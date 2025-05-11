@@ -1,5 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import type { AnalyzeContentOutput } from "@/ai/flows/analyze-content";
+import type { z } from "zod";
+import type { AnalyzeTeachingInputSchema, AnalyzeTeachingOutputSchema } from "@/ai/flows/analyze-teaching-flow";
+
 
 export type NavItem = {
   title: string;
@@ -68,3 +71,24 @@ export type DocumentReference = {
 // These are already defined in the AI flow files but re-exporting or creating specific report types can be useful.
 export type { AnalyzeContentInput, AnalyzeContentOutput } from "@/ai/flows/analyze-content";
 export type { CalvinismDeepDiveInput, CalvinismDeepDiveOutput } from "@/ai/flows/calvinism-deep-dive";
+
+
+// Types for the new Teaching Analysis Feature
+export type AnalyzeTeachingInput = z.infer<typeof AnalyzeTeachingInputSchema>;
+export type AnalyzeTeachingOutput = z.infer<typeof AnalyzeTeachingOutputSchema>;
+
+export type TeachingAnalysisReport = {
+  id: string;
+  userId: string; // Simulated user ID
+  // Inputs from form
+  teaching: string;
+  recipientNameTitle: string;
+  tonePreference: 'gentle' | 'firm' | 'urgent';
+  outputFormats: Array<'PDF' | 'TXT' | 'RTF' | 'Email' | 'Share' | 'Print'>;
+  userEmail?: string;
+  additionalNotes?: string;
+  // Output from AI
+  analysisResult: AnalyzeTeachingOutput;
+  createdAt: Date;
+  status: "pending" | "processing" | "completed" | "failed";
+};

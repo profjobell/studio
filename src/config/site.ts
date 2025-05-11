@@ -1,5 +1,5 @@
 import type { NavItem, SidebarNavItem } from "@/types";
-import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck } from 'lucide-react';
+import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList } from 'lucide-react';
 
 export type SiteConfig = {
   name: string;
@@ -30,12 +30,20 @@ export const siteConfig: SiteConfig = {
       href: "/dashboard",
     },
     {
-      title: "Analyze",
+      title: "Analyze Content",
       href: "/analyze",
     },
     {
-      title: "Reports",
+      title: "Content Reports",
       href: "/reports",
+    },
+    {
+      title: "Analyze Teaching",
+      href: "/analyze-teaching",
+    },
+    {
+      title: "Teaching Reports",
+      href: "/teaching-reports",
     },
     {
       title: "Library",
@@ -59,19 +67,31 @@ export const siteConfig: SiteConfig = {
       ],
     },
     {
-      title: "Analysis",
+      title: "Analysis Tools",
       items: [
         {
           title: "Analyze Content",
           href: "/analyze",
-          icon: Search,
-          description: "Submit content for theological analysis.",
+          icon: Search, // General content analysis
+          description: "Submit sermons, articles for theological analysis.",
         },
         {
-          title: "My Reports",
+          title: "Content Reports",
           href: "/reports",
-          icon: FileText,
-          description: "View and manage your analysis reports.",
+          icon: FileText, // List of reports from general content analysis
+          description: "View your content analysis reports.",
+        },
+        {
+          title: "Analyze Teaching",
+          href: "/analyze-teaching",
+          icon: FileSignature, // Specific teaching/philosophy analysis
+          description: "Analyze specific teachings or philosophies.",
+        },
+        {
+          title: "Teaching Reports",
+          href: "/teaching-reports",
+          icon: History, // List of reports from teaching analysis
+          description: "View your teaching analysis reports.",
         },
       ],
     },
@@ -101,13 +121,6 @@ export const siteConfig: SiteConfig = {
           icon: UserCircle,
           description: "Manage your user profile.",
         },
-        // Settings might be part of profile or its own page
-        // {
-        //   title: "Settings",
-        //   href: "/settings",
-        //   icon: Settings,
-        //   description: "Adjust application settings.",
-        // },
       ],
     },
   ],
