@@ -31,6 +31,9 @@ import {
   Share2,
   Download,
   Mail,
+  Youtube, // Added for Calvinism resources
+  ExternalLink, // Added for Calvinism resources
+  PlayCircle, // Added for Calvinism resources
 } from "lucide-react";
 import React from "react";
 
@@ -39,10 +42,12 @@ interface FeatureDetail {
   title: string;
   icon?: LucideIcon;
   description: string;
+  points?: string[]; // Added for top-level points
   subFeatures?: Array<{
     title: string;
     description: string;
     icon?: LucideIcon;
+    htmlContent?: string; // Added for raw HTML content
     points?: string[];
   }>;
 }
@@ -244,6 +249,29 @@ const featuresData: FeatureDetail[] = [
         "Community features for sharing insights (with privacy controls).",
         "Full implementation of interactive learning tools (quizzes, scripture memory)."
     ]
+  },
+  {
+    id: "calvinism-video-resources",
+    title: "Understanding Calvinism: Video Resources",
+    icon: Youtube,
+    description: "Explore these external video resources to deepen your understanding of Calvinism. You can watch an introductory video embedded below or view the full playlist directly on YouTube.",
+    subFeatures: [
+      {
+        title: "Full Playlist on YouTube",
+        icon: ExternalLink,
+        description: "Access the complete series of videos discussing various aspects of Calvinism.",
+        htmlContent: "<p class='text-sm'><a href='https://youtube.com/playlist?list=PLY2G1Gk_v1wOFzOk5PogZnPCioanrblrz&amp;si=kVeQ5zMaT53efNW4' target='_blank' rel='noopener noreferrer' class='text-primary hover:underline'>View Full Playlist on YouTube</a></p>"
+      },
+      {
+        title: "Embedded Video Example",
+        icon: PlayCircle,
+        description: "Watch a video from the playlist here (Note: This is an example, the full playlist contains more content):",
+        htmlContent: `
+          <div class="aspect-video mt-2">
+            <iframe width="100%" height="100%" src="https://www.youtube.com/embed/videoseries?list=PLY2G1Gk_v1wOFzOk5PogZnPCioanrblrz" title="YouTube video player for Calvinism playlist" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          </div>`
+      }
+    ]
   }
 ];
 
@@ -261,7 +289,7 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-grow pr-6 -mr-6"> {/* Added pr for scrollbar space and -mr to hide parent's scrollbar if any */}
-          <Accordion type="multiple" className="w-full space-y-4">
+          <Accordion type="multiple" className="w-full space-y-4" defaultValue={["introduction", "calvinism-video-resources"]}>
             {featuresData.map((feature) => (
               <AccordionItem value={feature.id} key={feature.id} className="border rounded-lg shadow-sm">
                 <AccordionTrigger className="px-4 py-3 text-lg font-semibold hover:bg-muted/50 rounded-t-lg">
@@ -272,6 +300,13 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pt-2 pb-4 border-t">
                   <p className="text-sm text-muted-foreground mb-3">{feature.description}</p>
+                  {feature.points && feature.points.length > 0 && (
+                        <ul className="list-disc list-inside space-y-1 pl-4 mt-2">
+                            {feature.points.map((point, pIndex) => (
+                            <li key={pIndex} className="text-sm">{point}</li>
+                            ))}
+                        </ul>
+                    )}
                   {feature.subFeatures && feature.subFeatures.length > 0 && (
                     <div className="space-y-3 ml-2">
                       {feature.subFeatures.map((subFeature, index) => (
@@ -288,17 +323,13 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
                               ))}
                             </ul>
                           )}
+                          {subFeature.htmlContent && (
+                            <div className="mt-2 text-xs" dangerouslySetInnerHTML={{ __html: subFeature.htmlContent }} />
+                          )}
                         </div>
                       ))}
                     </div>
                   )}
-                   {feature.points && feature.points.length > 0 && (
-                        <ul className="list-disc list-inside space-y-1 pl-4 mt-2">
-                            {feature.points.map((point, pIndex) => (
-                            <li key={pIndex} className="text-sm">{point}</li>
-                            ))}
-                        </ul>
-                    )}
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -311,4 +342,3 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
     </Dialog>
   );
 }
-
