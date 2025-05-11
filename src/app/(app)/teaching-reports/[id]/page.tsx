@@ -7,6 +7,7 @@ import type { TeachingAnalysisReport } from "@/types";
 import { fetchTeachingAnalysisFromDatabase } from "../../analyze-teaching/actions";
 import { TeachingReportDisplay } from "./components/teaching-report-display";
 import { TeachingReportActions } from "./components/teaching-report-actions";
+import { PodcastGenerator } from "./components/podcast-generator"; // Import PodcastGenerator
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const report = await fetchTeachingAnalysisFromDatabase(params.id);
@@ -64,6 +65,11 @@ export default async function TeachingReportPage({ params }: { params: { id: str
           </div>
         </CardFooter>
       </Card>
+
+      {/* Conditionally render PodcastGenerator if analysisResult exists */}
+      {report.analysisResult && (
+        <PodcastGenerator analysisId={report.id} initialReport={report} />
+      )}
 
        <div className="mt-8 print:hidden">
           <Button variant="outline" asChild>

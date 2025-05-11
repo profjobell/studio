@@ -8,12 +8,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+
 import {
   FileText,
-  Search,
   GraduationCap,
   Library,
   UserCircle,
@@ -31,9 +34,10 @@ import {
   Share2,
   Download,
   Mail,
-  Youtube, // Added for Calvinism resources
-  ExternalLink, // Added for Calvinism resources
-  PlayCircle, // Added for Calvinism resources
+  Youtube,
+  ExternalLink,
+  PlayCircle,
+  Podcast,
 } from "lucide-react";
 import React from "react";
 
@@ -42,12 +46,12 @@ interface FeatureDetail {
   title: string;
   icon?: LucideIcon;
   description: string;
-  points?: string[]; // Added for top-level points
+  points?: string[];
   subFeatures?: Array<{
     title: string;
     description: string;
     icon?: LucideIcon;
-    htmlContent?: string; // Added for raw HTML content
+    htmlContent?: string;
     points?: string[];
   }>;
 }
@@ -124,6 +128,45 @@ const featuresData: FeatureDetail[] = [
           "Biblical Warnings regarding false teachers and erroneous doctrines.",
         ],
       },
+    ],
+  },
+  {
+    id: "podcast-generation",
+    title: "Podcast Generation (For Teaching Analyses)",
+    icon: Podcast,
+    description: "Generate an audio podcast from your 'Teaching Analysis' reports. This feature uses simulated Text-to-Speech (as a placeholder for potential NotebookLM integration).",
+    subFeatures: [
+      {
+        title: "How to Generate",
+        icon: UploadCloud, 
+        description: "After a teaching analysis is completed and you are viewing the report, a 'Podcast Generation' section will appear.",
+        points: [
+          "Select 'Content Scope': Choose which parts of the report to include (e.g., Full Report, Church History, Letter of Caution).",
+          "Select 'Treatment Type': Choose between 'General Overview' (simulated 5-10 min) or 'Deep' (simulated 15-20 min).",
+          "Click 'Generate Podcast'. The system will simulate audio generation.",
+        ],
+      },
+      {
+        title: "Exporting Your Podcast",
+        icon: Share2,
+        description: "Once generated, you can export the podcast (simulated):",
+        points: [
+          "Play the audio directly in the browser.",
+          "Select 'Export Options': Choose 'Email' or 'Google Drive'.",
+          "If 'Email' is selected, provide your email address.",
+          "Click 'Export Podcast'. The system will simulate sending an email or uploading to Google Drive.",
+        ],
+      },
+      {
+        title: "Important Notes",
+        icon: Info,
+        description: "Current implementation details:",
+        points: [
+          "Podcast generation is simulated. A placeholder audio file/link is used.",
+          "NotebookLM integration is conceptual due to API limitations. Google Cloud Text-to-Speech is a potential fallback.",
+          "This feature is currently available for reports generated via the 'Analyze Teaching' functionality.",
+        ],
+      }
     ],
   },
   {
@@ -247,7 +290,8 @@ const featuresData: FeatureDetail[] = [
         "Full implementation of audio/video transcription.",
         "Enhanced AI models for even more nuanced analysis.",
         "Community features for sharing insights (with privacy controls).",
-        "Full implementation of interactive learning tools (quizzes, scripture memory)."
+        "Full implementation of interactive learning tools (quizzes, scripture memory).",
+        "True NotebookLM integration if/when an API becomes available for podcast generation."
     ]
   },
   {
@@ -277,6 +321,22 @@ const featuresData: FeatureDetail[] = [
 
 export function FeaturesGuideModal({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+
+  const filteredFeatures = featuresData.filter(feature =>
+    feature.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    feature.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (feature.subFeatures && feature.subFeatures.some(sub =>
+      sub.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.description.toLowerCase().includes(searchTerm.toLowerCase())
+    ))
+  );
+
+  const defaultOpenAccordionItems = ["introduction", "calvinism-video-resources"];
+  if (filteredFeatures.length === 1 && filteredFeatures[0]) { 
+      defaultOpenAccordionItems.push(filteredFeatures[0].id);
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -288,38 +348,48 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
             An overview of the features, analysis options, tools, and report functionalities available in this app.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow pr-6 -mr-6"> {/* Added pr for scrollbar space and -mr to hide parent's scrollbar if any */}
-          <Accordion type="multiple" className="w-full space-y-4" defaultValue={["introduction", "calvinism-video-resources"]}>
-            {featuresData.map((feature) => (
-              <AccordionItem value={feature.id} key={feature.id} className="border rounded-lg shadow-sm">
-                <AccordionTrigger className="px-4 py-3 text-lg font-semibold hover:bg-muted/50 rounded-t-lg">
-                  <div className="flex items-center gap-3">
-                    {feature.icon && <feature.icon className="h-6 w-6 text-primary" />}
-                    <span>{feature.title}</span>
+        <div className="relative my-4">
+          <Input
+            type="search"
+            placeholder="Search features..."
+            className="w-full pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
+        <ScrollArea className="flex-grow pr-4">
+          <Accordion type="multiple" defaultValue={defaultOpenAccordionItems} className="w-full">
+            {filteredFeatures.map((feature) => (
+              <AccordionItem value={feature.id} key={feature.id}>
+                <AccordionTrigger className="text-lg hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    {feature.icon && <feature.icon className="h-5 w-5 text-primary" />}
+                    {feature.title}
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-4 pt-2 pb-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-3">{feature.description}</p>
+                <AccordionContent className="text-sm text-muted-foreground space-y-2 pl-2">
+                  <p dangerouslySetInnerHTML={{ __html: feature.description.replace(/\n/g, "<br />") }} />
                   {feature.points && feature.points.length > 0 && (
-                        <ul className="list-disc list-inside space-y-1 pl-4 mt-2">
-                            {feature.points.map((point, pIndex) => (
-                            <li key={pIndex} className="text-sm">{point}</li>
-                            ))}
-                        </ul>
-                    )}
+                         <ul className="list-disc list-inside pl-4 space-y-1">
+                              {feature.points.map((point, pIndex) => (
+                                <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
+                              ))}
+                          </ul>
+                  )}
                   {feature.subFeatures && feature.subFeatures.length > 0 && (
-                    <div className="space-y-3 ml-2">
+                    <div className="space-y-3 mt-3">
                       {feature.subFeatures.map((subFeature, index) => (
-                        <div key={index} className="p-3 bg-muted/30 rounded-md">
-                          <h4 className="font-semibold text-md mb-1 flex items-center gap-2">
-                            {subFeature.icon && <subFeature.icon className="h-5 w-5 text-primary/80" />}
+                        <div key={index} className="ml-4 p-3 border rounded-md bg-background/50">
+                          <h4 className="font-semibold text-foreground flex items-center gap-2 mb-1">
+                            {subFeature.icon && <subFeature.icon className="h-4 w-4 text-primary/80" />}
                             {subFeature.title}
                           </h4>
-                          <p className="text-xs text-muted-foreground mb-2">{subFeature.description}</p>
+                          <p className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: subFeature.description.replace(/\n/g, "<br />") }} />
                           {subFeature.points && subFeature.points.length > 0 && (
-                            <ul className="list-disc list-inside space-y-1 pl-4">
+                            <ul className="list-disc list-inside pl-4 space-y-1 mt-1 text-xs">
                               {subFeature.points.map((point, pIndex) => (
-                                <li key={pIndex} className="text-xs">{point}</li>
+                                <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
                               ))}
                             </ul>
                           )}
@@ -333,12 +403,17 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
                 </AccordionContent>
               </AccordionItem>
             ))}
+             {filteredFeatures.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No features match your search.</p>
+            )}
           </Accordion>
         </ScrollArea>
-         <div className="mt-4 text-xs text-muted-foreground">
+        <DialogFooter className="text-xs text-muted-foreground pt-4">
             This guide will be updated as new features are added.
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+    

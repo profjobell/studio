@@ -77,6 +77,16 @@ export type { CalvinismDeepDiveInput, CalvinismDeepDiveOutput } from "@/ai/flows
 export type AnalyzeTeachingInput = z.infer<typeof AnalyzeTeachingInputSchema>;
 export type AnalyzeTeachingOutput = z.infer<typeof AnalyzeTeachingOutputSchema>;
 
+export type PodcastData = {
+  status: "pending" | "generating" | "generated" | "failed" | "exporting" | "exported";
+  contentScope: Array<"Full Report" | "Church History" | "Promoters" | "Church Council" | "Letter of Caution" | "Warnings">;
+  treatmentType: "General Overview" | "Deep";
+  audioUrl?: string;
+  exportOptions: Array<"Email" | "Google Drive">;
+  exportStatus: "pending" | "completed" | "failed";
+  lastError?: string;
+};
+
 export type TeachingAnalysisReport = {
   id: string;
   userId: string; // Simulated user ID
@@ -91,4 +101,6 @@ export type TeachingAnalysisReport = {
   analysisResult: AnalyzeTeachingOutput;
   createdAt: Date;
   status: "pending" | "processing" | "completed" | "failed";
+  analysisMode?: "Overview" | "Scholastic" | "Deep" | "Very Deep" | "Full Summary"; // Added as per prompt
+  podcast?: PodcastData | null; // Added for podcast feature
 };

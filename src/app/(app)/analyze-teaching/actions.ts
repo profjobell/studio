@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { analyzeTeachingAgainstKJV, type AnalyzeTeachingInput, type AnalyzeTeachingOutput } from '@/ai/flows/analyze-teaching-flow';
-import type { TeachingAnalysisReport } from '@/types';
+import type { TeachingAnalysisReport, PodcastData } from '@/types';
 
 // Schema for form validation before calling AI
 export const TeachingAnalysisFormSchema = z.object({
@@ -77,7 +77,9 @@ A Watchman for the Truth`,
         biblicalWarnings: "The KJV 1611 Bible sternly warns against teachings that deviate from the apostles' doctrine. Galatians 1:8-9 (KJV) states: 'But though we, or an angel from heaven, preach any other gospel unto you than that which we have preached unto you, let him be accursed. As we said before, so say I now again, If any man preach any other gospel unto you than that ye have received, let him be accursed.' 1 Timothy 1:3-4 (KJV) commands to 'charge some that they teach no other doctrine, Neither give heed to fables...' and James 3:1 (KJV) cautions, 'My brethren, be not many masters, knowing that we shall receive the greater condemnation.' These verses underscore the gravity of doctrinal purity."
       },
       createdAt: new Date("2025-06-01T10:00:00Z"),
-      status: "completed"
+      status: "completed",
+      analysisMode: "Deep",
+      podcast: null,
     };
     global.tempTeachingAnalysisDatabaseGlobal[sampleTeachingAnalysisId] = sampleTeachingAnalysisData;
   }
@@ -122,6 +124,8 @@ export async function submitTeachingAnalysisAction(
       analysisResult,
       createdAt: new Date(),
       status: 'completed',
+      analysisMode: "Full Summary", // Default or determine based on inputs
+      podcast: null, // Initialize podcast field
     };
 
     tempTeachingAnalysisDatabase[newAnalysisId] = newReport;
@@ -178,4 +182,110 @@ export function generateTxtOutput(report: TeachingAnalysisReport): string {
     output += `--- Additional User Notes ---\n${report.additionalNotes}\n\n`;
   }
   return output;
+}
+
+
+// --- Podcast Related Server Actions ---
+
+export async function generatePodcastAction(
+  analysisId: string,
+  reportContent: string,
+  treatmentType: string,
+  contentScope: string[]
+): Promise<{ success: boolean; message: string; audioUrl?: string; podcastData?: PodcastData }> {
+  console.log(`Server Action: Generating podcast for analysis ID: ${analysisId}`);
+  console.log(`Treatment Type: ${treatmentType}, Content Scope: ${contentScope.join(', ')}`);
+  // Simulate AI podcast generation (e.g., using a Text-to-Speech API or NotebookLM if available)
+  // For this demo, we'll return a placeholder audio URL and simulate success.
+
+  if (!tempTeachingAnalysisDatabase[analysisId]) {
+    return { success: false, message: `Analysis report ${analysisId} not found.` };
+  }
+
+  // Simulate a delay for podcast generation
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+  const audioUrl = `/placeholder-podcast-${analysisId}.mp3`; // Simulated URL
+
+  const updatedPodcastData: Partial<PodcastData> = {
+    status: 'generated',
+    audioUrl: audioUrl,
+    treatmentType: treatmentType as PodcastData['treatmentType'],
+    contentScope: contentScope as PodcastData['contentScope'],
+    // exportOptions and exportStatus will be set by exportPodcastAction or initialized
+  };
+  
+  tempTeachingAnalysisDatabase[analysisId].podcast = {
+    ...(tempTeachingAnalysisDatabase[analysisId].podcast ?? {
+      status: 'pending', // Default if not existing
+      contentScope: [],
+      treatmentType: 'General Overview',
+      exportOptions: [],
+      exportStatus: 'pending',
+    }),
+    ...updatedPodcastData,
+  };
+
+  console.log("Updated podcast data in DB:", tempTeachingAnalysisDatabase[analysisId].podcast);
+
+  return { 
+    success: true, 
+    message: 'Podcast generated successfully (simulated).', 
+    audioUrl,
+    podcastData: tempTeachingAnalysisDatabase[analysisId].podcast
+  };
+}
+
+export async function exportPodcastAction(
+  analysisId: string,
+  audioUrl: string,
+  exportOptions: Array<'Email' | 'Google Drive'>,
+  email?: string
+): Promise<{ success: boolean; message: string, podcastData?: PodcastData }> {
+  console.log(`Server Action: Exporting podcast for analysis ID: ${analysisId}`);
+  console.log(`Audio URL: ${audioUrl}, Export Options: ${exportOptions.join(', ')}, Email: ${email}`);
+
+  if (!tempTeachingAnalysisDatabase[analysisId]) {
+    return { success: false, message: `Analysis report ${analysisId} not found.` };
+  }
+  if (!tempTeachingAnalysisDatabase[analysisId].podcast) {
+    return { success: false, message: `Podcast data not found for report ${analysisId}. Generate podcast first.` };
+  }
+
+  // Simulate export process (e.g., sending email, uploading to Google Drive)
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  if (exportOptions.includes('Email') && email) {
+    console.log(`Simulating email to: ${email} with attachment: ${audioUrl}`);
+  }
+  if (exportOptions.includes('Google Drive')) {
+    console.log(`Simulating upload to Google Drive: ${audioUrl}`);
+  }
+  
+  tempTeachingAnalysisDatabase[analysisId].podcast!.exportStatus = 'completed';
+  tempTeachingAnalysisDatabase[analysisId].podcast!.exportOptions = exportOptions;
+  tempTeachingAnalysisDatabase[analysisId].podcast!.status = 'exported';
+
+
+  return { 
+    success: true, 
+    message: 'Podcast export process completed (simulated).',
+    podcastData: tempTeachingAnalysisDatabase[analysisId].podcast
+  };
+}
+
+export async function updateTeachingReportPodcastDataAction(
+  analysisId: string,
+  podcastData: PodcastData
+): Promise<{ success: boolean; message: string; updatedReport?: TeachingAnalysisReport }> {
+  if (!tempTeachingAnalysisDatabase[analysisId]) {
+    return { success: false, message: "Report not found." };
+  }
+  tempTeachingAnalysisDatabase[analysisId].podcast = podcastData;
+  // revalidatePath(`/teaching-reports/${analysisId}`); // If you want to force re-fetch on page
+  return { 
+    success: true, 
+    message: "Podcast data updated successfully.",
+    updatedReport: tempTeachingAnalysisDatabase[analysisId]
+  };
 }
