@@ -54,12 +54,12 @@ export default function LandingPage() {
                 </div>
               </div>
               <Image
-                src="https://picsum.photos/seed/kingjamesbible/600/400"
+                src="https://picsum.photos/seed/ancientbible/600/400"
                 width="600"
                 height="400"
-                alt="KJV Bible"
+                alt="Ancient KJV Bible"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                data-ai-hint="KJV bible book"
+                data-ai-hint="KJV bible open"
               />
             </div>
           </div>
@@ -77,6 +77,7 @@ export default function LandingPage() {
                 </h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   We understand that it can feel daunting to ask questions about sermons or religious teachings, especially if you worry about seeming out of place. Our platform provides a warm, welcoming space with easy-to-use tools designed to gently guide you toward a clearer understanding of what’s shared from the pulpit. Here, you can explore with confidence, free from judgment, and deepen your connection to the message at your own pace.
+                  <span className="block mt-2 text-sm font-bold italic"> - Brother Joseph Bell</span>
                 </p>
               </div>
             </div>
