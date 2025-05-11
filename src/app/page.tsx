@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons/logo';
@@ -52,12 +53,12 @@ export default function LandingPage() {
                 </div>
               </div>
               <Image
-                src="https://picsum.photos/seed/holybook/600/400"
+                src="https://picsum.photos/seed/kjvbiblestudy/600/400"
                 width="600"
                 height="400"
-                alt="Hero"
+                alt="KJV Bible study"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                data-ai-hint="holy bible"
+                data-ai-hint="KJV bible open"
               />
             </div>
           </div>
@@ -125,13 +126,13 @@ export default function LandingPage() {
         </p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link
-            href="/terms"
+            href="#"
             className="text-xs hover:underline underline-offset-4 text-muted-foreground"
           >
             Terms of Service
           </Link>
           <Link
-            href="/privacy"
+            href="#"
             className="text-xs hover:underline underline-offset-4 text-muted-foreground"
           >
             Privacy Policy
