@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
 @layer base {
@@ -54,6 +54,10 @@ body {
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    --font-sans: "__GeistSans_05d8c6", "__GeistSans_Fallback_05d8c6", system-ui, sans-serif; /* Added GeistSans variables */
+    --font-mono: "__GeistMono_5330f3", "__GeistMono_Fallback_5330f3", monospace; /* Added GeistMono variables */
+
   }
 
   .dark {
