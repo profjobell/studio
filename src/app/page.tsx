@@ -57,7 +57,7 @@ export default function LandingPage() {
                 height="400"
                 alt="Hero"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                data-ai-hint="bible study analysis"
+                data-ai-hint="KJV Bible"
               />
             </div>
           </div>
