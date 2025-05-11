@@ -38,6 +38,7 @@ import {
   ExternalLink,
   PlayCircle,
   Podcast,
+  Mic, // Added Mic icon
 } from "lucide-react";
 import React from "react";
 
@@ -102,18 +103,31 @@ const featuresData: FeatureDetail[] = [
     id: "teaching-analysis",
     title: "Specific Teaching/Philosophy Analysis",
     icon: FileSignature,
-    description: "Dedicated analysis for specific teachings, philosophies, or sayings to evaluate their alignment with KJV 1611 principles.",
+    description: "Dedicated analysis for specific teachings, philosophies, or sayings to evaluate their alignment with KJV 1611 principles. Includes an option to record audio input.",
     subFeatures: [
       {
         title: "Submission Process",
         icon: UploadCloud,
         description: "Submit details on the 'Analyze Teaching' page.",
         points: [
-          "Enter the teaching/philosophy/saying.",
+          "Enter the teaching/philosophy/saying directly or use the Audio Recorder.",
           "Specify recipient name and title for the letter of clarification.",
           "Choose the desired tone for the letter (Gentle, Firm, Urgent).",
           "Select output formats (PDF, TXT, RTF, Email, Share, Print).",
           "Optionally provide your email for Email/Share and additional notes.",
+        ],
+      },
+       {
+        title: "Audio Recording for Teaching Input",
+        icon: Mic,
+        description: "Directly record your teaching or thoughts using your device's microphone. The recording will be transcribed (simulated) and used as input for the analysis.",
+        points: [
+          "Click 'Start Recording' to begin.",
+          "Click 'Stop Recording' when finished.",
+          "Preview the recording if needed.",
+          "Click 'Save & Transcribe'. The transcribed text will populate the teaching input field.",
+          "The audio file (simulated storage) and transcription details can be saved with the analysis report.",
+          "Option to 'Delete Recording' before saving.",
         ],
       },
       {
@@ -126,6 +140,7 @@ const featuresData: FeatureDetail[] = [
           "Summary of relevant Church Council decisions.",
           "A detailed Letter of Clarification/Caution (KJV 1611 based).",
           "Biblical Warnings regarding false teachers and erroneous doctrines.",
+          "If audio was recorded, metadata about the recording may be included.",
         ],
       },
     ],
@@ -287,7 +302,8 @@ const featuresData: FeatureDetail[] = [
     points: [
         "Direct integration of library documents as reference material in analyses.",
         "Advanced search within reports and library documents.",
-        "Full implementation of audio/video transcription.",
+        "Full implementation of audio/video transcription (currently simulated for non-text files).",
+        "Real audio recording transcription (currently simulated).",
         "Enhanced AI models for even more nuanced analysis.",
         "Community features for sharing insights (with privacy controls).",
         "Full implementation of interactive learning tools (quizzes, scripture memory).",
@@ -328,7 +344,8 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
     feature.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (feature.subFeatures && feature.subFeatures.some(sub =>
       sub.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.description.toLowerCase().includes(searchTerm.toLowerCase())
+      sub.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sub.htmlContent && sub.htmlContent.toLowerCase().includes(searchTerm.toLowerCase()))
     ))
   );
 
@@ -415,5 +432,3 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
     </Dialog>
   );
 }
-
-    

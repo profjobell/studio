@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,6 +23,7 @@ import { useState, useTransition } from 'react';
 import { submitTeachingAnalysisAction, TeachingAnalysisFormSchema } from '../actions';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { AudioRecorder } from './audio-recorder'; // Import AudioRecorder
 
 const outputFormatOptions = [
   { id: 'PDF', label: 'PDF' },
@@ -39,6 +41,12 @@ export function AnalyzeTeachingForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const [recordedAudioDetails, setRecordedAudioDetails] = useState<{
+    transcription: string;
+    audioStoragePath: string;
+    audioBlob: Blob;
+  } | null>(null);
+
   const form = useForm<FormData>({
     resolver: zodResolver(TeachingAnalysisFormSchema),
     defaultValues: {
@@ -51,10 +59,24 @@ export function AnalyzeTeachingForm() {
     },
   });
 
+  const handleTranscriptionComplete = (transcription: string, audioStoragePath: string, audioBlob: Blob) => {
+    form.setValue('teaching', transcription, { shouldValidate: true });
+    setRecordedAudioDetails({ transcription, audioStoragePath, audioBlob });
+    toast({
+      title: 'Transcription Received',
+      description: 'The teaching input has been populated with the recorded audio content.',
+    });
+  };
+
   async function onSubmit(values: FormData) {
     startTransition(async () => {
       try {
-        const result = await submitTeachingAnalysisAction(values);
+        // Prepare audio details to pass to the server action if a recording was made
+        const audioDetailsForAction = recordedAudioDetails 
+          ? { audioUrl: recordedAudioDetails.audioStoragePath, transcription: recordedAudioDetails.transcription }
+          : undefined;
+
+        const result = await submitTeachingAnalysisAction(values, audioDetailsForAction);
 
         if (result.success && result.analysisId) {
           toast({
@@ -63,6 +85,7 @@ export function AnalyzeTeachingForm() {
           });
           router.push(`/teaching-reports/${result.analysisId}`);
           form.reset();
+          setRecordedAudioDetails(null); // Clear recorded audio details
         } else {
           toast({
             title: 'Submission Failed',
@@ -89,22 +112,24 @@ export function AnalyzeTeachingForm() {
           name="teaching"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Teaching / Philosophy / Saying</FormLabel>
+              <FormLabel>Teaching / Philosophy / Saying (or Record Audio)</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Enter the teaching or philosophy you want to analyze..."
+                  placeholder="Enter the teaching or philosophy you want to analyze, or use the recorder below..."
                   className="resize-y min-h-[150px]"
                   {...field}
                 />
               </FormControl>
               <FormDescription>
-                Provide the specific teaching, saying, or philosophical statement for analysis.
+                Provide the specific teaching, saying, or philosophical statement for analysis. Alternatively, record audio below.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        <AudioRecorder onTranscriptionComplete={handleTranscriptionComplete} />
+        
         <FormField
           control={form.control}
           name="recipientNameTitle"

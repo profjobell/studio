@@ -87,6 +87,13 @@ export type PodcastData = {
   lastError?: string;
 };
 
+export type AudioRecordingData = {
+  status: "pending" | "saved" | "transcribed" | "failed";
+  audioUrl: string; // URL to audio file in Firebase Storage (or simulated path)
+  transcription?: string; // Transcribed text, might be same as main teaching text
+  timestamp: Date;
+};
+
 export type TeachingAnalysisReport = {
   id: string;
   userId: string; // Simulated user ID
@@ -103,4 +110,5 @@ export type TeachingAnalysisReport = {
   status: "pending" | "processing" | "completed" | "failed";
   analysisMode?: "Overview" | "Scholastic" | "Deep" | "Very Deep" | "Full Summary"; // Added as per prompt
   podcast?: PodcastData | null; // Added for podcast feature
+  recording?: AudioRecordingData | null; // Added for audio recording feature
 };
