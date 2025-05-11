@@ -5,8 +5,9 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 
-const geistSans = GeistSans;
-const geistMono = GeistMono;
+// These are now assigned directly, no need for separate const declarations if already imported.
+// const geistSans = GeistSans;
+// const geistMono = GeistMono;
 
 export const metadata: Metadata = {
   title: 'KJV Sentinel - Theological Content Analyzer',
@@ -27,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased font-sans`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
