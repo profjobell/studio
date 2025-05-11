@@ -1,3 +1,4 @@
+
 export interface GlossaryEntry {
   id: string;
   term: string;
@@ -137,7 +138,9 @@ export const glossaryTermsArray: GlossaryEntry[] = [
     htmlDefinition: `
       <p>A circular graphic of emotional labels that hierarchically arranges different emotions to aide people in identifying the emotion they are experiencing.</p>
       <p>Usage and familiarity is highly recommended by BTF.</p>
-      <div class="my-2"><img src="https://picsum.photos/seed/emotionwheeldiagram/400/200" alt="Emotion Wheel Diagram" class="rounded-md" data-ai-hint="emotion wheel diagram" /></div>
+      <div class="my-2">
+        <img src="https://picsum.photos/seed/emotionwheeldiagram/400/300" alt="Emotion Wheel Diagram" class="rounded-md w-full max-w-md mx-auto" data-ai-hint="emotion wheel diagram" />
+      </div>
     `,
   },
   {
@@ -447,7 +450,7 @@ export const glossaryTermsArray: GlossaryEntry[] = [
         <li><strong>Two-Way Street:</strong> Rule Omega must be operated in both or all directions in order for it to be effective. Rule Omega cannot be offered to a sophist or an ideologue and a mechanism of interaction. They will very quickly weaponize Rule Omega and employ a mutated version of it in an asymmetric fashion.</li>
       </ul>
       <p>See also "Protocol X" on this page.</p>
-      <p><strong>Rule Omega YouTube Video:</strong> <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">(Placeholder Link - Rick Astley)</a></p>
+      <p><strong>Rule Omega Youtube Video:</strong> <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">(Placeholder Link - Rick Astley)</a></p>
       <div class="aspect-video my-2">
         <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Placeholder Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
       </div>
@@ -514,7 +517,9 @@ export const glossaryTermsArray: GlossaryEntry[] = [
     htmlDefinition: `
       <p>The "S-Curve" is a visual graph used to describe how economic, societal, resource, and technological developments typically progress through phases: an initial period of slow growth, followed by rapid acceleration, and finally a leveling off as the system matures or reaches its capacity limits. This model helps to explain and anticipate changes in various domains, indicating how innovations are adopted and integrated over time until they saturate the market or society, necessitating new innovations to start a new S-Curve. This concept is useful for understanding the lifecycle of technologies, businesses, and even cultural trends.</p>
       <p>At Beyond The Fundamentals, we emphasize the reality that human minds constitute "resources" and when ideologies and meme complexes (acting as egregors) attempt to colonize minds, the S-Curve applies to the availability of minds to colonized and the tactics used to do so. This can cause the tactics to soar in their implementation of cleverness toward rivalry, antagonism and moralism.</p>
-      <div class="my-2"><img src="https://picsum.photos/seed/scurvegraph/400/200" alt="S-Curve Graph" class="rounded-md" data-ai-hint="s-curve graph" /></div>
+      <div class="my-2">
+        <img src="https://picsum.photos/seed/scurvegraph/400/200" alt="S-Curve Graph illustration" class="rounded-md w-full max-w-md mx-auto" data-ai-hint="s-curve graph" />
+      </div>
     `,
   },
   {
@@ -564,7 +569,9 @@ export const glossaryTermsArray: GlossaryEntry[] = [
     htmlDefinition: `
       <p>Joseph Tainter's theory of the "collapse of complex societies" postulates that the complexity of societies increases as they solve problems, leading to diminishing returns on complexity investments and ultimately to collapse.</p>
       <p>At Beyond The Fundamentals, we abstract this concept to many different arenas. For example, ideologies need naive neotenous human minds to colonize. However, the more human minds are colonized by an ideology, the fewer naive neotenous minds are available to be colonized, and the returns of meme-complex propagation diminish rapidly. This is exacerbated by the fact that those constituting the constituency of the ideology can only perform simulated thinking instead of actual thinking, thus making the collapse and demise that much more inevitable.</p>
-      <div class="my-2"><img src="https://picsum.photos/seed/taintercollapsecurve/400/200" alt="Tainter Curve Illustration" class="rounded-md" data-ai-hint="collapse graph curve" /></div>
+      <div class="my-2">
+        <img src="https://picsum.photos/seed/taintercollapsecurve/400/200" alt="Tainter Curve Illustration" class="rounded-md w-full max-w-md mx-auto" data-ai-hint="collapse graph curve" />
+      </div>
     `,
   },
   {
