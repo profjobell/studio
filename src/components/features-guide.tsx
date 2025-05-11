@@ -1,0 +1,313 @@
+
+"use client";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  FileText,
+  Search,
+  GraduationCap,
+  Library,
+  UserCircle,
+  Settings,
+  Brain,
+  FileSignature,
+  ListChecks,
+  Info,
+  Puzzle,
+  BookOpen,
+  Lightbulb,
+  type LucideIcon,
+  UploadCloud,
+  Printer,
+  Share2,
+  Download,
+  Mail,
+} from "lucide-react";
+import React from "react";
+
+interface FeatureDetail {
+  id: string;
+  title: string;
+  icon?: LucideIcon;
+  description: string;
+  subFeatures?: Array<{
+    title: string;
+    description: string;
+    icon?: LucideIcon;
+    points?: string[];
+  }>;
+}
+
+const featuresData: FeatureDetail[] = [
+  {
+    id: "introduction",
+    title: "Welcome to KJV Sentinel",
+    icon: Info,
+    description: "KJV Sentinel is your comprehensive tool for analyzing religious content through the lens of the King James Version (KJV) 1611 Bible. Our platform helps you understand theological accuracy, historical context, detect manipulative tactics, identify various 'isms', and explore Calvinistic influences within submitted materials.",
+  },
+  {
+    id: "content-analysis",
+    title: "Core Content Analysis",
+    icon: Search,
+    description: "Analyze various forms of religious content including text, documents (PDF, TXT, DOCX), audio (MP3, WAV), and video (MP4, AVI - transcription simulated).",
+    subFeatures: [
+      {
+        title: "Submission Process",
+        icon: UploadCloud,
+        description: "Easily submit your content via text input or file upload on the 'Analyze Content' page.",
+        points: [
+          "Provide a title for your analysis.",
+          "Choose between direct text input or uploading a file.",
+          "Supported files are processed for text extraction/transcription (simulated for audio/video).",
+        ],
+      },
+      {
+        title: "Standard Analysis Report",
+        icon: FileText,
+        description: "Receive a detailed report covering:",
+        points: [
+          "Summary of Findings",
+          "Verse-by-Verse Scriptural Analysis (KJV 1611)",
+          "Historical Context",
+          "Etymology of Key Terms",
+          "Potential Exposure to Harmful Ideologies",
+          "Identified Logical Fallacies",
+          "Detected Manipulative Tactics",
+          "Biblical Remonstrance",
+          "Identified Theological 'Isms'",
+          "Initial Calvinism Influence Assessment",
+        ],
+      },
+    ],
+  },
+  {
+    id: "teaching-analysis",
+    title: "Specific Teaching/Philosophy Analysis",
+    icon: FileSignature,
+    description: "Dedicated analysis for specific teachings, philosophies, or sayings to evaluate their alignment with KJV 1611 principles.",
+    subFeatures: [
+      {
+        title: "Submission Process",
+        icon: UploadCloud,
+        description: "Submit details on the 'Analyze Teaching' page.",
+        points: [
+          "Enter the teaching/philosophy/saying.",
+          "Specify recipient name and title for the letter of clarification.",
+          "Choose the desired tone for the letter (Gentle, Firm, Urgent).",
+          "Select output formats (PDF, TXT, RTF, Email, Share, Print).",
+          "Optionally provide your email for Email/Share and additional notes.",
+        ],
+      },
+      {
+        title: "Teaching Analysis Report",
+        icon: FileText,
+        description: "The generated report includes:",
+        points: [
+          "Church History Context of the teaching.",
+          "Promoters and Demonstrators (key figures/groups).",
+          "Summary of relevant Church Council decisions.",
+          "A detailed Letter of Clarification/Caution (KJV 1611 based).",
+          "Biblical Warnings regarding false teachers and erroneous doctrines.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "analysis-depths",
+    title: "Understanding Analysis Depths & Options",
+    icon: Brain,
+    description: "KJV Sentinel provides various levels of insight through its reports and specialized tools. While not always separate buttons, these 'depths' describe how you can engage with the analysis results:",
+    subFeatures: [
+      {
+        title: "Overview Analysis",
+        description: "Quickly grasp key takeaways from the 'Summary' section of standard reports, including primary 'isms' detected and overall KJV alignment.",
+      },
+      {
+        title: "Scholastic Focus",
+        description: "For deeper study, focus on sections like 'Historical Context', 'Etymology', 'Scriptural Analysis', and 'Logical Fallacies' within the standard report.",
+      },
+      {
+        title: "Deep Theological Examination (Standard Report)",
+        description: "The full standard content analysis report provides a comprehensive look at all aspects, including 'Manipulative Tactics', detailed 'Identified Isms', and the initial 'Calvinism Analysis'.",
+      },
+      {
+        title: "In-Depth Calvinism Report",
+        description: "For content where Calvinistic influences are preliminarily detected, you can request a specialized 'In-Depth Calvinism Report'. This provides a more granular examination of Calvinistic elements, their nuances, and scriptural comparisons.",
+      },
+      {
+        title: "Targeted Teaching Analysis",
+        description: "Use the 'Analyze Teaching' feature for a focused analysis of specific doctrines or sayings, resulting in a structured report with historical context and a formal letter of clarification.",
+      },
+       {
+        title: "Full Summary (Conceptual)",
+        description: "Conceptually, a 'full summary' involves reviewing all generated reports (standard, deep-dive, teaching analysis if applicable) for a holistic understanding of the submitted content or topic from multiple analytical angles.",
+      }
+    ],
+  },
+  {
+    id: "report-management",
+    title: "Managing Your Reports",
+    icon: ListChecks,
+    description: "Access and manage all your generated analysis reports.",
+    subFeatures: [
+      {
+        title: "Viewing Reports",
+        icon: FileText,
+        description: "Reports are presented in an accordion layout for easy navigation. Each section (Summary, Scriptural Analysis, etc.) can be expanded or collapsed.",
+        points: [
+          "Navigate to 'Content Reports' or 'Teaching Reports' to see lists of your analyses.",
+          "Click on a report title to view its detailed contents.",
+        ],
+      },
+      {
+        title: "Report Actions",
+        icon: Settings,
+        description: "For each report, you have several options:",
+        points: [
+          "Download as PDF (placeholder for content reports, functional for teaching reports via TXT).",
+          "Download as TXT (functional for teaching reports).",
+          "Share (simulated link, or via Email for teaching reports if email provided).",
+          "Print (uses browser's print functionality).",
+          "Delete reports from your list.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "document-library",
+    title: "Document Library",
+    icon: Library,
+    description: "Upload and manage your personal reference documents (PDF, TXT, DOCX). These documents can be used as source material for future analysis or personal study. Currently, uploaded documents are stored, but integration into the analysis flow as reference material is a future enhancement.",
+  },
+  {
+    id: "learning-tools",
+    title: "Learning Tools",
+    icon: GraduationCap,
+    description: "Interactive tools to enhance your theological understanding and scripture memory, often drawing from content you've analyzed.",
+    subFeatures: [
+      {
+        title: "Fallacy Detection Quiz",
+        icon: Puzzle,
+        description: "Test your ability to identify logical fallacies in theological arguments. (Conceptual, based on analyzed content)",
+      },
+      {
+        title: "Scripture Memory Tool",
+        icon: BookOpen,
+        description: "Save and practice KJV verses identified in your analyses using a flashcard-style interface. (Conceptual)",
+      },
+      {
+        title: "Ism Awareness Quiz",
+        icon: Lightbulb,
+        description: "Deepen your understanding of various theological 'isms' and Calvinistic influences. (Conceptual, based on analyzed content)",
+      },
+    ],
+  },
+  {
+    id: "user-profile",
+    title: "User Profile & Settings",
+    icon: UserCircle,
+    description: "Manage your account details and preferences.",
+    subFeatures: [
+      {
+        title: "Profile Management",
+        description: "Update your display name and email.",
+      },
+      {
+        title: "Theme Toggle",
+        description: "Switch between light, dark, and system themes for optimal viewing comfort.",
+      },
+      {
+        title: "Account Deletion",
+        description: "Option to permanently delete your account and associated data.",
+      },
+    ],
+  },
+  {
+    id: "future-updates",
+    title: "Future Enhancements",
+    icon: Settings,
+    description: "KJV Sentinel is continually evolving. Future updates may include:",
+    points: [
+        "Direct integration of library documents as reference material in analyses.",
+        "Advanced search within reports and library documents.",
+        "Full implementation of audio/video transcription.",
+        "Enhanced AI models for even more nuanced analysis.",
+        "Community features for sharing insights (with privacy controls).",
+        "Full implementation of interactive learning tools (quizzes, scripture memory)."
+    ]
+  }
+];
+
+export function FeaturesGuideModal({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">KJV Sentinel Features Guide</DialogTitle>
+          <DialogDescription>
+            An overview of the features, analysis options, tools, and report functionalities available in this app.
+          </DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="flex-grow pr-6 -mr-6"> {/* Added pr for scrollbar space and -mr to hide parent's scrollbar if any */}
+          <Accordion type="multiple" className="w-full space-y-4">
+            {featuresData.map((feature) => (
+              <AccordionItem value={feature.id} key={feature.id} className="border rounded-lg shadow-sm">
+                <AccordionTrigger className="px-4 py-3 text-lg font-semibold hover:bg-muted/50 rounded-t-lg">
+                  <div className="flex items-center gap-3">
+                    {feature.icon && <feature.icon className="h-6 w-6 text-primary" />}
+                    <span>{feature.title}</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pt-2 pb-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-3">{feature.description}</p>
+                  {feature.subFeatures && feature.subFeatures.length > 0 && (
+                    <div className="space-y-3 ml-2">
+                      {feature.subFeatures.map((subFeature, index) => (
+                        <div key={index} className="p-3 bg-muted/30 rounded-md">
+                          <h4 className="font-semibold text-md mb-1 flex items-center gap-2">
+                            {subFeature.icon && <subFeature.icon className="h-5 w-5 text-primary/80" />}
+                            {subFeature.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mb-2">{subFeature.description}</p>
+                          {subFeature.points && subFeature.points.length > 0 && (
+                            <ul className="list-disc list-inside space-y-1 pl-4">
+                              {subFeature.points.map((point, pIndex) => (
+                                <li key={pIndex} className="text-xs">{point}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                   {feature.points && feature.points.length > 0 && (
+                        <ul className="list-disc list-inside space-y-1 pl-4 mt-2">
+                            {feature.points.map((point, pIndex) => (
+                            <li key={pIndex} className="text-sm">{point}</li>
+                            ))}
+                        </ul>
+                    )}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </ScrollArea>
+         <div className="mt-4 text-xs text-muted-foreground">
+            This guide will be updated as new features are added.
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

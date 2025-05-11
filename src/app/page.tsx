@@ -5,6 +5,7 @@ import { Logo } from '@/components/icons/logo';
 import { siteConfig } from '@/config/site';
 import Image from 'next/image';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { FeaturesGuideModal } from '@/components/features-guide';
 
 export default function LandingPage() {
   return (
@@ -47,18 +48,18 @@ export default function LandingPage() {
                   <Button asChild size="lg">
                     <Link href="/signup">Get Started</Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg">
-                    <Link href="/#features">Learn More</Link>
-                  </Button>
+                  <FeaturesGuideModal>
+                    <Button variant="outline" size="lg">Learn More</Button>
+                  </FeaturesGuideModal>
                 </div>
               </div>
               <Image
-                src="https://picsum.photos/seed/kjvbiblestudy/600/400"
+                src="https://picsum.photos/seed/kjv-bible-study-detailed/600/400"
                 width="600"
                 height="400"
-                alt="KJV Bible study"
+                alt="Detailed KJV Bible study scene"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                data-ai-hint="KJV bible open"
+                data-ai-hint="KJV bible book"
               />
             </div>
           </div>
