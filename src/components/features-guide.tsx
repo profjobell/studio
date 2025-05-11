@@ -38,7 +38,7 @@ import {
   ExternalLink,
   PlayCircle,
   Podcast,
-  Mic, // Added Mic icon
+  Mic, 
 } from "lucide-react";
 import React from "react";
 
@@ -62,7 +62,7 @@ const featuresData: FeatureDetail[] = [
     id: "introduction",
     title: "Welcome to KJV Sentinel",
     icon: Info,
-    description: "KJV Sentinel is your comprehensive tool for analyzing religious content through the lens of the King James Version (KJV) 1611 Bible. This app was created by Professor J. Bell, Nottingham, 2025 in response to an observed and urgent need for the 'non technical' and 'Un-theologicalized', 'un-Seminaried, Saint of God, to quickly and reliably access the tools and facilities that are Bible Based ( the KJV1611 ) which are the received through the transmission under the oversight and protected delivery of the Blessed Holy Spirit. It is our intention that this little tool, will, while we are still able to access and reference Truth and Scripturally affirmed information on the internet, provide a ready and edifying research aide in the process of rightly dividing the Word of Truth. This is merely a 'Litmus tool', an aide and not a replacement for individual delving and diligently \"...Rightly divide the Word Of Truth\" 2Timothy 2:15. Our platform helps you understand theological accuracy, historical context, detect manipulative tactics, identify various 'isms', and explore Calvinistic influences within submitted materials.",
+    description: "A personal welcome message from Professor Joseph Bell:\n\n\"Welcome to KJV Sentinel! This app was created in Nottingham, 2025, in response to an observed and urgent need for the 'non-technical' and 'Un-theologicalized', 'un-Seminaried', Saint of God, to quickly and reliably access the tools and facilities that are Bible Based (the KJV 1611) which are received through the transmission under the oversight and protected delivery of the Blessed Holy Spirit. It is our intention that this little tool will, while we are still able to access and reference Truth and Scripturally affirmed information on the internet, provide a ready and edifying research aide in the process of rightly dividing the Word of Truth. This is merely a 'Litmus tool', an aide and not a replacement for individual delving and diligently '...Rightly divide the Word Of Truth' (2 Timothy 2:15).\"\n\nKJV Sentinel is your comprehensive tool for analyzing religious content through the lens of the King James Version (KJV) 1611 Bible. Our platform helps you understand theological accuracy, historical context, detect manipulative tactics, identify various 'isms', and explore Calvinistic influences within submitted materials.",
   },
   {
     id: "content-analysis",
