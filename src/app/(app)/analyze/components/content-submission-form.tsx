@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,9 +18,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition } from "react";
-import { analyzeSubmittedContent, initiateCalvinismDeepDive } from "../actions"; // Assuming actions are in the parent directory
+import { analyzeSubmittedContent, saveReportToDatabase } from "../actions";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation"; // Corrected import
+import { useRouter } from "next/navigation";
+import type { AnalysisReport } from "@/types";
+
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const SUPPORTED_FILE_TYPES = [
@@ -40,7 +43,7 @@ const formSchema = z.object({
   }),
   submissionType: z.enum(["text", "file"]),
   textContent: z.string().optional(),
-  file: z.any().optional(), // Using `any` for FileList, will refine with superRefine
+  file: z.any().optional(), 
 }).superRefine((data, ctx) => {
   if (data.submissionType === "text") {
     if (!data.textContent || data.textContent.trim().length < 20) {
@@ -81,7 +84,7 @@ export function ContentSubmissionForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [submissionType, setSubmissionType] = useState<"text" | "file">("text");
+  const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file">("text");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -92,74 +95,89 @@ export function ContentSubmissionForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
       try {
         let analysisInput = "";
-        let analysisType: "text" | "file_audio" | "file_video" | "file_document" = "text";
+        let analysisTypeString: AnalysisReport['analysisType'] = "text";
 
         if (values.submissionType === "text" && values.textContent) {
           analysisInput = values.textContent;
-          analysisType = "text";
+          analysisTypeString = "text";
         } else if (values.submissionType === "file" && values.file && values.file[0]) {
           const file = values.file[0] as File;
-          // In a real app, you'd upload the file and get a URL or process it.
-          // For now, we'll simulate by reading its content if it's a text file for the AI flow.
-          // The AI flow currently only accepts text. So true file handling is a placeholder.
-          if (file.type === "text/plain") {
-             analysisInput = await file.text();
+          if (file.type === "text/plain" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/pdf") {
+             // For text-based files, attempt to read. For DOCX/PDF, this is a simplification.
+             // A real app would use server-side extraction (e.g., Tika, pdf-text-extract).
+             if (file.type === "text/plain") {
+                analysisInput = await file.text();
+             } else {
+                analysisInput = `File submitted for text extraction: ${file.name} (type: ${file.type}). True extraction requires server-side processing. This demo uses filename as placeholder content.`;
+                 toast({
+                    title: "File Submitted (Text Extraction Simulation)",
+                    description: `File "${file.name}" requires server-side text extraction. Using placeholder for AI analysis.`,
+                    variant: "default",
+                 });
+             }
           } else {
-            // For non-text files, send a placeholder or file info.
-            // The current AI flow expects 'content: string'.
-            // This part needs actual file processing backend.
-            analysisInput = `File submitted: ${file.name} (type: ${file.type}). File content processing not yet implemented for this demo.`;
+            analysisInput = `File submitted: ${file.name} (type: ${file.type}). Audio/Video transcription not yet implemented. Using file name as content for now.`;
             toast({
-              title: "File Submitted (Simulation)",
-              description: `File "${file.name}" was submitted. Full processing and analysis of non-text files requires backend implementation. Using file name as content for now.`,
+              title: "File Submitted (Transcription Simulation)",
+              description: `File "${file.name}" was submitted. Transcription for audio/video files requires backend implementation. Using file name as content.`,
               variant: "default",
             });
           }
           
-          if (file.type.startsWith("audio/")) analysisType = "file_audio";
-          else if (file.type.startsWith("video/")) analysisType = "file_video";
-          else analysisType = "file_document";
+          if (file.type.startsWith("audio/")) analysisTypeString = "file_audio";
+          else if (file.type.startsWith("video/")) analysisTypeString = "file_video";
+          // Default to document if not audio/video, covering PDF, TXT, DOCX
+          else analysisTypeString = "file_document";
 
         } else {
           toast({ title: "Error", description: "No content provided.", variant: "destructive" });
           return;
         }
         
-        // Use the GenAI flow
-        const result = await analyzeSubmittedContent({ content: analysisInput });
+        const analysisResult = await analyzeSubmittedContent({ content: analysisInput });
 
-        toast({
-          title: "Analysis Submitted",
-          description: "Your content is being analyzed. Title: " + values.analysisTitle,
-        });
+        if (analysisResult && 'error' in analysisResult) {
+          toast({
+            title: "Analysis Failed",
+            description: analysisResult.error,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (!analysisResult) {
+          toast({
+            title: "Analysis Failed",
+            description: "Received no result from analysis.",
+            variant: "destructive",
+          });
+          return;
+        }
         
-        // For now, just log the result and navigate to a generic reports page or show summary
-        console.log("Analysis Result:", result);
+        // Save the report using the new action
+        const saveResult = await saveReportToDatabase(analysisResult, values.analysisTitle, analysisInput, analysisTypeString);
 
-        // Example of how to save the result (conceptually, as no DB is set up yet)
-        // const reportId = await saveReportToDatabase({ ...result, title: values.analysisTitle, originalContent: analysisInput, analysisType });
-        // router.push(`/reports/${reportId}`);
-        
-        // Placeholder: just showing a success message
-        // In a real app, you'd likely navigate to the report page once it's ready.
-        // For now, we'll just re-direct to reports list.
-        // This would actually go to a specific report page e.g. /reports/some-id
-        // For now, let's push to a generic reports page or dashboard.
-        // router.push("/reports"); // This needs a reports page to exist.
-
-        // For demonstration, we can simulate showing the summary
-         if (result?.summary) {
-           toast({
-             title: `Analysis Summary for "${values.analysisTitle}"`,
-             description: result.summary.substring(0, 200) + "...", // Show a snippet
-             duration: 10000,
-           });
-         }
-        form.reset();
+        if (typeof saveResult === 'string') {
+          const reportId = saveResult;
+          toast({
+            title: "Analysis Submitted & Saved",
+            description: "Navigating to your report: " + values.analysisTitle,
+          });
+          router.push(`/reports/${reportId}`);
+          form.reset();
+          setSubmissionTypeState("text"); // Reset submission type UI
+        } else {
+          // Error object from saveReportToDatabase
+          toast({
+            title: "Failed to Save Report",
+            description: saveResult.error || "Could not save the analysis report. Please try again.",
+            variant: "destructive",
+          });
+        }
 
       } catch (error) {
         console.error("Submission error:", error);
@@ -202,20 +220,22 @@ export function ContentSubmissionForm() {
                  <div className="flex gap-4">
                     <Button 
                         type="button"
-                        variant={submissionType === 'text' ? 'default' : 'outline'}
+                        variant={submissionTypeState === 'text' ? 'default' : 'outline'}
                         onClick={() => {
-                            setSubmissionType('text');
+                            setSubmissionTypeState('text');
                             field.onChange('text');
+                            form.setValue('file', undefined); // Clear file if switching to text
                         }}
                     >
                         Text Input
                     </Button>
                     <Button 
                         type="button"
-                        variant={submissionType === 'file' ? 'default' : 'outline'}
+                        variant={submissionTypeState === 'file' ? 'default' : 'outline'}
                         onClick={() => {
-                            setSubmissionType('file');
+                            setSubmissionTypeState('file');
                             field.onChange('file');
+                            form.setValue('textContent', ''); // Clear text if switching to file
                         }}
                     >
                         File Upload
@@ -227,7 +247,7 @@ export function ContentSubmissionForm() {
           )}
         />
         
-        {submissionType === "text" && (
+        {submissionTypeState === "text" && (
           <FormField
             control={form.control}
             name="textContent"
@@ -250,18 +270,19 @@ export function ContentSubmissionForm() {
           />
         )}
 
-        {submissionType === "file" && (
+        {submissionTypeState === "file" && (
           <FormField
             control={form.control}
             name="file"
-            render={({ field }) => (
+            render={({ field: { onChange, value, ...restField } }) => ( // Destructure field to handle onChange specifically for files
               <FormItem>
                 <FormLabel>Upload File</FormLabel>
                 <FormControl>
                   <Input 
                     type="file" 
                     accept={SUPPORTED_FILE_TYPES.join(",")}
-                    onChange={(e) => field.onChange(e.target.files)}
+                    onChange={(e) => onChange(e.target.files)} // react-hook-form expects FileList for file inputs
+                    {...restField}
                   />
                 </FormControl>
                 <FormDescription>
