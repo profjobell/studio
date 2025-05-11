@@ -1,29 +1,16 @@
 import Link from "next/link";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarGroupLabel,
-  SidebarInset,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from "@/components/ui/sidebar";
+// Removed imports from "@/components/ui/sidebar" as SidebarProvider is no longer used
+// and other specific sidebar components were not used in this file directly.
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Search as SearchIcon, Bell } from "lucide-react"; // Renamed Search to SearchIcon
-import { KJVShieldIcon, Logo } from "@/components/icons/logo";
+import { Menu } from "lucide-react"; 
+import { Logo } from "@/components/icons/logo";
 import { siteConfig } from "@/config/site";
 import { UserNav } from "@/components/layout/user-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// Input and ScrollArea were not used directly in this file's components.
+// If they are needed by child pages, they should be imported there or remain if AppHeader/AppSidebar used them implicitly via other components.
+// For now, assuming they are not directly needed by this layout file after removing SidebarProvider.
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -31,7 +18,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   return (
-    <SidebarProvider defaultOpen>
+    // <SidebarProvider defaultOpen> Removed SidebarProvider
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
         <AppSidebar />
         <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14 print:pl-0">
@@ -41,7 +28,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </main>
         </div>
       </div>
-    </SidebarProvider>
+    // </SidebarProvider> Removed SidebarProvider
   );
 }
 
@@ -58,10 +45,10 @@ function AppSidebar() {
         </Link>
         {siteConfig.sidebarNav.map((group, groupIndex) =>
           group.items.map((item, itemIndex) => (
-            item.icon && (
+            item.icon && item.href && ( // Ensure href exists before rendering Link
               <Link
                 key={`${groupIndex}-${itemIndex}`}
-                href={item.href || "#"}
+                href={item.href}
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 title={item.title}
               >
