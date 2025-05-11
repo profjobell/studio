@@ -1,13 +1,13 @@
 "use client";
 
-import type { AnalyzeContentOutput } from "@/types";
+import type { AnalysisReport } from "@/types"; // Changed from AnalyzeContentOutput
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from "next/link";
 
 interface ReportDisplayProps {
-  reportData: AnalyzeContentOutput; // This is the 'result' part of the full AnalysisReport
+  reportData: AnalysisReport; // Changed from AnalyzeContentOutput
 }
 
 // Table styles from prompt
@@ -59,7 +59,7 @@ function ReportTable({ title, headers, data, columns }: { title: string, headers
 
 
 export function ReportDisplay({ reportData }: ReportDisplayProps) {
-  const sections = [
+  const baseSections = [
     { title: "Summary", content: reportData.summary, type: "paragraph" as const },
     { 
       title: "Scriptural Analysis", 
@@ -70,8 +70,6 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
     },
     { title: "Historical Context", content: reportData.historicalContext, type: "paragraph" as const },
     { title: "Etymology", content: reportData.etymology, type: "paragraph" as const, 
-      // For future structured data:
-      // data: parseEtymology(reportData.etymology), headers: ["Term", "Root", "KJV Definition", "Contextual Use"], columns: ["term", "root", "definition", "use"] 
     },
     { title: "Exposure", content: reportData.exposure, type: "paragraph" as const },
     { 
@@ -91,22 +89,42 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
     { 
       title: "Identified Isms", 
       data: reportData.identifiedIsms, 
-      headers: ["Ism", "Description", "Evidence"/*, "KJV Alignment" (add when data available) */], 
-      columns: ["ism", "description", "evidence"/*, "kjvAlignment"*/],
+      headers: ["Ism", "Description", "Evidence"], 
+      columns: ["ism", "description", "evidence"],
       type: "table" as const 
     },
     { 
       title: "Calvinism Analysis", 
       data: reportData.calvinismAnalysis, 
-      headers: ["Detected Element", "Description", "Evidence", "Infiltration Tactic"/*, "KJV Alignment"*/], 
-      columns: ["element", "description", "evidence", "infiltrationTactic"/*, "kjvAlignment"*/],
+      headers: ["Detected Element", "Description", "Evidence", "Infiltration Tactic"], 
+      columns: ["element", "description", "evidence", "infiltrationTactic"],
       type: "table" as const 
     },
     { title: "Biblical Remonstrance", content: reportData.biblicalRemonstrance, type: "paragraph" as const, isHtml: true },
   ];
 
+  const sections = [...baseSections];
+
+  if (reportData.originalContent) {
+    sections.unshift({
+      title: "Original Content Submitted",
+      content: reportData.originalContent,
+      type: "paragraph" as const,
+    });
+  }
+  
+  const defaultOpenValues = sections
+    .filter(section => (section.type === "paragraph" && section.content) || (section.type === "table" && section.data && section.data.length > 0))
+    .map(section => section.title);
+  // Ensure "Summary" and "Original Content Submitted" (if present) are open by default.
+  if (reportData.summary && !defaultOpenValues.includes("Summary")) {
+      if (reportData.originalContent) defaultOpenValues.splice(1,0, "Summary"); // Insert after Original Content
+      else defaultOpenValues.unshift("Summary");
+  }
+
+
   return (
-    <Accordion type="multiple" defaultValue={sections.map(s => s.title)} className="w-full">
+    <Accordion type="multiple" defaultValue={defaultOpenValues} className="w-full">
       {sections.map((section, index) => (
         (section.type === "paragraph" && section.content) || (section.type === "table" && section.data && section.data.length > 0) ? (
           <AccordionItem value={section.title} key={index} className="border-b border-border print:border-gray-300">
@@ -131,10 +149,3 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
     </Accordion>
   );
 }
-
-// Placeholder for etymology parsing if it becomes structured
-// function parseEtymology(etymologyString: string): any[] {
-//   // Implement parsing logic if etymology becomes structured
-//   // For now, it's displayed as a paragraph.
-//   return [];
-// }

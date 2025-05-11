@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 
 
 export default async function ReportPage({ params }: { params: { id: string } }) {
-  const report = await fetchReportFromDatabase(params.id);
+  const report: AnalysisReport | null = await fetchReportFromDatabase(params.id);
 
   if (!report) {
     notFound();
