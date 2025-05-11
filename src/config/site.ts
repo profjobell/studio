@@ -1,5 +1,5 @@
 import type { NavItem, SidebarNavItem } from "@/types";
-import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList } from 'lucide-react';
+import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen } from 'lucide-react';
 
 export type SiteConfig = {
   name: string;
@@ -52,6 +52,10 @@ export const siteConfig: SiteConfig = {
     {
       title: "Learning",
       href: "/learning",
+    },
+    {
+      title: "Glossary",
+      href: "/glossary",
     },
   ],
   sidebarNav: [
@@ -110,6 +114,12 @@ export const siteConfig: SiteConfig = {
           icon: GraduationCap,
           description: "Interactive quizzes and study aids.",
         },
+        {
+          title: "Glossary",
+          href: "/glossary",
+          icon: BookOpen,
+          description: "Definitions of key terms and concepts.",
+        }
       ],
     },
     {

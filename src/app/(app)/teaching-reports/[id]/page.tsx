@@ -71,9 +71,12 @@ export default async function TeachingReportPage({ params }: { params: { id: str
         <PodcastGenerator analysisId={report.id} initialReport={report} />
       )}
 
-       <div className="mt-8 print:hidden">
+       <div className="mt-8 print:hidden flex flex-wrap gap-2">
           <Button variant="outline" asChild>
             <Link href="/teaching-reports">Back to Teaching Analyses List</Link>
+          </Button>
+           <Button variant="outline" asChild>
+            <Link href="/glossary">View Glossary</Link>
           </Button>
         </div>
     </div>

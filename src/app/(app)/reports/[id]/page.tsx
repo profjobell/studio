@@ -83,9 +83,12 @@ export default async function ReportPage({ params }: { params: { id: string } })
           </CardContent>
         </Card>
       )}
-       <div className="mt-8 print:hidden">
+       <div className="mt-8 print:hidden flex flex-wrap gap-2">
           <Button variant="outline" asChild>
             <Link href="/reports">Back to Reports List</Link>
+          </Button>
+           <Button variant="outline" asChild>
+            <Link href="/glossary">View Glossary</Link>
           </Button>
         </div>
     </div>
