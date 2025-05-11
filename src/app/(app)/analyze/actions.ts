@@ -1,4 +1,3 @@
-
 "use server";
 
 import { analyzeContent, type AnalyzeContentInput, type AnalyzeContentOutput } from "@/ai/flows/analyze-content";
@@ -25,7 +24,23 @@ interface StoredReportData extends AnalyzeContentOutput {
 interface TempReportStore {
   [key: string]: StoredReportData;
 }
-const tempReportDatabase: TempReportStore = {};
+
+// Make tempReportDatabase survive hot-reloads in dev by attaching to global
+declare global {
+  // eslint-disable-next-line no-var
+  var tempReportDatabaseGlobal: TempReportStore | undefined;
+}
+
+let tempReportDatabase: TempReportStore;
+
+if (process.env.NODE_ENV === 'production') {
+  tempReportDatabase = {};
+} else {
+  if (!global.tempReportDatabaseGlobal) {
+    global.tempReportDatabaseGlobal = {};
+  }
+  tempReportDatabase = global.tempReportDatabaseGlobal;
+}
 
 
 export async function analyzeSubmittedContent(
@@ -70,7 +85,6 @@ export async function saveReportToDatabase(
 ): Promise<string | { error: string }> {
   try {
     console.log("Saving report to temporary database (simulated):", title);
-    // Generate a more unique ID for the demo
     const reportId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     tempReportDatabase[reportId] = {
       ...reportData,
@@ -80,6 +94,7 @@ export async function saveReportToDatabase(
       createdAt: new Date(),
     };
     console.log(`Saved report with ID: ${reportId} to tempDB. Current DB size: ${Object.keys(tempReportDatabase).length}`);
+    console.log('Current tempReportDatabase keys after save:', Object.keys(tempReportDatabase));
     return reportId;
   } catch (e) {
     console.error("Error saving report to temp DB:", e);
@@ -90,19 +105,21 @@ export async function saveReportToDatabase(
 
 export async function fetchReportFromDatabase(reportId: string): Promise<AnalysisReport | null> {
   console.log(`Attempting to fetch report from database for ID: ${reportId}`);
+  console.log('Current tempReportDatabase keys at fetch:', Object.keys(tempReportDatabase));
+  // console.log('Current tempReportDatabase content:', JSON.stringify(tempReportDatabase)); // Potentially large, use with caution
+
   if (tempReportDatabase[reportId]) {
     const data = tempReportDatabase[reportId];
     console.log(`Found report in tempDB for ID: ${reportId}`);
     return {
       id: reportId,
-      userId: "user-123", // Placeholder
+      userId: "user-123", 
       title: data.title,
       analysisType: data.analysisType,
-      status: "completed", // Assume completed for temp stored reports
+      status: "completed", 
       createdAt: data.createdAt,
-      updatedAt: new Date(), // Placeholder, could be data.updatedAt if stored
+      updatedAt: new Date(), 
       originalContent: data.originalContent,
-      // Spread AnalyzeContentOutput fields
       summary: data.summary,
       scripturalAnalysis: data.scripturalAnalysis,
       historicalContext: data.historicalContext,
@@ -150,6 +167,7 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       userId: "user-123",
       title: "Sample Analysis: Sermon on Divine Sovereignty",
       analysisType: "text",
+      originalContent: "For God so loved the world...", // Add original content for sample if deep dive from list is desired
       status: "completed",
       createdAt: new Date("2025-05-22T10:00:00Z"),
       updatedAt: new Date("2025-05-22T11:30:00Z"),
@@ -160,3 +178,4 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
   console.log(`Report not found in tempDB or as sample for ID: ${reportId}`);
   return null;
 }
+
