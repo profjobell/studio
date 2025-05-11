@@ -1,22 +1,23 @@
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, ArrowUpRight, DollarSign, Users, FileText, Search } from "lucide-react";
+import { Activity, FileText, Search } from "lucide-react";
 import Image from "next/image";
+import { fetchReportsList } from "../reports/actions"; // Fetches list of reports
+import type { AnalysisReport } from "@/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-export default function DashboardPage() {
-  // Placeholder data - replace with actual data fetching
-  const recentAnalyses = [
-    { id: "1", title: "Sermon on John 3:16 Analysis", date: "2024-07-15", status: "Completed" },
-    { id: "2", title: "Book Excerpt Review", date: "2024-07-14", status: "Completed" },
-    { id: "3", title: "Podcast Episode: The Nature of Faith", date: "2024-07-12", status: "Pending" },
-  ];
+export default async function DashboardPage() {
+  const allReports: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput >[] = await fetchReportsList();
+  
+  const recentAnalyses = allReports
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // .slice(0, 5); // Optionally limit to a certain number if not using scroll or for above-the-fold
 
   const stats = [
-    { title: "Total Analyses", value: "125", icon: FileText, change: "+5 this week" },
-    { title: "Documents in Library", value: "32", icon: Search, change: "+2 uploaded" },
-    // { title: "Quizzes Taken", value: "48", icon: Activity, change: "" },
-    // { title: "Verses Memorized", value: "76", icon: Users, change: "" },
+    { title: "Total Analyses", value: recentAnalyses.length.toString(), icon: FileText, change: "" }, // Updated value, change can be static or dynamic
+    { title: "Documents in Library", value: "32", icon: Search, change: "+2 uploaded" }, // Placeholder
   ];
 
   return (
@@ -55,21 +56,35 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {recentAnalyses.length > 0 ? (
-              <ul className="space-y-2">
-                {recentAnalyses.map((analysis) => (
-                  <li key={analysis.id} className="flex items-center justify-between p-2 hover:bg-muted rounded-md">
-                    <div>
-                      <Link href={`/reports/${analysis.id}`} className="font-medium text-primary hover:underline">
-                        {analysis.title}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">{analysis.date} - {analysis.status}</p>
-                    </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/reports/${analysis.id}`}>View</Link>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              <ScrollArea className="h-[350px] w-full">
+                <ul className="space-y-3 pr-3">
+                  {recentAnalyses.map((analysis) => (
+                    <li key={analysis.id} className="flex items-center justify-between p-3 hover:bg-muted rounded-md border border-border">
+                      <div>
+                        <Link href={`/reports/${analysis.id}`} className="font-medium text-primary hover:underline">
+                          {analysis.title}
+                        </Link>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(analysis.createdAt).toLocaleDateString()} - 
+                          <span className={`ml-1 capitalize ${
+                            analysis.status === "completed" ? "text-green-600" :
+                            analysis.status === "processing" ? "text-yellow-600" :
+                            analysis.status === "failed" ? "text-red-600" : ""
+                          }`}>
+                            {analysis.status}
+                          </span>
+                        </p>
+                        {analysis.fileName && (
+                           <p className="text-xs text-muted-foreground italic">{analysis.fileName}</p>
+                        )}
+                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/reports/${analysis.id}`}>View</Link>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
             ) : (
               <p className="text-sm text-muted-foreground">No recent analyses found. <Link href="/analyze" className="text-primary hover:underline">Start a new analysis</Link>.</p>
             )}
@@ -105,8 +120,8 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row items-center gap-6">
           <Image 
-            src="https://picsum.photos/seed/kjvdashboard/400/300" 
-            alt="KJV Sentinel Illustration"
+            src="https://picsum.photos/seed/kjvbiblestudy/400/300" 
+            alt="KJV Bible study"
             width={300}
             height={225}
             className="rounded-lg shadow-md"

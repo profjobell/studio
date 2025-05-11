@@ -1,3 +1,4 @@
+
 "use server";
 
 import { analyzeContent, type AnalyzeContentInput, type AnalyzeContentOutput } from "@/ai/flows/analyze-content";
@@ -19,6 +20,7 @@ interface StoredReportData extends AnalyzeContentOutput {
   originalContent: string;
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
+  fileName?: string; // Added for file-based analyses
 }
 
 interface TempReportStore {
@@ -35,9 +37,45 @@ let tempReportDatabase: TempReportStore;
 
 if (process.env.NODE_ENV === 'production') {
   tempReportDatabase = {};
+  // Consider pre-populating production with a default sample if needed, or handle empty state gracefully.
 } else {
   if (!global.tempReportDatabaseGlobal) {
     global.tempReportDatabaseGlobal = {};
+    // Pre-populate sample report 'report-001' for development
+    const sampleReportId = "report-001";
+    const sampleReportData: StoredReportData = {
+      title: "Sample Analysis: Sermon on Divine Sovereignty",
+      originalContent: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. This sermon explores the depths of God's sovereignty in salvation, referencing key scriptures and theological arguments. It discusses concepts such as election, predestination, and the irresistible grace of God, aiming to provide a clear understanding from a perspective rooted in the KJV 1611. The implications of these doctrines on Christian life and evangelism are also considered.",
+      analysisType: "text",
+      createdAt: new Date("2025-05-22T10:00:00Z"),
+      summary: "This is a brief summary of the analyzed content. It highlights key findings and overall theological alignment with KJV 1611. The content shows tendencies towards [Ism Example] and some elements of Calvinistic thought, particularly regarding [Calvinism Example].",
+      scripturalAnalysis: [
+        { verse: "John 3:16", analysis: "The submitted text interprets this verse in a way that aligns with universal atonement, consistent with KJV 1611." },
+        { verse: "Ephesians 1:4-5", analysis: "The content's explanation of predestination here shows some Calvinistic leanings, potentially misinterpreting the scope of 'adoption'." },
+      ],
+      historicalContext: "The ideas presented in the content echo debates from the Reformation period, particularly those between Calvinists and Arminians regarding free will and divine sovereignty.",
+      etymology: "Key term 'agape' (love): Greek root, signifies unconditional, self-sacrificial love. KJV often translates as 'charity'. Contextual use in submitted text is consistent.",
+      exposure: "The content seems to draw from modern evangelical writings, some of which have been influenced by Neo-Calvinism. There's no direct exposure to harmful extremist ideologies detected.",
+      fallacies: [
+        { type: "Straw Man", description: "Misrepresents an opposing view on salvation to make it easier to critique." },
+        { type: "Appeal to Emotion", description: "Uses emotionally charged language to persuade rather than scriptural evidence." },
+      ],
+      manipulativeTactics: [
+        { technique: "Proof-texting", description: "Uses isolated Bible verses out of context to support a preconceived idea." },
+        { technique: "Loaded Language", description: "Employs terms with strong emotional connotations to sway the audience." },
+      ],
+      biblicalRemonstrance: "The KJV 1611 emphasizes God's desire for all to be saved (2 Peter 3:9, 1 Timothy 2:4), which should be considered alongside verses on election. For further study, see Blue Letter Bible (https://www.blueletterbible.org).",
+      identifiedIsms: [
+        { ism: "Arminianism (Partial)", description: "Emphasizes free will in salvation, conditional election.", evidence: "Statements like 'humans must choose to accept God's offer'." },
+        { ism: "Dispensationalism (Minor)", description: "Hints at a pre-tribulation rapture view.", evidence: "Reference to 'the Church being taken out before the great suffering'."},
+      ],
+      calvinismAnalysis: [
+        { element: "Unconditional Election (Hinted)", description: "Suggests God chose specific individuals for salvation irrespective of their actions.", evidence: "Interpretation of Ephesians 1:4-5.", infiltrationTactic: "Subtle rephrasing of 'foreknowledge' as 'predetermination'."},
+        { element: "Sovereignty (Emphasized)", description: "Strong focus on God's absolute control over all events, including salvation.", evidence: "Repeated phrases like 'God's sovereign decree'."},
+      ],
+      // fileName: undefined, // No fileName for text type
+    };
+    global.tempReportDatabaseGlobal[sampleReportId] = sampleReportData;
   }
   tempReportDatabase = global.tempReportDatabaseGlobal;
 }
@@ -81,20 +119,28 @@ export async function saveReportToDatabase(
   reportData: AnalyzeContentOutput,
   title: string,
   originalContent: string,
-  analysisType: AnalysisReport['analysisType']
+  analysisType: AnalysisReport['analysisType'],
+  fileName?: string // Added fileName parameter
 ): Promise<string | { error: string }> {
   try {
     console.log("Saving report to temporary database (simulated):", title);
     const reportId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    tempReportDatabase[reportId] = {
+    
+    const dataToStore: StoredReportData = {
       ...reportData,
       title,
       originalContent,
       analysisType,
       createdAt: new Date(),
     };
+
+    if (analysisType !== 'text' && fileName) {
+      dataToStore.fileName = fileName;
+    }
+    
+    tempReportDatabase[reportId] = dataToStore;
+
     console.log(`Saved report with ID: ${reportId} to tempDB. Current DB size: ${Object.keys(tempReportDatabase).length}`);
-    console.log('Current tempReportDatabase keys after save:', Object.keys(tempReportDatabase));
     return reportId;
   } catch (e) {
     console.error("Error saving report to temp DB:", e);
@@ -106,7 +152,6 @@ export async function saveReportToDatabase(
 export async function fetchReportFromDatabase(reportId: string): Promise<AnalysisReport | null> {
   console.log(`Attempting to fetch report from database for ID: ${reportId}`);
   console.log('Current tempReportDatabase keys at fetch:', Object.keys(tempReportDatabase));
-  // console.log('Current tempReportDatabase content:', JSON.stringify(tempReportDatabase)); // Potentially large, use with caution
 
   if (tempReportDatabase[reportId]) {
     const data = tempReportDatabase[reportId];
@@ -115,6 +160,7 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       id: reportId,
       userId: "user-123", 
       title: data.title,
+      fileName: data.fileName,
       analysisType: data.analysisType,
       status: "completed", 
       createdAt: data.createdAt,
@@ -132,50 +178,7 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       calvinismAnalysis: data.calvinismAnalysis,
     };
   }
-
-  // Fallback for the original sample report
-  if (reportId === "report-001") {
-    const sampleReportData: AnalyzeContentOutput = {
-      summary: "This is a brief summary of the analyzed content. It highlights key findings and overall theological alignment with KJV 1611. The content shows tendencies towards [Ism Example] and some elements of Calvinistic thought, particularly regarding [Calvinism Example].",
-      scripturalAnalysis: [
-        { verse: "John 3:16", analysis: "The submitted text interprets this verse in a way that aligns with universal atonement, consistent with KJV 1611." },
-        { verse: "Ephesians 1:4-5", analysis: "The content's explanation of predestination here shows some Calvinistic leanings, potentially misinterpreting the scope of 'adoption'." },
-      ],
-      historicalContext: "The ideas presented in the content echo debates from the Reformation period, particularly those between Calvinists and Arminians regarding free will and divine sovereignty.",
-      etymology: "Key term 'agape' (love): Greek root, signifies unconditional, self-sacrificial love. KJV often translates as 'charity'. Contextual use in submitted text is consistent.",
-      exposure: "The content seems to draw from modern evangelical writings, some of which have been influenced by Neo-Calvinism. There's no direct exposure to harmful extremist ideologies detected.",
-      fallacies: [
-        { type: "Straw Man", description: "Misrepresents an opposing view on salvation to make it easier to critique." },
-        { type: "Appeal to Emotion", description: "Uses emotionally charged language to persuade rather than scriptural evidence." },
-      ],
-      manipulativeTactics: [
-        { technique: "Proof-texting", description: "Uses isolated Bible verses out of context to support a preconceived idea." },
-        { technique: "Loaded Language", description: "Employs terms with strong emotional connotations to sway the audience." },
-      ],
-      biblicalRemonstrance: "The KJV 1611 emphasizes God's desire for all to be saved (2 Peter 3:9, 1 Timothy 2:4), which should be considered alongside verses on election. For further study, see Blue Letter Bible (https://www.blueletterbible.org).",
-      identifiedIsms: [
-        { ism: "Arminianism (Partial)", description: "Emphasizes free will in salvation, conditional election.", evidence: "Statements like 'humans must choose to accept God's offer'." },
-        { ism: "Dispensationalism (Minor)", description: "Hints at a pre-tribulation rapture view.", evidence: "Reference to 'the Church being taken out before the great suffering'."},
-      ],
-      calvinismAnalysis: [
-        { element: "Unconditional Election (Hinted)", description: "Suggests God chose specific individuals for salvation irrespective of their actions.", evidence: "Interpretation of Ephesians 1:4-5.", infiltrationTactic: "Subtle rephrasing of 'foreknowledge' as 'predetermination'."},
-        { element: "Sovereignty (Emphasized)", description: "Strong focus on God's absolute control over all events, including salvation.", evidence: "Repeated phrases like 'God's sovereign decree'."},
-      ],
-    };
-    return {
-      id: "report-001",
-      userId: "user-123",
-      title: "Sample Analysis: Sermon on Divine Sovereignty",
-      analysisType: "text",
-      originalContent: "For God so loved the world...", // Add original content for sample if deep dive from list is desired
-      status: "completed",
-      createdAt: new Date("2025-05-22T10:00:00Z"),
-      updatedAt: new Date("2025-05-22T11:30:00Z"),
-      ...sampleReportData,
-    };
-  }
   
-  console.log(`Report not found in tempDB or as sample for ID: ${reportId}`);
+  console.log(`Report not found in tempDB for ID: ${reportId}`);
   return null;
 }
-

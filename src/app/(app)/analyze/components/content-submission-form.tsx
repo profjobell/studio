@@ -100,15 +100,16 @@ export function ContentSubmissionForm() {
       try {
         let analysisInput = "";
         let analysisTypeString: AnalysisReport['analysisType'] = "text";
+        let submittedFileName: string | undefined = undefined;
 
         if (values.submissionType === "text" && values.textContent) {
           analysisInput = values.textContent;
           analysisTypeString = "text";
         } else if (values.submissionType === "file" && values.file && values.file[0]) {
           const file = values.file[0] as File;
+          submittedFileName = file.name; // Capture file name
+
           if (file.type === "text/plain" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/pdf") {
-             // For text-based files, attempt to read. For DOCX/PDF, this is a simplification.
-             // A real app would use server-side extraction (e.g., Tika, pdf-text-extract).
              if (file.type === "text/plain") {
                 analysisInput = await file.text();
              } else {
@@ -130,7 +131,6 @@ export function ContentSubmissionForm() {
           
           if (file.type.startsWith("audio/")) analysisTypeString = "file_audio";
           else if (file.type.startsWith("video/")) analysisTypeString = "file_video";
-          // Default to document if not audio/video, covering PDF, TXT, DOCX
           else analysisTypeString = "file_document";
 
         } else {
@@ -158,8 +158,13 @@ export function ContentSubmissionForm() {
           return;
         }
         
-        // Save the report using the new action
-        const saveResult = await saveReportToDatabase(analysisResult, values.analysisTitle, analysisInput, analysisTypeString);
+        const saveResult = await saveReportToDatabase(
+          analysisResult, 
+          values.analysisTitle, 
+          analysisInput, 
+          analysisTypeString,
+          submittedFileName // Pass fileName if available
+        );
 
         if (typeof saveResult === 'string') {
           const reportId = saveResult;
@@ -169,9 +174,8 @@ export function ContentSubmissionForm() {
           });
           router.push(`/reports/${reportId}`);
           form.reset();
-          setSubmissionTypeState("text"); // Reset submission type UI
+          setSubmissionTypeState("text"); 
         } else {
-          // Error object from saveReportToDatabase
           toast({
             title: "Failed to Save Report",
             description: saveResult.error || "Could not save the analysis report. Please try again.",
@@ -224,7 +228,7 @@ export function ContentSubmissionForm() {
                         onClick={() => {
                             setSubmissionTypeState('text');
                             field.onChange('text');
-                            form.setValue('file', undefined); // Clear file if switching to text
+                            form.setValue('file', undefined); 
                         }}
                     >
                         Text Input
@@ -235,7 +239,7 @@ export function ContentSubmissionForm() {
                         onClick={() => {
                             setSubmissionTypeState('file');
                             field.onChange('file');
-                            form.setValue('textContent', ''); // Clear text if switching to file
+                            form.setValue('textContent', ''); 
                         }}
                     >
                         File Upload
@@ -274,14 +278,14 @@ export function ContentSubmissionForm() {
           <FormField
             control={form.control}
             name="file"
-            render={({ field: { onChange, value, ...restField } }) => ( // Destructure field to handle onChange specifically for files
+            render={({ field: { onChange, value, ...restField } }) => ( 
               <FormItem>
                 <FormLabel>Upload File</FormLabel>
                 <FormControl>
                   <Input 
                     type="file" 
                     accept={SUPPORTED_FILE_TYPES.join(",")}
-                    onChange={(e) => onChange(e.target.files)} // react-hook-form expects FileList for file inputs
+                    onChange={(e) => onChange(e.target.files)} 
                     {...restField}
                   />
                 </FormControl>
