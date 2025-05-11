@@ -2,13 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Download, Share2, Printer, FileText } from "lucide-react";
 import { ReportDisplay } from "../components/report-display";
 import type { AnalysisReport } from "@/types";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { fetchReportFromDatabase, initiateCalvinismDeepDive } from "../../analyze/actions"; // Adjusted import path
+import { fetchReportFromDatabase } from "../../analyze/actions"; // Adjusted import path
 import { CalvinismDeepDiveButton } from "./components/calvinism-deep-dive-button";
+import { ReportActions } from "./components/report-actions";
 
 
 // Metadata can be generated dynamically based on the report
@@ -33,12 +33,6 @@ export default async function ReportPage({ params }: { params: { id: string } })
   if (!report) {
     notFound();
   }
-
-  const handlePrint = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
-    }
-  };
   
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
@@ -51,20 +45,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
                 Generated on: {new Date(report.createdAt).toLocaleDateString()} | Type: <span className="capitalize">{report.analysisType.replace(/_/g, " ")}</span>
               </CardDescription>
             </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={() => alert("Download PDF (placeholder)")}>
-                <Download className="mr-2 h-4 w-4" /> PDF
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => alert("Download TXT (placeholder)")}>
-                <FileText className="mr-2 h-4 w-4" /> TXT
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => alert("Share report (placeholder)")}>
-                <Share2 className="mr-2 h-4 w-4" /> Share
-              </Button>
-              <Button variant="outline" size="sm" onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" /> Print
-              </Button>
-            </div>
+            <ReportActions />
           </div>
         </CardHeader>
         
