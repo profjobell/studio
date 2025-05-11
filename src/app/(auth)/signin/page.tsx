@@ -9,23 +9,37 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { redirect } from 'next/navigation';
 
 export default function SignInPage() {
-  // Placeholder action, replace with actual Firebase sign-in logic
   const handleSignIn = async (formData: FormData) => {
     "use server";
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    console.log("Sign In attempt:", { email, password });
-    // Here you would call Firebase auth functions
-    // For now, just log and maybe redirect or show a message
-    // redirect("/dashboard"); // Example redirect
+    
+    // Check for default admin credentials
+    if (email === "admin@kjvsentinel.com" && password === "N0tjuni0r") {
+      console.log("Default admin login successful");
+      // In a real application, you would establish a session here.
+      // For this example, we'll just redirect to the dashboard.
+      redirect("/dashboard");
+    } else {
+      console.log("Sign In attempt with other credentials:", { email }); // Avoid logging password
+      // Placeholder for actual Firebase or other auth logic for non-admin users
+      // For now, if not admin, it will not redirect, effectively failing the login.
+      // To provide user feedback, this would typically return an error message.
+      // For this specific request, handling the default account is the priority.
+      console.log("Invalid credentials or not the default admin account.");
+      // Optionally, you could return an error or redirect back with an error query param.
+      // For simplicity, this example does not implement detailed error feedback here.
+    }
   };
   
   const handleGoogleSignIn = async () => {
     "use server";
     console.log("Google Sign In attempt");
     // Firebase Google Sign-In logic
+    // This would also involve redirecting or handling session after successful Google sign-in.
   }
 
   return (
@@ -33,13 +47,12 @@ export default function SignInPage() {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl">Sign In</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account
+          Enter your email below to login to your account or use the default admin credentials.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         <form action={handleGoogleSignIn} className="grid gap-2">
           <Button variant="outline" type="submit">
-            {/* Replace with Google Icon component if available */}
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor"  data-ai-hint="google logo">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -63,7 +76,7 @@ export default function SignInPage() {
         <form action={handleSignIn} className="grid gap-2">
           <div className="grid gap-1">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+            <Input id="email" name="email" type="email" placeholder="admin@kjvsentinel.com or m@example.com" required />
           </div>
           <div className="grid gap-1">
             <Label htmlFor="password">Password</Label>
