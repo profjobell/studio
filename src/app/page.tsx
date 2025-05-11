@@ -52,12 +52,12 @@ export default function LandingPage() {
                 </div>
               </div>
               <Image
-                src="https://picsum.photos/seed/kjvsentinel/600/400"
+                src="https://picsum.photos/seed/holybook/600/400"
                 width="600"
                 height="400"
                 alt="Hero"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                data-ai-hint="KJV Bible"
+                data-ai-hint="holy bible"
               />
             </div>
           </div>
