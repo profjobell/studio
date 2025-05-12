@@ -4,21 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, FileText, Search, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { fetchReportsList } from "../reports/actions"; // Fetches list of reports
-import type { AnalysisReport } from "@/types";
+import { fetchReportsList } from "../reports/actions"; 
+import { fetchLibraryDocuments } from "../library/actions"; // Import fetchLibraryDocuments
+import type { AnalysisReport, DocumentReference } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClearHistoryButton } from "./components/clear-history-button";
 
 export default async function DashboardPage() {
   const allReports: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput >[] = await fetchReportsList();
+  const libraryDocuments: DocumentReference[] = await fetchLibraryDocuments(); // Fetch library documents
   
   const recentAnalyses = allReports
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     // .slice(0, 5); // Optionally limit to a certain number if not using scroll or for above-the-fold
 
   const stats = [
-    { title: "Total Analyses", value: recentAnalyses.length.toString(), icon: FileText, change: "" }, // Updated value, change can be static or dynamic
-    { title: "Documents in Library", value: "32", icon: Search, change: "+2 uploaded" }, // Placeholder
+    { title: "Total Analyses", value: recentAnalyses.length.toString(), icon: FileText, change: "", href:"/reports" },
+    { title: "Documents in Library", value: libraryDocuments.length.toString(), icon: Search, change: "+ View/Upload", href: "/library" }, // Updated value and added href
   ];
 
   const hasReports = recentAnalyses.length > 0;
@@ -36,16 +38,18 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              {stat.change && <p className="text-xs text-muted-foreground">{stat.change}</p>}
-            </CardContent>
-          </Card>
+          <Link href={stat.href || "#"} key={stat.title} className="block hover:shadow-lg transition-shadow rounded-lg">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                <stat.icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                {stat.change && <p className="text-xs text-muted-foreground">{stat.change}</p>}
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -103,6 +107,16 @@ export default async function DashboardPage() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
+          <div className="relative w-full h-48 md:h-56 lg:h-64"> {/* Container for Image */}
+            <Image
+              src="https://picsum.photos/seed/dashboardaction/600/400"
+              alt="Quick Actions Visual"
+              layout="fill" // Changed from width/height to layout="fill"
+              objectFit="contain" // Ensures the whole image is seen, scaled down
+              className="rounded-md"
+              data-ai-hint="books computer study"
+            />
+          </div>
             <Button asChild variant="outline">
               <Link href="/analyze">
                 <Search className="mr-2 h-4 w-4" /> Analyze New Content
@@ -128,7 +142,7 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row items-center gap-6">
           <Image 
-            src="https://picsum.photos/seed/kjvbiblestudy/400/300" 
+            src="https://picsum.photos/seed/kjvbiblestudy/300/225" 
             alt="KJV Bible study"
             width={300}
             height={225}
