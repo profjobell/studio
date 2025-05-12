@@ -1,7 +1,7 @@
+
 "use client";
 
-import { useEffect, useTransition } from "react";
-import { useFormState } from "react-dom";
+import { useEffect, useTransition, useActionState } from "react"; // Changed import
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +19,8 @@ const initialState = {
 };
 
 export function ProfileUpdateForm({ initialDisplayName, initialEmail }: ProfileUpdateFormProps) {
-  const [state, formAction] = useFormState(updateProfileAction, initialState);
-  const [isPending, startTransition] = useTransition();
+  const [state, formAction, isPending] = useActionState(updateProfileAction, initialState); // Updated to useActionState and get isPending
+  // const [isPending, startTransition] = useTransition(); // No longer need separate useTransition for form submission pending state
   const { toast } = useToast();
 
   useEffect(() => {
@@ -33,16 +33,17 @@ export function ProfileUpdateForm({ initialDisplayName, initialEmail }: ProfileU
     }
   }, [state, toast]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    startTransition(() => {
-        formAction(formData);
-    });
-  };
+  // handleSubmit is no longer needed as formAction handles it directly with useActionState
+  // const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  //   event.preventDefault();
+  //   const formData = new FormData(event.currentTarget);
+  //   startTransition(() => { // No need for startTransition here if isPending comes from useActionState
+  //       formAction(formData);
+  //   });
+  // };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form action={formAction} className="space-y-6"> {/* Changed onSubmit to action */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="displayName">Display Name</Label>
@@ -65,3 +66,4 @@ export function ProfileUpdateForm({ initialDisplayName, initialEmail }: ProfileU
     </form>
   );
 }
+
