@@ -109,16 +109,6 @@ export default async function DashboardPage() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
-          <div className="relative w-full h-48 md:h-56 lg:h-64"> {/* Container for Image */}
-            <Image
-              src="https://picsum.photos/seed/dashboardaction/600/400"
-              alt="Quick Actions Visual"
-              layout="fill" // Changed from width/height to layout="fill"
-              objectFit="contain" // Ensures the whole image is seen, scaled down
-              className="rounded-md"
-              data-ai-hint="books computer study"
-            />
-          </div>
             <Button asChild variant="outline">
               <Link href="/analyze">
                 <Search className="mr-2 h-4 w-4" /> Analyze New Content
@@ -144,7 +134,7 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row items-center gap-6">
           <Image 
-            src="https://picsum.photos/seed/kjvbiblestudy/300/225" 
+            src="https://picsum.photos/seed/bibleopen/300/225" 
             alt="KJV Bible study"
             width={300}
             height={225}
@@ -162,9 +152,9 @@ export default async function DashboardPage() {
               <Button asChild>
                 <Link href="/analyze">Analyze Content</Link>
               </Button>
-              <Button variant="secondary" asChild>
-                <Link href="/#features">Learn More</Link>
-              </Button>
+              <FeaturesGuideModal>
+                  <Button variant="secondary">Learn More</Button>
+              </FeaturesGuideModal>
             </div>
           </div>
         </CardContent>
