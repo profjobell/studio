@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -372,15 +371,16 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
     );
   }, [glossarySearchTerm]);
 
-  const defaultOpenAccordionItems = ["introduction", "calvinism-video-resources"];
+  // Determine the default open item for single-item accordion
+  let defaultAccordionValue: string | undefined = "introduction";
   if (globalSearchTerm && filteredFeatures.length > 0) {
-     filteredFeatures.forEach(feature => {
-        if (!defaultOpenAccordionItems.includes(feature.id)) {
-            defaultOpenAccordionItems.push(feature.id);
-        }
-     })
-  } else if (filteredFeatures.length === 1 && filteredFeatures[0] && !filteredFeatures[0].isGlossary) { 
-      defaultOpenAccordionItems.push(filteredFeatures[0].id);
+    defaultAccordionValue = filteredFeatures[0].id;
+  } else if (filteredFeatures.length === 0 && globalSearchTerm) {
+    defaultAccordionValue = undefined; // No item open if search yields no results
+  }
+  // Ensure "introduction" is a valid ID among filtered features if it's the default
+  if (defaultAccordionValue === "introduction" && !filteredFeatures.find(f => f.id === "introduction")) {
+      defaultAccordionValue = filteredFeatures.length > 0 ? filteredFeatures[0].id : undefined;
   }
 
 
@@ -404,8 +404,8 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
           />
           <SearchIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
-        <ScrollArea className="flex-grow pr-4">
-          <Accordion type="multiple" defaultValue={defaultOpenAccordionItems} className="w-full">
+        <ScrollArea className="flex-grow pr-4 max-h-[60vh]">
+          <Accordion type="single" collapsible defaultValue={defaultAccordionValue} className="w-full">
             {filteredFeatures.map((feature) => (
               <AccordionItem value={feature.id} key={feature.id}>
                 <AccordionTrigger className="text-lg hover:no-underline">
