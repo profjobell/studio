@@ -109,7 +109,7 @@ body {
   }
 
   /* Olive Green Swathe Theme */
-  .theme-olive {
+  .olive {
     --background: 80 20% 20%;
     --foreground: 60 30% 95%;
     --muted: 80 15% 28%;
@@ -141,7 +141,7 @@ body {
   }
 
   /* Beige, White, and Brown Theme */
-  .theme-beige-brown {
+  .beige-brown {
     --background: 40 30% 92%;
     --foreground: 30 40% 20%;
     --muted: 40 20% 88%;
@@ -173,7 +173,7 @@ body {
   }
 
   /* Sunrise Vibrant Theme */
-  .theme-sunrise {
+  .sunrise {
     --background: 270 50% 20%;
     --foreground: 50 100% 90%;
     --muted: 275 40% 28%;
