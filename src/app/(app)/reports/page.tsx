@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { fetchReportsList } from "./actions"; // Server action
 import { ReportsListClient } from "./components/reports-list-client";
 
 export const metadata = {
-  title: "My Reports Generated - KJV Sentinel", // Changed title
+  title: "My Reports Generated to date - KJV Sentinel", // Changed title
   description: "View and manage your theological analysis reports.",
 };
 
@@ -20,7 +21,7 @@ export default async function ReportsPage() {
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">My Reports Generated</h1> {/* Changed title */}
+        <h1 className="text-3xl font-bold tracking-tight">My Reports Generated to date</h1> {/* Changed title */}
         <div className="flex items-center space-x-2"> {/* Group buttons */}
           <Button asChild variant="outline">
             <Link href="/dashboard">
@@ -49,3 +50,4 @@ export default async function ReportsPage() {
     </div>
   );
 }
+
