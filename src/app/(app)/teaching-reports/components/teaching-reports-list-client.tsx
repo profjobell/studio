@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from "next/link";
@@ -17,6 +18,7 @@ import {
 import type { TeachingAnalysisReport } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { deleteTeachingAnalysisAction } from "../../analyze-teaching/actions"; // Server Actions
+import { format } from 'date-fns';
 
 interface TeachingReportsListClientProps {
   initialReports: TeachingAnalysisReport[];
@@ -98,7 +100,7 @@ export function TeachingReportsListClient({ initialReports }: TeachingReportsLis
                 </Badge>
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {new Date(report.createdAt).toLocaleDateString()}
+                {format(new Date(report.createdAt), 'MM/dd/yyyy')}
               </TableCell>
               <TableCell>
                 <DropdownMenu>

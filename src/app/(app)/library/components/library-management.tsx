@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -31,6 +32,7 @@ import {
 import type { DocumentReference } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { uploadDocumentAction, deleteDocumentAction, deleteAllDocumentsAction } from "../actions"; // Server Actions
+import { format } from 'date-fns';
 
 interface LibraryManagementProps {
   initialDocuments: DocumentReference[];
@@ -166,7 +168,7 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
         <CardHeader>
           <CardTitle>Upload New Document</CardTitle>
           <CardDescription>
-            Add PDF, TXT, or DOCX files to your library. Max 100MB.
+            Add PDF, TXT, or DOCX files to your library. Max 100MB. 
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -234,7 +236,7 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
                       {(doc.fileSize / (1024 * 1024)).toFixed(2)} MB
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {new Date(doc.uploadDate).toLocaleDateString()}
+                       {format(new Date(doc.uploadDate), 'MM/dd/yyyy')}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -289,3 +291,4 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
     </>
   );
 }
+

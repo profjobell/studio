@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -28,6 +29,7 @@ import type { AnalysisReport } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { deleteReportAction, generateInDepthCalvinismReportAction } from "../actions"; // Server Actions
 import { slugify } from "@/lib/utils";
+import { format } from 'date-fns';
 
 interface ReportsListClientProps {
   initialReports: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput >[];
@@ -140,7 +142,7 @@ export function ReportsListClient({ initialReports }: ReportsListClientProps) {
                 </Badge>
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {new Date(report.createdAt).toLocaleDateString()}
+                {format(new Date(report.createdAt), 'MM/dd/yyyy')}
               </TableCell>
               <TableCell>
                 <DropdownMenu>
@@ -225,3 +227,4 @@ export function ReportsListClient({ initialReports }: ReportsListClientProps) {
     </>
   );
 }
+

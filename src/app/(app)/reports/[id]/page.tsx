@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +10,7 @@ import Link from "next/link";
 import { fetchReportFromDatabase } from "../../analyze/actions"; // Adjusted import path
 import { CalvinismDeepDiveButton } from "./components/calvinism-deep-dive-button";
 import { ReportActions } from "./components/report-actions";
+import { format } from 'date-fns';
 
 
 // Metadata can be generated dynamically based on the report
@@ -42,7 +44,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
             <div>
               <CardTitle className="text-2xl md:text-3xl">{report.title}</CardTitle>
               <CardDescription>
-                Generated on: {new Date(report.createdAt).toLocaleDateString()} | Type: <span className="capitalize">{report.analysisType.replace(/_/g, " ")}</span>
+                Generated on: {format(new Date(report.createdAt), 'MM/dd/yyyy')} | Type: <span className="capitalize">{report.analysisType.replace(/_/g, " ")}</span>
               </CardDescription>
             </div>
             <ReportActions />
@@ -51,7 +53,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
         
         <div className="hidden print:block mb-4 p-4">
             <h1 className="text-2xl font-bold">{report.title}</h1>
-            <p className="text-sm text-gray-600">Generated on: {new Date(report.createdAt).toLocaleDateString()} | Type: <span className="capitalize">{report.analysisType.replace(/_/g, " ")}</span></p>
+            <p className="text-sm text-gray-600">Generated on: {format(new Date(report.createdAt), 'MM/dd/yyyy')} | Type: <span className="capitalize">{report.analysisType.replace(/_/g, " ")}</span></p>
             <Separator className="my-2"/>
         </div>
 
@@ -94,3 +96,4 @@ export default async function ReportPage({ params }: { params: { id: string } })
     </div>
   );
 }
+

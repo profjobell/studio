@@ -1,8 +1,10 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ProfileUpdateForm } from "./components/profile-update-form";
 import { DeleteAccountSection } from "./components/delete-account-section";
+import { format } from 'date-fns';
 
 export const metadata = {
   title: "User Profile - KJV Sentinel",
@@ -39,7 +41,7 @@ export default async function ProfilePage() {
             </Avatar>
             <div>
               <CardTitle className="text-2xl">{user.name}</CardTitle>
-              <CardDescription>Joined on {user.joinedDate.toLocaleDateString()}</CardDescription>
+              <CardDescription>Joined on {format(user.joinedDate, 'MM/dd/yyyy')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -62,3 +64,4 @@ export default async function ProfilePage() {
     </div>
   );
 }
+

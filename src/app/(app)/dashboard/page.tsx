@@ -1,4 +1,5 @@
 
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { fetchLibraryDocuments } from "../library/actions"; // Import fetchLibra
 import type { AnalysisReport, DocumentReference } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClearHistoryButton } from "./components/clear-history-button";
+import { format } from 'date-fns';
 
 export default async function DashboardPage() {
   const allReports: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput >[] = await fetchReportsList();
@@ -77,7 +79,7 @@ export default async function DashboardPage() {
                           {analysis.title}
                         </Link>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(analysis.createdAt).toLocaleDateString()} - 
+                          {format(new Date(analysis.createdAt), 'MM/dd/yyyy')} - 
                           <span className={`ml-1 capitalize ${
                             analysis.status === "completed" ? "text-green-600" :
                             analysis.status === "processing" ? "text-yellow-600" :
@@ -170,4 +172,5 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
 

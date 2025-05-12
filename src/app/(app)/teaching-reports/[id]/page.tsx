@@ -1,3 +1,4 @@
+
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { fetchTeachingAnalysisFromDatabase } from "../../analyze-teaching/action
 import { TeachingReportDisplay } from "./components/teaching-report-display";
 import { TeachingReportActions } from "./components/teaching-report-actions";
 import { PodcastGenerator } from "./components/podcast-generator"; // Import PodcastGenerator
+import { format } from 'date-fns';
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const report = await fetchTeachingAnalysisFromDatabase(params.id);
@@ -40,7 +42,7 @@ export default async function TeachingReportPage({ params }: { params: { id: str
               <CardDescription>
                 Analysis for: &quot;{report.teaching.length > 100 ? `${report.teaching.substring(0, 97)}...` : report.teaching}&quot;
                 <br />
-                Recipient: {report.recipientNameTitle} | Generated: {new Date(report.createdAt).toLocaleDateString()}
+                Recipient: {report.recipientNameTitle} | Generated: {format(new Date(report.createdAt), 'MM/dd/yyyy')}
               </CardDescription>
             </div>
             <TeachingReportActions report={report} />
@@ -50,7 +52,7 @@ export default async function TeachingReportPage({ params }: { params: { id: str
         <div className="hidden print:block mb-4 p-4">
             <h1 className="text-2xl font-bold">Teaching Analysis Report</h1>
             <p className="text-sm text-gray-600">Teaching: &quot;{report.teaching}&quot;</p>
-            <p className="text-sm text-gray-600">Recipient: {report.recipientNameTitle} | Generated: {new Date(report.createdAt).toLocaleDateString()}</p>
+            <p className="text-sm text-gray-600">Recipient: {report.recipientNameTitle} | Generated: {format(new Date(report.createdAt), 'MM/dd/yyyy')}</p>
             <Separator className="my-2"/>
         </div>
 
@@ -82,3 +84,4 @@ export default async function TeachingReportPage({ params }: { params: { id: str
     </div>
   );
 }
+
