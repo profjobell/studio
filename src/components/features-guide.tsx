@@ -373,9 +373,16 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
   }, [glossarySearchTerm]);
 
   const defaultOpenAccordionItems = ["introduction", "calvinism-video-resources"];
-  if (filteredFeatures.length === 1 && filteredFeatures[0] && !filteredFeatures[0].isGlossary) { 
+  if (globalSearchTerm && filteredFeatures.length > 0) {
+     filteredFeatures.forEach(feature => {
+        if (!defaultOpenAccordionItems.includes(feature.id)) {
+            defaultOpenAccordionItems.push(feature.id);
+        }
+     })
+  } else if (filteredFeatures.length === 1 && filteredFeatures[0] && !filteredFeatures[0].isGlossary) { 
       defaultOpenAccordionItems.push(filteredFeatures[0].id);
   }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -495,3 +502,4 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
     </Dialog>
   );
 }
+
