@@ -352,7 +352,7 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
   const [glossarySearchTerm, setGlossarySearchTerm] = React.useState("");
 
   const filteredFeatures = featuresData.filter(feature =>
-    feature.id === 'glossary-of-terms' || // Always include glossary so its internal search works
+    feature.id === 'glossary-of-terms' || 
     feature.title.toLowerCase().includes(globalSearchTerm.toLowerCase()) ||
     feature.description.toLowerCase().includes(globalSearchTerm.toLowerCase()) ||
     (feature.subFeatures && feature.subFeatures.some(sub =>
@@ -376,12 +376,6 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
   if (filteredFeatures.length === 1 && filteredFeatures[0] && !filteredFeatures[0].isGlossary) { 
       defaultOpenAccordionItems.push(filteredFeatures[0].id);
   }
-  if (globalSearchTerm && filteredFeatures.some(f => f.isGlossary) && !defaultOpenAccordionItems.includes("glossary-of-terms")) {
-    // If glossary is relevant to search, open it.
-    // defaultOpenAccordionItems.push("glossary-of-terms"); 
-    // Decided against auto-opening glossary on global search to avoid too many open sections. User can open it manually.
-  }
-
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -413,45 +407,47 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
                     {feature.title}
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground space-y-2 pl-2">
+                <AccordionContent> {/* Default Radix/ShadCN padding will apply (pt-0 pb-4 usually) */}
                   {!feature.isGlossary ? (
-                    <>
-                      <p dangerouslySetInnerHTML={{ __html: feature.description.replace(/\n/g, "<br />") }} />
-                      {feature.points && feature.points.length > 0 && (
-                            <ul className="list-disc list-inside pl-4 space-y-1">
-                                  {feature.points.map((point, pIndex) => (
-                                    <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
-                                  ))}
-                              </ul>
-                      )}
-                      {feature.subFeatures && feature.subFeatures.length > 0 && (
-                        <div className="space-y-3 mt-3">
-                          {feature.subFeatures.map((subFeature, index) => (
-                            <div key={index} className="ml-4 p-3 border rounded-md bg-background/50">
-                              <h4 className="font-semibold text-foreground flex items-center gap-2 mb-1">
-                                {subFeature.icon && <subFeature.icon className="h-4 w-4 text-primary/80" />}
-                                {subFeature.title}
-                              </h4>
-                              <p className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: subFeature.description.replace(/\n/g, "<br />") }} />
-                              {subFeature.points && subFeature.points.length > 0 && (
-                                <ul className="list-disc list-inside pl-4 space-y-1 mt-1 text-xs">
-                                  {subFeature.points.map((point, pIndex) => (
-                                    <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
-                                  ))}
+                    <ScrollArea className="max-h-[60vh] pr-3"> {/* Scroll for individual feature content */}
+                      <div className="text-sm text-muted-foreground space-y-2 pl-2"> {/* Content styling and indent */}
+                        <p dangerouslySetInnerHTML={{ __html: feature.description.replace(/\n/g, "<br />") }} />
+                        {feature.points && feature.points.length > 0 && (
+                              <ul className="list-disc list-inside pl-4 space-y-1">
+                                    {feature.points.map((point, pIndex) => (
+                                      <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
+                                    ))}
                                 </ul>
-                              )}
-                              {subFeature.htmlContent && (
-                                <div className="mt-2 text-xs" dangerouslySetInnerHTML={{ __html: subFeature.htmlContent }} />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </>
+                        )}
+                        {feature.subFeatures && feature.subFeatures.length > 0 && (
+                          <div className="space-y-3 mt-3">
+                            {feature.subFeatures.map((subFeature, index) => (
+                              <div key={index} className="ml-4 p-3 border rounded-md bg-background/50">
+                                <h4 className="font-semibold text-foreground flex items-center gap-2 mb-1">
+                                  {subFeature.icon && <subFeature.icon className="h-4 w-4 text-primary/80" />}
+                                  {subFeature.title}
+                                </h4>
+                                <p className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: subFeature.description.replace(/\n/g, "<br />") }} />
+                                {subFeature.points && subFeature.points.length > 0 && (
+                                  <ul className="list-disc list-inside pl-4 space-y-1 mt-1 text-xs">
+                                    {subFeature.points.map((point, pIndex) => (
+                                      <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
+                                    ))}
+                                  </ul>
+                                )}
+                                {subFeature.htmlContent && (
+                                  <div className="mt-2 text-xs" dangerouslySetInnerHTML={{ __html: subFeature.htmlContent }} />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
                   ) : (
-                    // Render Glossary Content
-                    <div className="space-y-3">
-                       <p dangerouslySetInnerHTML={{ __html: feature.description.replace(/\n/g, "<br />") }} />
+                    // Glossary Content
+                    <div className="space-y-3 pl-2"> {/* Apply pl-2 here for alignment */}
+                       <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: feature.description.replace(/\n/g, "<br />") }} />
                        <div className="relative my-2">
                         <Input
                           type="search"
