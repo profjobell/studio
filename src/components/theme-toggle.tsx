@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun, Palette } from "lucide-react" // Added Palette icon for custom themes
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator, // Added Separator
 } from "@/components/ui/dropdown-menu"
 
 export function ThemeToggle() {
@@ -31,6 +33,17 @@ export function ThemeToggle() {
         <DropdownMenuItem onClick={() => setTheme("dark")}>
           Dark
         </DropdownMenuItem>
+        <DropdownMenuSeparator /> 
+        <DropdownMenuItem onClick={() => setTheme("olive")}>
+          <Palette className="mr-2 h-4 w-4 text-green-700" /> Olive Swathe
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("beige-brown")}>
+          <Palette className="mr-2 h-4 w-4 text-yellow-700" /> Beige & Brown
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("sunrise")}>
+          <Palette className="mr-2 h-4 w-4 text-orange-500" /> Sunrise Vibrant
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => setTheme("system")}>
           System
         </DropdownMenuItem>

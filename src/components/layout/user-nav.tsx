@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -14,20 +15,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { LogOut, User, Settings, LifeBuoy } from "lucide-react"
+import { useRouter } from "next/navigation"; // Import useRouter
 
-// Placeholder for user data and logout function
+// Placeholder for user data
 // In a real app, this would come from an auth context or hook
 const user = {
   name: "User Name",
   email: "user@example.com",
   avatar: "https://picsum.photos/100/100", // Placeholder
 };
-const handleLogout = async () => {
-  alert("Logout clicked (placeholder)");
-  // Actual logout logic here
-};
 
 export function UserNav() {
+  const router = useRouter(); // Initialize router
+
+  const handleLogout = async () => {
+    // Actual logout logic here (e.g., call Firebase signOut)
+    console.log("Logout action initiated");
+    // For demo, redirect to sign-in page
+    router.push('/signin'); 
+    // In a real app, you'd also clear any auth state.
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -79,3 +87,4 @@ export function UserNav() {
     </DropdownMenu>
   )
 }
+

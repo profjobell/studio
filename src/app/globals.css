@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -105,6 +106,102 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+  }
+
+  /* Olive Green Swathe Theme */
+  .theme-olive {
+    --background: 80 20% 20%;
+    --foreground: 60 30% 95%;
+    --muted: 80 15% 28%;
+    --muted-foreground: 80 10% 65%;
+    --popover: 80 20% 18%;
+    --popover-foreground: 60 30% 95%;
+    --card: 80 20% 25%;
+    --card-foreground: 60 30% 95%;
+    --border: 80 15% 35%;
+    --input: 80 15% 35%;
+    --primary: 40 50% 50%;
+    --primary-foreground: 60 30% 95%;
+    --secondary: 80 15% 30%;
+    --secondary-foreground: 60 30% 90%;
+    --accent: 30 60% 60%;
+    --accent-foreground: 80 20% 10%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 40 50% 50%;
+
+    --sidebar-background: 80 25% 15%;
+    --sidebar-foreground: 60 30% 85%;
+    --sidebar-primary: 40 60% 55%;
+    --sidebar-primary-foreground: 80 25% 10%;
+    --sidebar-accent: 80 20% 22%;
+    --sidebar-accent-foreground: 60 30% 90%;
+    --sidebar-border: 80 20% 28%;
+    --sidebar-ring: 40 60% 55%;
+  }
+
+  /* Beige, White, and Brown Theme */
+  .theme-beige-brown {
+    --background: 40 30% 92%;
+    --foreground: 30 40% 20%;
+    --muted: 40 20% 88%;
+    --muted-foreground: 30 25% 50%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 40% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 40% 20%;
+    --border: 30 20% 75%;
+    --input: 30 20% 75%;
+    --primary: 30 50% 40%;
+    --primary-foreground: 40 30% 95%;
+    --secondary: 40 25% 85%;
+    --secondary-foreground: 30 40% 25%;
+    --accent: 35 70% 60%;
+    --accent-foreground: 30 40% 15%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 30 50% 40%;
+
+    --sidebar-background: 30 45% 15%;
+    --sidebar-foreground: 40 25% 80%;
+    --sidebar-primary: 35 75% 65%;
+    --sidebar-primary-foreground: 30 45% 10%;
+    --sidebar-accent: 30 30% 25%;
+    --sidebar-accent-foreground: 40 25% 85%;
+    --sidebar-border: 30 30% 30%;
+    --sidebar-ring: 35 75% 65%;
+  }
+
+  /* Sunrise Vibrant Theme */
+  .theme-sunrise {
+    --background: 270 50% 20%;
+    --foreground: 50 100% 90%;
+    --muted: 275 40% 28%;
+    --muted-foreground: 270 20% 70%;
+    --popover: 270 50% 15%;
+    --popover-foreground: 50 100% 90%;
+    --card: 280 50% 25%;
+    --card-foreground: 50 100% 90%;
+    --border: 270 30% 40%;
+    --input: 270 30% 40%;
+    --primary: 25 90% 60%;
+    --primary-foreground: 270 50% 10%;
+    --secondary: 290 40% 30%;
+    --secondary-foreground: 45 90% 85%;
+    --accent: 55 100% 65%;
+    --accent-foreground: 270 50% 10%;
+    --destructive: 0 80% 65%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 25 90% 60%;
+
+    --sidebar-background: 260 60% 10%;
+    --sidebar-foreground: 40 80% 80%;
+    --sidebar-primary: 35 100% 60%;
+    --sidebar-primary-foreground: 260 60% 5%;
+    --sidebar-accent: 270 50% 18%;
+    --sidebar-accent-foreground: 40 80% 85%;
+    --sidebar-border: 270 50% 22%;
+    --sidebar-ring: 35 100% 60%;
   }
 }
 
