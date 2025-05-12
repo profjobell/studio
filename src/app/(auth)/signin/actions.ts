@@ -1,3 +1,4 @@
+
 "use server";
 
 import { redirect } from 'next/navigation';
@@ -10,8 +11,12 @@ export async function handleSignIn(formData: FormData) {
   if (email && email.toLowerCase() === "admin@kjvsentinel.com" && password === "N0tjuni0r") {
     console.log("Default admin login successful");
     redirect("/dashboard");
-  } else {
-    console.log("Invalid credentials or not the default admin account.");
+  } else if (email && email.toLowerCase() === "rich@home.com" && password === "John3:16") {
+    console.log("Richard Wilkinson login successful");
+    redirect("/dashboard");
+  }
+   else {
+    console.log("Invalid credentials or not a recognized account.");
     redirect("/signin?error=invalid_credentials");
   }
 }
@@ -23,3 +28,4 @@ export async function handleGoogleSignIn() {
   // For this demo, we'll indicate it's not fully implemented.
   redirect("/signin?error=google_not_implemented");
 }
+
