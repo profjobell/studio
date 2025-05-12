@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,7 +31,7 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
   const [isPendingUpload, startUploadTransition] = useTransition();
   const [isPendingDelete, startDeleteTransition] = useTransition();
   const { toast } = useToast();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   useEffect(() => {
