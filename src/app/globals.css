@@ -55,8 +55,8 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    --font-sans: "__GeistSans_05d8c6", "__GeistSans_Fallback_05d8c6", system-ui, sans-serif; /* Added GeistSans variables */
-    --font-mono: "__GeistMono_5330f3", "__GeistMono_Fallback_5330f3", monospace; /* Added GeistMono variables */
+    --font-sans: "__GeistSans_05d8c6", "__GeistSans_Fallback_05d8c6", system-ui, sans-serif;
+    --font-mono: "__GeistMono_5330f3", "__GeistMono_Fallback_5330f3", monospace;
 
   }
 
@@ -107,8 +107,11 @@ body {
     --chart-5: 340 75% 55%;
   }
 
-  /* Olive Green Swathe Theme - Redefined as a light theme */
-  .olive {
+  /* Light mode for custom themes */
+  /* `next-themes` adds the theme name as a class to the html element */
+  /* e.g., <html class="olive"> or <html class="dark olive"> */
+
+  html.olive:not(.dark) {
     --background: 70 50% 92%;  /* Pale Olive/Khaki */
     --foreground: 70 30% 20%;  /* Dark Olive Green */
     --muted: 70 40% 85%;       /* Light muted olive */
@@ -129,7 +132,6 @@ body {
     --destructive-foreground: 0 0% 100%; /* White text for destructive */
     --ring: 80 40% 40%;         /* Medium Olive Green for focus rings */
 
-    /* Sidebar for light olive theme */
     --sidebar-background: 75 30% 30%; /* Darker olive for sidebar background */
     --sidebar-foreground: 70 40% 85%; /* Light text for sidebar */
     --sidebar-primary: 60 55% 60%;    /* Brighter accent for sidebar active items */
@@ -140,8 +142,7 @@ body {
     --sidebar-ring: 60 55% 60%;       /* Brighter accent for sidebar focus rings */
   }
 
-  /* Beige, White, and Brown Theme - Reviewed as a light theme */
-  .beige-brown {
+  html.beige-brown:not(.dark) {
     --background: 40 30% 92%;  /* Light Beige */
     --foreground: 30 40% 20%;  /* Dark Brown */
     --muted: 40 20% 88%;       /* Lighter muted beige */
@@ -162,7 +163,6 @@ body {
     --destructive-foreground: 0 0% 100%;
     --ring: 30 50% 40%;         /* Rich Brown for focus rings */
 
-    /* Sidebar for beige-brown theme */
     --sidebar-background: 30 45% 25%; /* Darker Brown for sidebar background */
     --sidebar-foreground: 40 25% 80%; /* Light beige text for sidebar */
     --sidebar-primary: 35 75% 65%;    /* Brighter gold accent for sidebar active */
@@ -173,8 +173,7 @@ body {
     --sidebar-ring: 35 75% 65%;       /* Gold accent for sidebar focus rings */
   }
 
-  /* Sunrise Vibrant Theme - Redefined as a light theme */
-  .sunrise {
+  html.sunrise:not(.dark) {
     --background: 35 100% 94%; /* Very Light Yellow/Orange */
     --foreground: 25 80% 25%;  /* Dark Orange/Brown */
     --muted: 30 80% 88%;       /* Lighter muted orange */
@@ -195,7 +194,6 @@ body {
     --destructive-foreground: 0 0% 100%;
     --ring: 15 85% 55%;         /* Bright Orange/Red for focus rings */
 
-    /* Sidebar for sunrise theme */
     --sidebar-background: 10 60% 30%; /* Dark Red/Brown for sidebar background */
     --sidebar-foreground: 30 80% 85%; /* Light orange text for sidebar */
     --sidebar-primary: 40 100% 70%;   /* Bright yellow/orange for sidebar active */
@@ -205,6 +203,101 @@ body {
     --sidebar-border: 15 50% 45%;     /* Muted red/brown for sidebar borders */
     --sidebar-ring: 40 100% 70%;      /* Bright yellow/orange for sidebar focus rings */
   }
+
+  /* Dark mode variants for custom themes */
+  html.dark.olive {
+    --background: 70 30% 15%;  /* Dark Olive Green */
+    --foreground: 70 50% 88%;  /* Pale Olive/Khaki for text */
+    --muted: 70 25% 25%;       /* Darker muted olive */
+    --muted-foreground: 70 40% 65%; /* Medium-light olive for muted text */
+    --popover: 70 30% 20%;      /* Dark olive for popover */
+    --popover-foreground: 70 50% 88%; /* Pale olive text for popover */
+    --card: 70 30% 18%;         /* Dark olive for card */
+    --card-foreground: 70 50% 88%;   /* Pale olive text for card */
+    --border: 70 25% 35%;       /* Dark muted olive border */
+    --input: 70 25% 35%;        /* Dark muted olive input border */
+    --primary: 80 50% 60%;      /* Brighter Olive Green for primary actions in dark mode */
+    --primary-foreground: 70 25% 15%; /* Dark text for primary actions */
+    --secondary: 70 30% 28%;    /* Darker Olive for secondary elements */
+    --secondary-foreground: 70 50% 80%; /* Lighter olive text for secondary */
+    --accent: 60 65% 70%;       /* Lighter Green-Gold accent for dark mode */
+    --accent-foreground: 60 30% 20%;   /* Dark text for accent */
+    --destructive: 0 70% 60%;   /* Standard red for destructive actions */
+    --destructive-foreground: 0 0% 100%; /* White text for destructive */
+    --ring: 80 50% 60%;         /* Brighter Olive Green for focus rings */
+
+    --sidebar-background: 75 25% 20%; /* Very Dark olive for sidebar background */
+    --sidebar-foreground: 70 45% 75%; /* Light text for sidebar */
+    --sidebar-primary: 60 60% 75%;    /* Even Brighter accent for sidebar active items */
+    --sidebar-primary-foreground: 70 25% 10%; /* Dark text for active sidebar items */
+    --sidebar-accent: 75 20% 30%;     /* Darker Medium olive for sidebar hover */
+    --sidebar-accent-foreground: 70 45% 80%; /* Light text for sidebar hover */
+    --sidebar-border: 75 20% 35%;     /* Dark Muted olive for sidebar borders */
+    --sidebar-ring: 60 60% 75%;       /* Brighter accent for sidebar focus rings */
+  }
+
+  html.dark.beige-brown {
+    --background: 30 25% 15%;  /* Very Dark Brown */
+    --foreground: 40 30% 88%;  /* Light Beige for text */
+    --muted: 30 15% 25%;       /* Darker muted brown */
+    --muted-foreground: 35 20% 60%; /* Medium-light beige for muted text */
+    --popover: 25 30% 20%;        /* Dark brown for popover */
+    --popover-foreground: 40 30% 88%; /* Light beige text for popover */
+    --card: 25 30% 18%;           /* Dark brown for card */
+    --card-foreground: 40 30% 88%;   /* Light beige text for card */
+    --border: 30 15% 40%;       /* Dark muted brown border */
+    --input: 30 15% 40%;        /* Dark muted brown input border */
+    --primary: 30 60% 70%;      /* Lighter, softer Brown for primary actions in dark mode */
+    --primary-foreground: 30 30% 15%; /* Dark text for primary actions */
+    --secondary: 30 20% 30%;    /* Darker Brown for secondary elements */
+    --secondary-foreground: 40 30% 80%; /* Lighter beige text for secondary */
+    --accent: 35 80% 75%;       /* Brighter, lighter Gold/Orange accent */
+    --accent-foreground: 30 40% 20%;   /* Dark text for accent */
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 30 60% 70%;         /* Lighter Brown for focus rings */
+
+    --sidebar-background: 30 30% 12%; /* Even Darker Brown for sidebar background */
+    --sidebar-foreground: 40 20% 70%; /* Muted beige text for sidebar */
+    --sidebar-primary: 35 80% 80%;    /* Very Bright gold accent for sidebar active */
+    --sidebar-primary-foreground: 30 30% 8%; /* Very Dark text for active sidebar items */
+    --sidebar-accent: 30 20% 22%;     /* Darker Medium brown for sidebar hover */
+    --sidebar-accent-foreground: 40 20% 75%; /* Muted beige text for sidebar hover */
+    --sidebar-border: 30 20% 28%;     /* Dark Muted brown for sidebar borders */
+    --sidebar-ring: 35 80% 80%;       /* Bright gold accent for sidebar focus rings */
+  }
+
+  html.dark.sunrise {
+    --background: 20 60% 15%; /* Dark Orange/Brown */
+    --foreground: 35 100% 90%; /* Very Light Yellow/Orange for text */
+    --muted: 25 50% 22%;       /* Darker muted orange */
+    --muted-foreground: 30 70% 65%; /* Medium-light orange for muted text */
+    --popover: 15 70% 20%;      /* Dark orange for popover */
+    --popover-foreground: 35 100% 90%; /* Light yellow/orange text for popover */
+    --card: 15 70% 18%;           /* Dark orange for card */
+    --card-foreground: 35 100% 90%;   /* Light yellow/orange text for card */
+    --border: 20 50% 35%;       /* Dark muted orange border */
+    --input: 20 50% 35%;        /* Dark muted orange input border */
+    --primary: 15 95% 75%;      /* Lighter Bright Orange/Red for primary actions */
+    --primary-foreground: 10 70% 15%; /* Dark text for primary actions */
+    --secondary: 25 70% 28%;    /* Darker Orange for secondary elements */
+    --secondary-foreground: 30 90% 85%; /* Lighter orange text for secondary */
+    --accent: 45 100% 80%;      /* Lighter Bright Yellow accent */
+    --accent-foreground: 25 80% 25%;   /* Dark text for accent */
+    --destructive: 0 80% 70%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 15 95% 75%;         /* Lighter Bright Orange/Red for focus rings */
+
+    --sidebar-background: 10 50% 20%; /* Very Dark Red/Brown for sidebar background */
+    --sidebar-foreground: 30 70% 75%; /* Muted orange text for sidebar */
+    --sidebar-primary: 40 100% 85%;   /* Very bright yellow/orange for sidebar active */
+    --sidebar-primary-foreground: 10 50% 10%; /* Very Dark text for active sidebar items */
+    --sidebar-accent: 15 40% 28%;     /* Darker Medium orange/red for sidebar hover */
+    --sidebar-accent-foreground: 30 70% 80%; /* Muted orange text for sidebar hover */
+    --sidebar-border: 15 40% 32%;     /* Dark Muted red/brown for sidebar borders */
+    --sidebar-ring: 40 100% 85%;      /* Very bright yellow/orange for sidebar focus rings */
+  }
+
 }
 
 @layer base {

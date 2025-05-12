@@ -5,10 +5,6 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 
-// These are now assigned directly, no need for separate const declarations if already imported.
-// const geistSans = GeistSans;
-// const geistMono = GeistMono;
-
 export const metadata: Metadata = {
   title: 'KJV Sentinel - Theological Content Analyzer',
   description: 'Analyze religious content against the KJV 1611 Bible for theological accuracy, historical context, and Calvinistic influence.',
@@ -33,6 +29,7 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="system"
           enableSystem
+          themes={['light', 'dark', 'system', 'olive', 'beige-brown', 'sunrise']}
           disableTransitionOnChange
         >
           {children}
