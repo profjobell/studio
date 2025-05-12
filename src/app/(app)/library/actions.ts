@@ -1,3 +1,4 @@
+
 "use server";
 
 import type { DocumentReference } from "@/types"; // Assuming DocumentReference type is defined
@@ -40,7 +41,7 @@ export async function fetchLibraryDocuments(): Promise<DocumentReference[]> {
   // Simulate fetching documents
   console.log("Server Action: Fetching library documents (simulated from tempLibraryDB)");
   // Ensure tempLibraryDB is always an array, even if global somehow fails (defensive programming)
-  return Promise.resolve(Array.isArray(tempLibraryDB) ? [...tempLibraryDB] : []);
+  return Promise.resolve(Array.isArray(tempLibraryDB) ? [...tempLibraryDB].sort((a,b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()) : []);
 }
 
 export async function uploadDocumentAction(formData: FormData): Promise<{ success: boolean; message: string; docId?: string }> {
@@ -71,14 +72,13 @@ export async function uploadDocumentAction(formData: FormData): Promise<{ succes
     uploadDate: new Date(),
   };
   
-  // Ensure tempLibraryDB is an array before pushing
   if (!Array.isArray(tempLibraryDB)) {
-    tempLibraryDB = []; // Initialize if it's not an array (shouldn't happen with new global pattern)
+    tempLibraryDB = []; 
   }
   tempLibraryDB.push(newDocument);
 
-  revalidatePath("/library"); // Revalidate the library page to show the new document
-  revalidatePath("/dashboard"); // Also revalidate dashboard if it uses this data
+  revalidatePath("/library"); 
+  revalidatePath("/dashboard"); 
   return { success: true, message: `Document "${file.name}" uploaded successfully.`, docId: newDocId };
 }
 
@@ -86,7 +86,6 @@ export async function deleteDocumentAction(docId: string): Promise<{ success: bo
   console.log(`Server Action: Attempting to delete document: ${docId} (simulated)`);
   
   if (!Array.isArray(tempLibraryDB)) {
-     // Should not happen with proper initialization
     return { success: false, message: `Document ${docId} not found or internal error.` };
   }
 
@@ -94,7 +93,7 @@ export async function deleteDocumentAction(docId: string): Promise<{ success: bo
   tempLibraryDB = tempLibraryDB.filter(doc => doc.id !== docId);
 
   if (tempLibraryDB.length < initialLength) {
-    revalidatePath("/library"); // Revalidate the library page
+    revalidatePath("/library"); 
     revalidatePath("/dashboard");
     return { success: true, message: `Document ${docId} deleted successfully.` };
   } else {
@@ -102,3 +101,21 @@ export async function deleteDocumentAction(docId: string): Promise<{ success: bo
   }
 }
 
+export async function deleteAllDocumentsAction(): Promise<{ success: boolean; message: string }> {
+  console.log("Server Action: Attempting to delete all documents (simulated)");
+  
+  if (!Array.isArray(tempLibraryDB)) {
+    tempLibraryDB = []; // Ensure it's an array
+  }
+  
+  if (tempLibraryDB.length === 0) {
+    return { success: true, message: "Document library is already empty." };
+  }
+
+  const numDeleted = tempLibraryDB.length;
+  tempLibraryDB = []; // Clear the array
+
+  revalidatePath("/library");
+  revalidatePath("/dashboard");
+  return { success: true, message: `Successfully deleted ${numDeleted} document(s).` };
+}

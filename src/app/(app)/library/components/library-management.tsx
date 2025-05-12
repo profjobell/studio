@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, Trash2, Download, UploadCloud, FileText, Search as SearchIcon } from "lucide-react";
+import { MoreHorizontal, Trash2, Download, UploadCloud, FileText, Search as SearchIcon, Home, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +17,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { DocumentReference } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { uploadDocumentAction, deleteDocumentAction } from "../actions"; // Server Actions
+import { uploadDocumentAction, deleteDocumentAction, deleteAllDocumentsAction } from "../actions"; // Server Actions
 
 interface LibraryManagementProps {
   initialDocuments: DocumentReference[];
@@ -30,6 +41,8 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
   const [searchTerm, setSearchTerm] = useState("");
   const [isPendingUpload, startUploadTransition] = useTransition();
   const [isPendingDelete, startDeleteTransition] = useTransition();
+  const [isPendingDeleteAll, startDeleteAllTransition] = useTransition();
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,20 +63,23 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
 
     startUploadTransition(async () => {
       const result = await uploadDocumentAction(formData);
-      if (result.success) {
+      if (result.success && result.docId) {
         toast({ title: "Upload Successful", description: result.message });
-        // Optimistically update or rely on revalidation from server action
-        // For demo, if server revalidates, no need to manually update state here.
-        // Or, if an ID is returned, you could fetch the new document and add it.
+         // Optimistically update UI or rely on revalidation.
+        // For immediate update, create a new document object and add to state.
+        const newDoc: DocumentReference = {
+          id: result.docId,
+          userId: "user-123", // Placeholder, should come from auth context or server
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          storagePath: `/documents/user-123/${result.docId}-${file.name}`, // Mimic server logic
+          uploadDate: new Date(),
+        };
+        setDocuments(prevDocs => [...prevDocs, newDoc].sort((a,b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()));
         if (fileInputRef.current) {
-            fileInputRef.current.value = ""; // Reset file input
+            fileInputRef.current.value = ""; 
         }
-        // Server action should revalidatePath, so new documents list will be fetched on next navigation or refresh.
-        // To see immediate update without full state re-fetch, we could add to local state:
-        // if (result.docId) {
-        //    const newDoc = { id: result.docId, userId: 'user-123', fileName: file.name, fileType: file.type, fileSize: file.size, storagePath: '', uploadDate: new Date() };
-        //    setDocuments(prev => [...prev, newDoc]);
-        // }
       } else {
         toast({ title: "Upload Failed", description: result.message, variant: "destructive" });
       }
@@ -75,10 +91,23 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
       const result = await deleteDocumentAction(docId);
       if (result.success) {
         toast({ title: "Delete Successful", description: result.message });
-        setDocuments(docs => docs.filter(doc => doc.id !== docId)); // Optimistic update
+        setDocuments(docs => docs.filter(doc => doc.id !== docId)); 
       } else {
         toast({ title: "Delete Failed", description: result.message, variant: "destructive" });
       }
+    });
+  };
+
+  const handleDeleteAllDocuments = async () => {
+    startDeleteAllTransition(async () => {
+      const result = await deleteAllDocumentsAction();
+      if (result.success) {
+        toast({ title: "All Documents Deleted", description: result.message });
+        setDocuments([]); 
+      } else {
+        toast({ title: "Delete All Failed", description: result.message, variant: "destructive" });
+      }
+      setShowDeleteAllDialog(false);
     });
   };
 
@@ -88,6 +117,51 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
 
   return (
     <>
+      <div className="flex justify-between items-center mb-6">
+        <Button asChild variant="outline">
+          <Link href="/dashboard">
+            <Home className="mr-2 h-4 w-4" />
+            Home
+          </Link>
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={() => setShowDeleteAllDialog(true)}
+          disabled={documents.length === 0 || isPendingDeleteAll}
+        >
+          {isPendingDeleteAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+          Remove All Documents
+        </Button>
+      </div>
+
+      <AlertDialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently delete all documents from your library. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPendingDeleteAll}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAllDocuments}
+              disabled={isPendingDeleteAll}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isPendingDeleteAll ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Yes, delete all documents"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Upload New Document</CardTitle>
@@ -146,10 +220,12 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
                 {filteredDocuments.map((doc) => (
                   <TableRow key={doc.id}>
                     <TableCell className="font-medium">
-                      <Link href="#" className="hover:underline text-primary flex items-center gap-2" title="View document (placeholder)">
-                        <FileText className="h-4 w-4 shrink-0" />
-                        {doc.fileName}
-                      </Link>
+                      <Button variant="link" asChild className="p-0 h-auto text-primary flex items-center gap-2 text-left">
+                        <Link href="#" title="View document (placeholder)">
+                          <FileText className="h-4 w-4 shrink-0" />
+                          {doc.fileName}
+                        </Link>
+                      </Button>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell uppercase text-xs">
                       {doc.fileType.split("/").pop()?.replace("vnd.openxmlformats-officedocument.wordprocessingml.", "")}
@@ -180,9 +256,9 @@ export function LibraryManagement({ initialDocuments }: LibraryManagementProps) 
                            <DropdownMenuItem
                               onClick={() => handleDeleteDocument(doc.id)}
                               className="text-destructive hover:!bg-destructive hover:!text-destructive-foreground"
-                              disabled={isPendingDelete}
+                              disabled={isPendingDelete || isPendingDeleteAll}
                             >
-                              {isPendingDelete ? <Trash2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} 
+                              {isPendingDelete && !isPendingDeleteAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} 
                               Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
