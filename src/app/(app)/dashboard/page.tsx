@@ -11,6 +11,7 @@ import type { AnalysisReport, DocumentReference } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClearHistoryButton } from "./components/clear-history-button";
 import { format } from 'date-fns';
+import { FeaturesGuideModal } from "@/components/features-guide"; // Added import
 
 export default async function DashboardPage() {
   const allReports: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput >[] = await fetchReportsList();
@@ -134,12 +135,12 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row items-center gap-6">
           <Image 
-            src="https://picsum.photos/seed/bibleopen/300/225" 
+            src="https://picsum.photos/seed/biblebooks/300/225" 
             alt="KJV Bible study"
             width={300}
             height={225}
-            className="rounded-lg shadow-md"
-            data-ai-hint="bible book open"
+            className="rounded-lg shadow-md object-contain"
+            data-ai-hint="bible books"
           />
           <div>
             <p className="mb-4 text-muted-foreground">
@@ -162,5 +163,6 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
 
 
