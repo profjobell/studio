@@ -1,18 +1,19 @@
 "use client";
 
-import type { AnalysisReport } from "@/types"; // Changed from AnalyzeContentOutput
+import type { AnalysisReport } from "@/types"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from "next/link";
+import { slugify } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 interface ReportDisplayProps {
-  reportData: AnalysisReport; // Changed from AnalyzeContentOutput
+  reportData: AnalysisReport; 
 }
 
-// Table styles from prompt
-const tableHeaderStyle = "bg-secondary text-secondary-foreground text-base font-semibold"; // Adjusted text-lg to text-base for better fit
-const tableRowStyle = "text-sm even:bg-card odd:bg-muted hover:bg-accent/50"; // Using theme colors
+const tableHeaderStyle = "bg-secondary text-secondary-foreground text-base font-semibold";
+const tableRowStyle = "text-sm even:bg-card odd:bg-muted hover:bg-accent/50";
 
 function ReportTable({ title, headers, data, columns }: { title: string, headers: string[], data: any[], columns: string[] }) {
   if (!data || data.length === 0) {
@@ -113,21 +114,61 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
     });
   }
   
-  const defaultOpenValues = sections
-    .filter(section => (section.type === "paragraph" && section.content) || (section.type === "table" && section.data && section.data.length > 0))
-    .map(section => section.title);
-  // Ensure "Summary" and "Original Content Submitted" (if present) are open by default.
-  if (reportData.summary && !defaultOpenValues.includes("Summary")) {
-      if (reportData.originalContent) defaultOpenValues.splice(1,0, "Summary"); // Insert after Original Content
-      else defaultOpenValues.unshift("Summary");
+  const getDefaultOpenValues = () => {
+    const openValues = sections
+      .filter(section => (section.type === "paragraph" && section.content) || (section.type === "table" && section.data && section.data.length > 0))
+      .map(section => slugify(section.title));
+    
+    if (reportData.summary && !openValues.includes(slugify("Summary"))) {
+        if (reportData.originalContent) openValues.splice(1,0, slugify("Summary"));
+        else openValues.unshift(slugify("Summary"));
+    }
+    if (reportData.originalContent && !openValues.includes(slugify("Original Content Submitted"))){
+        openValues.unshift(slugify("Original Content Submitted"));
+    }
+    return openValues;
   }
+
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>(getDefaultOpenValues());
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        const targetSection = sections.find(s => slugify(s.title) === hash);
+        if (targetSection) {
+          const slugifiedTitle = slugify(targetSection.title);
+          setOpenAccordionItems(prev => Array.from(new Set([...prev, slugifiedTitle])));
+          setTimeout(() => { 
+            const element = document.getElementById(slugifiedTitle);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 100); // Delay to ensure DOM update and smooth scroll
+        }
+      }
+    };
+
+    handleHashChange(); // Check hash on initial mount
+    window.addEventListener('hashchange', handleHashChange, false);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange, false);
+    };
+  }, [sections, reportData.summary, reportData.originalContent]); // Re-run if sections change
 
 
   return (
-    <Accordion type="multiple" defaultValue={defaultOpenValues} className="w-full">
-      {sections.map((section, index) => (
+    <Accordion 
+      type="multiple" 
+      value={openAccordionItems}
+      onValueChange={setOpenAccordionItems}
+      className="w-full"
+    >
+      {sections.map((section, index) => {
+        const sectionSlug = slugify(section.title);
+        return (
         (section.type === "paragraph" && section.content) || (section.type === "table" && section.data && section.data.length > 0) ? (
-          <AccordionItem value={section.title} key={index} className="border-b border-border print:border-gray-300">
+          <AccordionItem value={sectionSlug} key={sectionSlug} id={sectionSlug} className="border-b border-border print:border-gray-300">
             <AccordionTrigger className="py-4 text-xl font-semibold hover:no-underline text-left text-primary print:text-lg print:py-2">
               {section.title}
             </AccordionTrigger>
@@ -145,7 +186,7 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
             </AccordionContent>
           </AccordionItem>
         ) : null
-      ))}
+      )})}
     </Accordion>
   );
 }

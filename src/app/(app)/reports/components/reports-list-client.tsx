@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Trash2, FileText, Loader2, Brain } from "lucide-react";
+import { MoreHorizontal, Trash2, FileText, Loader2, Brain, ScrollText, MessageSquareWarning, Users, ClipboardList } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,10 +27,18 @@ import {
 import type { AnalysisReport } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { deleteReportAction, generateInDepthCalvinismReportAction } from "../actions"; // Server Actions
+import { slugify } from "@/lib/utils";
 
 interface ReportsListClientProps {
   initialReports: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput >[];
 }
+
+const reportSectionLinks = [
+  { label: "Identified Isms", slug: "identified-isms", icon: ClipboardList },
+  { label: "Logical Fallacies", slug: "logical-fallacies", icon: MessageSquareWarning },
+  { label: "Manipulative Tactics", slug: "manipulative-tactics", icon: Users },
+  { label: "Scriptural Analysis", slug: "scriptural-analysis", icon: ScrollText },
+];
 
 export function ReportsListClient({ initialReports }: ReportsListClientProps) {
   const [reports, setReports] = useState(initialReports);
@@ -146,10 +154,20 @@ export function ReportsListClient({ initialReports }: ReportsListClientProps) {
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
                       <Link href={`/reports/${report.id}`}>
-                        <FileText className="mr-2 h-4 w-4" /> View Report
+                        <FileText className="mr-2 h-4 w-4" /> View Full Report
                       </Link>
                     </DropdownMenuItem>
-                    {report.originalContent && ( // Only show if originalContent is available for deep dive
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Go to Section</DropdownMenuLabel>
+                    {reportSectionLinks.map(section => (
+                      <DropdownMenuItem key={section.slug} asChild>
+                        <Link href={`/reports/${report.id}#${section.slug}`}>
+                          <section.icon className="mr-2 h-4 w-4" /> {section.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                     <DropdownMenuSeparator />
+                    {report.originalContent && ( 
                        <DropdownMenuItem
                         onSelect={() => handleGenerateDeepDive(report.id, report.title)}
                         disabled={isPendingDeepDive}
@@ -165,7 +183,7 @@ export function ReportsListClient({ initialReports }: ReportsListClientProps) {
                       disabled={isPendingDelete}
                     >
                       {isPendingDelete ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                       Delete
+                       Delete Report
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
