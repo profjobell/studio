@@ -63,6 +63,29 @@ export async function deleteReportAction(reportId: string): Promise<{ success: b
   }
 }
 
+export async function deleteAllReportsAction(): Promise<{ success: boolean; message: string }> {
+  console.log("Server Action: Attempting to delete all reports from global store (simulated)");
+  
+  if (global.tempReportDatabaseGlobal) {
+    const reportCount = Object.keys(global.tempReportDatabaseGlobal).length;
+    if (reportCount === 0) {
+      return { success: true, message: "Report history is already empty." };
+    }
+    global.tempReportDatabaseGlobal = {}; // Clears the in-memory database
+    revalidatePath("/reports"); // Revalidate the reports list page
+    revalidatePath("/dashboard"); // Revalidate the dashboard page
+    return { success: true, message: `Successfully cleared ${reportCount} report(s) from history.` };
+  } else {
+    // This case implies the database was never initialized, or already cleared in a way that made it undefined.
+    // We ensure it's an empty object.
+    global.tempReportDatabaseGlobal = {};
+    revalidatePath("/reports");
+    revalidatePath("/dashboard");
+    return { success: true, message: "Report history store was not initialized or already empty, now ensured clear." };
+  }
+}
+
+
 export async function generateInDepthCalvinismReportAction(reportId: string): Promise<{ success: boolean; message: string; analysis?: string }> {
   console.log(`Server Action: Generating in-depth Calvinism report for: ${reportId} (simulated)`);
   
@@ -85,3 +108,4 @@ export async function generateInDepthCalvinismReportAction(reportId: string): Pr
     return { success: false, message: errorMessage };
   }
 }
+

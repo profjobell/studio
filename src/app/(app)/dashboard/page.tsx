@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, FileText, Search } from "lucide-react";
+import { Activity, FileText, Search, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { fetchReportsList } from "../reports/actions"; // Fetches list of reports
 import type { AnalysisReport } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ClearHistoryButton } from "./components/clear-history-button";
 
 export default async function DashboardPage() {
   const allReports: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput >[] = await fetchReportsList();
@@ -19,6 +20,8 @@ export default async function DashboardPage() {
     { title: "Total Analyses", value: recentAnalyses.length.toString(), icon: FileText, change: "" }, // Updated value, change can be static or dynamic
     { title: "Documents in Library", value: "32", icon: Search, change: "+2 uploaded" }, // Placeholder
   ];
+
+  const hasReports = recentAnalyses.length > 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -49,10 +52,15 @@ export default async function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Recent Analyses</CardTitle>
-            <CardDescription>
-              Overview of your latest content analyses.
-            </CardDescription>
+            <div className="flex flex-wrap justify-between items-start gap-2">
+              <div>
+                <CardTitle>Recent Analyses</CardTitle>
+                <CardDescription>
+                  Overview of your latest content analyses.
+                </CardDescription>
+              </div>
+              <ClearHistoryButton disabled={!hasReports} />
+            </div>
           </CardHeader>
           <CardContent>
             {recentAnalyses.length > 0 ? (
@@ -148,3 +156,4 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
