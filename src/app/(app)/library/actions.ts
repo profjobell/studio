@@ -1,3 +1,4 @@
+
 "use server";
 
 import type { DocumentReference } from "@/types"; // Assuming DocumentReference type is defined
@@ -8,26 +9,7 @@ const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100MB
 const ALLOWED_FILE_TYPES = ["application/pdf", "text/plain", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
 
 // Temporary in-memory store for documents for demo purposes
-let tempLibraryDB: DocumentReference[] = [
-  {
-    id: "doc-001",
-    userId: "user-123", // Placeholder user ID
-    fileName: "Systematic_Theology_Grudem.pdf",
-    fileType: "application/pdf",
-    fileSize: 5242880, // 5MB
-    storagePath: "/documents/user-123/Systematic_Theology_Grudem.pdf", // Simulated
-    uploadDate: new Date("2025-05-10T10:00:00Z"),
-  },
-  {
-    id: "doc-002",
-    userId: "user-123",
-    fileName: "Early_Church_Fathers_Quotes.txt",
-    fileType: "text/plain",
-    fileSize: 102400, // 100KB
-    storagePath: "/documents/user-123/Early_Church_Fathers_Quotes.txt",
-    uploadDate: new Date("2025-04-20T15:30:00Z"),
-  },
-];
+let tempLibraryDB: DocumentReference[] = [];
 
 
 export async function fetchLibraryDocuments(): Promise<DocumentReference[]> {
@@ -83,3 +65,4 @@ export async function deleteDocumentAction(docId: string): Promise<{ success: bo
     return { success: false, message: `Document ${docId} not found or could not be deleted.` };
   }
 }
+
