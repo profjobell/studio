@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -12,8 +13,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon } from "lucide-react"; // Renamed to avoid conflict
-import { glossaryTermsArray, type GlossaryEntry } from "@/lib/glossary-data"; // Import glossary data
+import { Search as SearchIcon } from "lucide-react"; 
+import { glossaryTermsArray, type GlossaryEntry } from "@/lib/glossary-data"; 
+import { Button } from "@/components/ui/button";
 
 
 import {
@@ -40,7 +42,7 @@ import {
   PlayCircle,
   Podcast,
   Mic, 
-  BookMarked, // Icon for Glossary
+  BookMarked, 
 } from "lucide-react";
 import React from "react";
 
@@ -57,7 +59,7 @@ interface FeatureDetail {
     htmlContent?: string;
     points?: string[];
   }>;
-  isGlossary?: boolean; // Flag for special rendering
+  isGlossary?: boolean; 
 }
 
 const featuresData: FeatureDetail[] = [
@@ -253,7 +255,7 @@ const featuresData: FeatureDetail[] = [
     title: "Glossary of Terms",
     icon: BookMarked,
     description: "A comprehensive glossary of theological, philosophical, and analytical terms used within the app and relevant discussions. This helps clarify concepts and deepen understanding.",
-    isGlossary: true, // Special flag for glossary rendering
+    isGlossary: true, 
   },
   {
     id: "document-library",
@@ -347,11 +349,32 @@ const featuresData: FeatureDetail[] = [
 
 export function FeaturesGuideModal({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
+  
+  // For the main features list search
   const [globalSearchTerm, setGlobalSearchTerm] = React.useState("");
-  const [glossarySearchTerm, setGlossarySearchTerm] = React.useState("");
+
+  // For the detail modal
+  const [detailModalOpen, setDetailModalOpen] = React.useState(false);
+  const [selectedFeatureForDetail, setSelectedFeatureForDetail] = React.useState<FeatureDetail | null>(null);
+
+  // For glossary search *within the detail modal*
+  const [glossaryDetailSearchTerm, setGlossaryDetailSearchTerm] = React.useState("");
+
+  const handleFeatureClick = (feature: FeatureDetail) => {
+    setSelectedFeatureForDetail(feature);
+    setDetailModalOpen(true);
+    if (!feature.isGlossary) { 
+      setGlossaryDetailSearchTerm("");
+    }
+  };
+
+  const handleDetailModalClose = () => {
+    setDetailModalOpen(false);
+    setSelectedFeatureForDetail(null);
+    setGlossaryDetailSearchTerm(""); 
+  };
 
   const filteredFeatures = featuresData.filter(feature =>
-    feature.id === 'glossary-of-terms' || 
     feature.title.toLowerCase().includes(globalSearchTerm.toLowerCase()) ||
     feature.description.toLowerCase().includes(globalSearchTerm.toLowerCase()) ||
     (feature.subFeatures && feature.subFeatures.some(sub =>
@@ -361,145 +384,160 @@ export function FeaturesGuideModal({ children }: { children: React.ReactNode }) 
     ))
   );
 
-  const filteredGlossaryTerms = React.useMemo(() => {
-    if (!glossarySearchTerm) {
+  const filteredGlossaryTermsForDetail = React.useMemo(() => {
+    if (!selectedFeatureForDetail?.isGlossary) {
+      return glossaryTermsArray; 
+    }
+    if (!glossaryDetailSearchTerm) {
       return glossaryTermsArray;
     }
     return glossaryTermsArray.filter((entry) =>
-      entry.term.toLowerCase().includes(glossarySearchTerm.toLowerCase()) ||
-      entry.htmlDefinition.toLowerCase().includes(glossarySearchTerm.toLowerCase())
+      entry.term.toLowerCase().includes(glossaryDetailSearchTerm.toLowerCase()) ||
+      entry.htmlDefinition.toLowerCase().includes(glossaryDetailSearchTerm.toLowerCase())
     );
-  }, [glossarySearchTerm]);
-
-  // Determine the default open item for single-item accordion
-  let defaultAccordionValue: string | undefined = "introduction";
-  if (globalSearchTerm && filteredFeatures.length > 0) {
-    defaultAccordionValue = filteredFeatures[0].id;
-  } else if (filteredFeatures.length === 0 && globalSearchTerm) {
-    defaultAccordionValue = undefined; // No item open if search yields no results
-  }
-  // Ensure "introduction" is a valid ID among filtered features if it's the default
-  if (defaultAccordionValue === "introduction" && !filteredFeatures.find(f => f.id === "introduction")) {
-      defaultAccordionValue = filteredFeatures.length > 0 ? filteredFeatures[0].id : undefined;
-  }
+  }, [selectedFeatureForDetail, glossaryDetailSearchTerm]);
 
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">KJV Sentinel Features Guide & Glossary</DialogTitle>
-          <DialogDescription>
-            An overview of features, tools, report options, and a searchable glossary of terms.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="relative my-4">
-          <Input
-            type="search"
-            placeholder="Search features (excluding glossary terms)..."
-            className="w-full pl-8"
-            value={globalSearchTerm}
-            onChange={(e) => setGlobalSearchTerm(e.target.value)}
-          />
-          <SearchIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        </div>
-        <ScrollArea className="flex-grow pr-4 max-h-[60vh]">
-          <Accordion type="single" collapsible defaultValue={defaultAccordionValue} className="w-full">
-            {filteredFeatures.map((feature) => (
-              <AccordionItem value={feature.id} key={feature.id}>
-                <AccordionTrigger className="text-lg hover:no-underline">
-                  <div className="flex items-center gap-2">
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">KJV Sentinel Features Guide & Glossary</DialogTitle>
+            <DialogDescription>
+              An overview of features, tools, report options, and a searchable glossary of terms.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative my-4">
+            <Input
+              type="search"
+              placeholder="Search features (excluding glossary terms)..."
+              className="w-full pl-8"
+              value={globalSearchTerm}
+              onChange={(e) => setGlobalSearchTerm(e.target.value)}
+            />
+            <SearchIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
+          <ScrollArea className="flex-grow pr-4 max-h-[60vh]">
+            <div className="space-y-1 py-2">
+              {filteredFeatures.map((feature) => (
+                <Button
+                  key={feature.id}
+                  variant="ghost"
+                  className="w-full justify-start text-left h-auto py-3 px-3 text-base rounded-md"
+                  onClick={() => handleFeatureClick(feature)}
+                >
+                  <div className="flex items-center gap-3">
                     {feature.icon && <feature.icon className="h-5 w-5 text-primary" />}
-                    {feature.title}
+                    <span className="font-normal">{feature.title}</span>
                   </div>
-                </AccordionTrigger>
-                <AccordionContent> {/* Default Radix/ShadCN padding will apply (pt-0 pb-4 usually) */}
-                  {!feature.isGlossary ? (
-                    <ScrollArea className="max-h-[60vh] pr-3"> {/* Scroll for individual feature content */}
-                      <div className="text-sm text-muted-foreground space-y-2 pl-2"> {/* Content styling and indent */}
-                        <p dangerouslySetInnerHTML={{ __html: feature.description.replace(/\n/g, "<br />") }} />
-                        {feature.points && feature.points.length > 0 && (
-                              <ul className="list-disc list-inside pl-4 space-y-1">
-                                    {feature.points.map((point, pIndex) => (
-                                      <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
-                                    ))}
-                                </ul>
-                        )}
-                        {feature.subFeatures && feature.subFeatures.length > 0 && (
-                          <div className="space-y-3 mt-3">
-                            {feature.subFeatures.map((subFeature, index) => (
-                              <div key={index} className="ml-4 p-3 border rounded-md bg-background/50">
-                                <h4 className="font-semibold text-foreground flex items-center gap-2 mb-1">
-                                  {subFeature.icon && <subFeature.icon className="h-4 w-4 text-primary/80" />}
-                                  {subFeature.title}
-                                </h4>
-                                <p className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: subFeature.description.replace(/\n/g, "<br />") }} />
-                                {subFeature.points && subFeature.points.length > 0 && (
-                                  <ul className="list-disc list-inside pl-4 space-y-1 mt-1 text-xs">
-                                    {subFeature.points.map((point, pIndex) => (
-                                      <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
-                                    ))}
-                                  </ul>
-                                )}
-                                {subFeature.htmlContent && (
-                                  <div className="mt-2 text-xs" dangerouslySetInnerHTML={{ __html: subFeature.htmlContent }} />
-                                )}
-                              </div>
-                            ))}
+                </Button>
+              ))}
+              {filteredFeatures.length === 0 && globalSearchTerm && (
+                  <p className="text-center text-muted-foreground py-8">No features match your search.</p>
+              )}
+            </div>
+          </ScrollArea>
+          <DialogFooter className="text-xs text-muted-foreground pt-4">
+              This guide will be updated as new features are added.
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {selectedFeatureForDetail && (
+        <Dialog open={detailModalOpen} onOpenChange={(isOpen) => {
+          if (!isOpen) handleDetailModalClose();
+          else setDetailModalOpen(true); 
+        }}>
+          <DialogContent className="max-w-2xl w-[80vw] max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                {selectedFeatureForDetail.icon && <selectedFeatureForDetail.icon className="h-5 w-5 text-primary" />}
+                {selectedFeatureForDetail.title}
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="flex-grow pr-2 -mr-2">
+              <div className="text-sm text-muted-foreground space-y-2 py-4">
+                {!selectedFeatureForDetail.isGlossary ? (
+                  <>
+                    <p dangerouslySetInnerHTML={{ __html: selectedFeatureForDetail.description.replace(/\n/g, "<br />") }} />
+                    {selectedFeatureForDetail.points && selectedFeatureForDetail.points.length > 0 && (
+                      <ul className="list-disc list-inside pl-4 space-y-1">
+                        {selectedFeatureForDetail.points.map((point, pIndex) => (
+                          <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
+                        ))}
+                      </ul>
+                    )}
+                    {selectedFeatureForDetail.subFeatures && selectedFeatureForDetail.subFeatures.length > 0 && (
+                      <div className="space-y-3 mt-3">
+                        {selectedFeatureForDetail.subFeatures.map((subFeature, index) => (
+                          <div key={index} className="ml-4 p-3 border rounded-md bg-muted/50">
+                            <h4 className="font-semibold text-foreground flex items-center gap-2 mb-1">
+                              {subFeature.icon && <subFeature.icon className="h-4 w-4 text-primary/80" />}
+                              {subFeature.title}
+                            </h4>
+                            <p className="text-xs" dangerouslySetInnerHTML={{ __html: subFeature.description.replace(/\n/g, "<br />") }} />
+                            {subFeature.points && subFeature.points.length > 0 && (
+                              <ul className="list-disc list-inside pl-4 space-y-1 mt-1 text-xs">
+                                {subFeature.points.map((point, pIndex) => (
+                                  <li key={pIndex} dangerouslySetInnerHTML={{ __html: point.replace(/\n/g, "<br />") }}></li>
+                                ))}
+                              </ul>
+                            )}
+                            {subFeature.htmlContent && (
+                              <div className="mt-2 text-xs" dangerouslySetInnerHTML={{ __html: subFeature.htmlContent }} />
+                            )}
                           </div>
-                        )}
+                        ))}
                       </div>
-                    </ScrollArea>
-                  ) : (
-                    // Glossary Content
-                    <div className="space-y-3 pl-2"> {/* Apply pl-2 here for alignment */}
-                       <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: feature.description.replace(/\n/g, "<br />") }} />
-                       <div className="relative my-2">
-                        <Input
-                          type="search"
-                          placeholder="Search glossary terms..."
-                          className="w-full pl-8 text-sm"
-                          value={glossarySearchTerm}
-                          onChange={(e) => setGlossarySearchTerm(e.target.value)}
-                          onClick={(e) => e.stopPropagation()} // Prevent accordion from closing
-                        />
-                        <SearchIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      </div>
-                      <ScrollArea className="h-[40vh] border rounded-md p-2">
-                        {filteredGlossaryTerms.length > 0 ? (
-                           <Accordion type="multiple" className="w-full">
-                            {filteredGlossaryTerms.map((entry) => (
-                              <AccordionItem value={entry.id} key={entry.id} className="border-b last:border-b-0">
-                                <AccordionTrigger className="text-base hover:no-underline py-2">
-                                  {entry.term}
-                                </AccordionTrigger>
-                                <AccordionContent className="prose prose-xs dark:prose-invert max-w-none text-foreground/80 leading-normal pt-1 pb-2 px-1">
-                                  <div dangerouslySetInnerHTML={{ __html: entry.htmlDefinition }} />
-                                </AccordionContent>
-                              </AccordionItem>
-                            ))}
-                          </Accordion>
-                        ) : (
-                          <p className="text-center text-muted-foreground py-4">No glossary terms match your search.</p>
-                        )}
-                      </ScrollArea>
-                       <p className="text-xs text-muted-foreground">For a full-page view, visit the <a href="/glossary" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={() => setOpen(false)}>Glossary page</a>.</p>
+                    )}
+                  </>
+                ) : (
+                  // Glossary rendering
+                  <div className="space-y-3">
+                    <p className="text-sm" dangerouslySetInnerHTML={{ __html: selectedFeatureForDetail.description.replace(/\n/g, "<br />") }} />
+                    <div className="relative my-2">
+                      <Input
+                        type="search"
+                        placeholder="Search glossary terms..."
+                        className="w-full pl-8 text-sm"
+                        value={glossaryDetailSearchTerm}
+                        onChange={(e) => setGlossaryDetailSearchTerm(e.target.value)}
+                      />
+                      <SearchIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-             {filteredFeatures.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No features match your search.</p>
-            )}
-          </Accordion>
-        </ScrollArea>
-        <DialogFooter className="text-xs text-muted-foreground pt-4">
-            This guide will be updated as new features are added.
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                    <ScrollArea className="h-[40vh] border rounded-md">
+                      {filteredGlossaryTermsForDetail.length > 0 ? (
+                         <Accordion type="multiple" className="w-full">
+                          {filteredGlossaryTermsForDetail.map((entry) => (
+                            <AccordionItem value={entry.id} key={entry.id} className="border-b last:border-b-0">
+                              <AccordionTrigger className="text-base hover:no-underline py-3 px-2 text-left"> {/* Added text-left */}
+                                {entry.term}
+                              </AccordionTrigger>
+                              <AccordionContent className="prose prose-xs dark:prose-invert max-w-none text-foreground/80 leading-normal pt-1 pb-2 px-2">
+                                <div dangerouslySetInnerHTML={{ __html: entry.htmlDefinition }} />
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      ) : (
+                        <p className="text-center text-muted-foreground py-4">
+                          {glossaryDetailSearchTerm ? "No glossary terms match your search." : "Loading glossary terms..."}
+                        </p>
+                      )}
+                    </ScrollArea>
+                     <p className="text-xs">For a full-page view, visit the <a href="/glossary" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={() => { setOpen(false); handleDetailModalClose(); }}>Glossary page</a>.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleDetailModalClose}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
-
