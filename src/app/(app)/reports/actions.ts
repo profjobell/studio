@@ -5,7 +5,7 @@ import type { AnalysisReport } from "@/types";
 import { revalidatePath } from "next/cache";
 import { fetchReportFromDatabase as fetchReportData } from "../analyze/actions"; 
 import { calvinismDeepDive } from "@/ai/flows/calvinism-deep-dive";
-import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, ChatWithReportInputSchema } from "@/ai/flows/chat-with-report-flow";
+import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput } from "@/ai/flows/chat-with-report-flow";
 
 
 // Access the global in-memory store from analyze/actions.ts
@@ -114,13 +114,14 @@ export async function generateInDepthCalvinismReportAction(reportId: string): Pr
 export async function chatWithReportAction(
   input: ChatWithReportInput
 ): Promise<ChatWithReportOutput | { error: string }> {
-  const validatedInput = ChatWithReportInputSchema.safeParse(input);
-  if (!validatedInput.success) {
-    return { error: validatedInput.error.errors.map(e => e.message).join(", ") };
-  }
+  // Rely on Genkit flow to validate input based on its defined schema.
+  // const validatedInput = ChatWithReportInputSchema.safeParse(input);
+  // if (!validatedInput.success) {
+  //   return { error: validatedInput.error.errors.map(e => e.message).join(", ") };
+  // }
 
   try {
-    const result = await chatWithReport(validatedInput.data);
+    const result = await chatWithReport(input); // Pass input directly
     return result;
   } catch (error) {
     console.error("Error in chatWithReportAction:", error);

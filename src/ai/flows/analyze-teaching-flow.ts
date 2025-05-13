@@ -5,14 +5,14 @@
  * a scripturally grounded letter of clarification/caution, and biblical warnings about false teachers.
  *
  * - analyzeTeachingAgainstKJV - A function that handles the teaching analysis process.
- * - AnalyzeTeachingInputSchema - The input type for the analyzeTeachingAgainstKJV function.
- * - AnalyzeTeachingOutputSchema - The return type for the analyzeTeachingAgainstKJV function.
+ * - AnalyzeTeachingInput - The input type for the analyzeTeachingAgainstKJV function.
+ * - AnalyzeTeachingOutput - The return type for the analyzeTeachingAgainstKJV function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const AnalyzeTeachingInputSchema = z.object({
+const AnalyzeTeachingInputSchema = z.object({
   teaching: z.string().min(10, "Teaching text must be at least 10 characters.")
     .describe('The teaching, philosophy, or saying to be analyzed.'),
   recipientNameTitle: z.string().min(3, "Recipient details must be provided.")
@@ -23,7 +23,7 @@ export const AnalyzeTeachingInputSchema = z.object({
     .describe('Optional additional notes or context provided by the user about the teaching.'),
 });
 
-export const AnalyzeTeachingOutputSchema = z.object({
+const AnalyzeTeachingOutputSchema = z.object({
   churchHistoryContext: z.string()
     .describe("A summary (around 200-300 words) of the teaching's historical emergence, key events associated with it, and how it has been generally accepted or rejected within broader church history, all from a KJV 1611 scriptural perspective."),
   promotersDemonstrators: z.array(z.object({

@@ -3,14 +3,14 @@
  * @fileOverview Provides a chat interface to discuss a given report context with an AI.
  *
  * - chatWithReport - A function that handles the chat interaction.
- * - ChatWithReportInputSchema - The input type for the chatWithReport function.
- * - ChatWithReportOutputSchema - The return type for the chatWithReport function.
+ * - ChatWithReportInput - The input type for the chatWithReport function.
+ * - ChatWithReportOutput - The return type for the chatWithReport function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
-export const ChatWithReportInputSchema = z.object({
+const ChatWithReportInputSchema = z.object({
   reportContext: z.string().min(1, "Report context cannot be empty.")
     .describe('The content of the report or section being discussed.'),
   userQuestion: z.string().min(1, "User question cannot be empty.")
@@ -19,7 +19,7 @@ export const ChatWithReportInputSchema = z.object({
 });
 export type ChatWithReportInput = z.infer<typeof ChatWithReportInputSchema>;
 
-export const ChatWithReportOutputSchema = z.object({
+const ChatWithReportOutputSchema = z.object({
   aiResponse: z.string().describe("The AI's answer to the user's question."),
 });
 export type ChatWithReportOutput = z.infer<typeof ChatWithReportOutputSchema>;
