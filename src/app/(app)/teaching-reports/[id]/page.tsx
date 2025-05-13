@@ -8,6 +8,7 @@ import type { TeachingAnalysisReport } from "@/types";
 import { fetchTeachingAnalysisFromDatabase } from "../../analyze-teaching/actions";
 import { TeachingReportDisplay } from "./components/teaching-report-display";
 import { TeachingReportActions } from "./components/teaching-report-actions";
+import { AiChatDialog } from "../../reports/components/ai-chat-dialog"; // Re-use component
 import { PodcastGenerator } from "./components/podcast-generator"; // Import PodcastGenerator
 import { format } from 'date-fns';
 
@@ -32,6 +33,21 @@ export default async function TeachingReportPage({ params }: { params: { id: str
     notFound();
   }
   
+  // Construct a context string for AI Chat
+  const aiChatContext = `
+Teaching Submitted:
+${report.teaching}
+
+Recipient for Letter: ${report.recipientNameTitle}
+Desired Tone: ${report.tonePreference}
+${report.additionalNotes ? `Additional User Notes: ${report.additionalNotes}\n` : ''}
+--- Analysis Result ---
+Church History Context: ${report.analysisResult.churchHistoryContext}
+Promoters/Demonstrators: ${report.analysisResult.promotersDemonstrators.map(p => `${p.name}: ${p.description}`).join('; ')}
+Church Council Summary: ${report.analysisResult.churchCouncilSummary}
+Letter of Clarification: ${report.analysisResult.letterOfClarification}
+Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
+
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
       <Card className="w-full shadow-lg print:shadow-none print:border-none">
@@ -73,6 +89,23 @@ export default async function TeachingReportPage({ params }: { params: { id: str
         <PodcastGenerator analysisId={report.id} initialReport={report} />
       )}
 
+      <Card className="mt-8 w-full shadow-lg print:hidden">
+        <CardHeader>
+          <CardTitle>Deeper Examination with AI</CardTitle>
+          <CardDescription>
+            Ask questions about this teaching analysis report.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AiChatDialog
+            reportId={report.id}
+            reportTitle={`Analysis: ${report.teaching.substring(0, 30)}...`}
+            initialContext={aiChatContext}
+            triggerButtonText="Chat About This Teaching Analysis"
+          />
+        </CardContent>
+      </Card>
+
        <div className="mt-8 print:hidden flex flex-wrap gap-2">
           <Button variant="outline" asChild>
             <Link href="/teaching-reports">Back to Teaching Analyses List</Link>
@@ -84,4 +117,3 @@ export default async function TeachingReportPage({ params }: { params: { id: str
     </div>
   );
 }
-

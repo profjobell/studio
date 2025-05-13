@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { fetchReportFromDatabase } from "../../analyze/actions"; // Adjusted import path
 import { CalvinismDeepDiveButton } from "./components/calvinism-deep-dive-button";
+import { AiChatDialog } from "../components/ai-chat-dialog"; // Newly added
 import { ReportActions } from "./components/report-actions";
 import { format } from 'date-fns';
 
@@ -85,6 +86,24 @@ export default async function ReportPage({ params }: { params: { id: string } })
           </CardContent>
         </Card>
       )}
+
+      <Card className="mt-8 w-full shadow-lg print:hidden">
+        <CardHeader>
+          <CardTitle>Deeper Examination with AI</CardTitle>
+          <CardDescription>
+            Ask questions and explore specific aspects of this report using AI assistance.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AiChatDialog
+            reportId={report.id}
+            reportTitle={report.title}
+            initialContext={report.originalContent || JSON.stringify(report, null, 2)} // Fallback to full JSON if originalContent is missing
+            triggerButtonText="Chat About This Report"
+          />
+        </CardContent>
+      </Card>
+
        <div className="mt-8 print:hidden flex flex-wrap gap-2">
           <Button variant="outline" asChild>
             <Link href="/reports">Back to Reports List</Link>
@@ -96,4 +115,3 @@ export default async function ReportPage({ params }: { params: { id: string } })
     </div>
   );
 }
-
