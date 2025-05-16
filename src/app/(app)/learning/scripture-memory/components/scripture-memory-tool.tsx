@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"; // Added for text input
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Lightbulb, CheckCircle2, XCircle, Repeat, BookOpen, Brain, Search } from "lucide-react"; // Added Search
+import { Lightbulb, CheckCircle2, XCircle, Repeat, BookOpen, Brain, Search, ArrowLeft } from "lucide-react"; // Added Search, ArrowLeft
 import { useToast } from "@/hooks/use-toast"; // Added useToast
 
 interface Question {
@@ -190,6 +190,13 @@ export function ScriptureMemoryTool() {
       prepareQuizForSet();
     }
   };
+
+  const handlePreviousVerse = () => {
+    if (currentVerseIndex > 0) {
+      setCurrentVerseIndex(prev => prev - 1);
+      setShowVerseText(false);
+    }
+  };
   
   const prepareQuizForSet = () => {
     if (verseSet.length === 0) return; // Don't start quiz if no verses
@@ -253,16 +260,23 @@ export function ScriptureMemoryTool() {
             <p className="text-lg md:text-xl p-4 bg-muted rounded-md">{verse.text}</p>
           )}
         </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2">
-          <Button onClick={() => setShowVerseText(false)} variant="ghost" disabled={!showVerseText}>
-            Hide Verse
-          </Button>
-           <Button onClick={restartCurrentSet} variant="outline">
-            <Repeat className="mr-2 h-4 w-4"/> Restart This Set
-          </Button>
-          <Button onClick={handleNextVerse} className="bg-primary hover:bg-primary/90">
-            {currentVerseIndex === verseSet.length - 1 ? "Start Quiz" : "Next Verse"}
-          </Button>
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2 pt-4">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button onClick={handlePreviousVerse} variant="outline" disabled={currentVerseIndex === 0}>
+              <ArrowLeft className="mr-2 h-4 w-4"/> Previous
+            </Button>
+            <Button onClick={() => setShowVerseText(false)} variant="ghost" disabled={!showVerseText} className="flex-grow sm:flex-grow-0">
+              Hide Verse
+            </Button>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button onClick={restartCurrentSet} variant="outline" className="flex-grow sm:flex-grow-0">
+              <Repeat className="mr-2 h-4 w-4"/> Restart Set
+            </Button>
+            <Button onClick={handleNextVerse} className="bg-primary hover:bg-primary/90 flex-grow sm:flex-grow-0">
+              {currentVerseIndex === verseSet.length - 1 ? "Start Quiz" : "Next Verse"}
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     );
@@ -284,7 +298,7 @@ export function ScriptureMemoryTool() {
         <CardContent className="space-y-4">
           <p className="text-md font-semibold">{question.questionText}</p>
           {question.type === "fill-in" && (
-            <Input // Changed from <input> to <Input>
+            <Input 
               type="text"
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
@@ -308,7 +322,7 @@ export function ScriptureMemoryTool() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2">
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2 pt-4">
            <Button onClick={restartCurrentSet} variant="outline">
             <Repeat className="mr-2 h-4 w-4"/> Restart This Set
           </Button>
@@ -358,7 +372,7 @@ export function ScriptureMemoryTool() {
             </AlertDescription>
           </Alert>
         </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2">
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2 pt-4">
           <Button onClick={restartCurrentSet} variant="outline">
             <Repeat className="mr-2 h-4 w-4"/> Review Same Set Again
           </Button>
@@ -422,3 +436,4 @@ export function ScriptureMemoryTool() {
     </div>
   );
 }
+
