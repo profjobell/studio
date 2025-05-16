@@ -5,23 +5,35 @@ import { z } from 'zod';
 import { analyzeTeachingAgainstKJV, type AnalyzeTeachingInput, type AnalyzeTeachingOutput } from '@/ai/flows/analyze-teaching-flow';
 import type { TeachingAnalysisReport, PodcastData, AudioRecordingData } from '@/types';
 
-// Schema for form validation before calling AI
-export const TeachingAnalysisFormSchema = z.object({
+// Base schema for the form
+const BaseTeachingAnalysisFormSchema = z.object({
   teaching: z.string().min(20, 'Teaching content must be at least 20 characters.'),
   recipientNameTitle: z.string().min(3, 'Recipient details are required.'),
   tonePreference: z.enum(['gentle', 'firm', 'urgent']),
   outputFormats: z.array(z.enum(['PDF', 'TXT', 'RTF', 'Email', 'Share', 'Print'])).min(1, 'At least one output format must be selected.'),
   userEmail: z.string().email('Invalid email address.').optional().or(z.literal('')),
   additionalNotes: z.string().optional(),
-}).refine(data => {
-  if ((data.outputFormats.includes('Email') || data.outputFormats.includes('Share')) && (!data.userEmail || data.userEmail.trim() === '')) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Email address is required if Email or Share output format is selected.',
-  path: ['userEmail'],
 });
+
+// Infer type from the base schema
+type BaseTeachingAnalysisFormData = z.infer<typeof BaseTeachingAnalysisFormSchema>;
+
+// Refinement function
+const teachingAnalysisRefinement = (data: BaseTeachingAnalysisFormData): boolean => {
+  if ((data.outputFormats.includes('Email') || data.outputFormats.includes('Share')) && (!data.userEmail || data.userEmail.trim() === '')) {
+    return false; // Validation fails, refine message will be triggered
+  }
+  return true; // Validation passes
+};
+
+// Final schema with refinement
+export const TeachingAnalysisFormSchema = BaseTeachingAnalysisFormSchema.refine(
+  teachingAnalysisRefinement,
+  {
+    message: 'Email address is required if Email or Share output format is selected.',
+    path: ['userEmail'], // Path to field where error message should appear
+  }
+);
 
 
 // Temporary in-memory store for teaching_analyses
@@ -161,7 +173,7 @@ export async function deleteTeachingAnalysisAction(id: string): Promise<{ succes
   return { success: false, message: `Teaching analysis ${id} not found.` };
 }
 
-export function generateTxtOutput(report: TeachingAnalysisReport): string {
+export async function generateTxtOutput(report: TeachingAnalysisReport): Promise<string> {
   const { teaching, recipientNameTitle, analysisResult, createdAt } = report;
   let output = `KJV Sentinel - Teaching Analysis Report\n`;
   output += `Generated: ${createdAt.toLocaleString()}\n\n`;

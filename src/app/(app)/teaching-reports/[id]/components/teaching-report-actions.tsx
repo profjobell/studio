@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -17,8 +18,8 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
     }
   };
 
-  const handleDownloadTxt = () => {
-    const txtContent = generateTxtOutput(report);
+  const handleDownloadTxt = async () => {
+    const txtContent = await generateTxtOutput(report);
     const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
