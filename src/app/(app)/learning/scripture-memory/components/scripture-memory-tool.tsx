@@ -5,9 +5,11 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input"; // Added for text input
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Lightbulb, CheckCircle2, XCircle, Repeat, BookOpen, Brain } from "lucide-react";
+import { Lightbulb, CheckCircle2, XCircle, Repeat, BookOpen, Brain, Search } from "lucide-react"; // Added Search
+import { useToast } from "@/hooks/use-toast"; // Added useToast
 
 interface Question {
   id: string;
@@ -113,11 +115,13 @@ const MEMORIZATION_SUGGESTIONS = [
   "Pray the verse.",
 ];
 
-const VERSES_PER_SET = 7; // As per "21 at a time", "questions in groups of seven" -> implies sets of 7.
-                         // For demo, our themes have fewer. Max 21 total for a session.
+const VERSES_PER_SET = 7; 
 
 export function ScriptureMemoryTool() {
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
+  const [themeInput, setThemeInput] = useState(""); // State for text input
+  const { toast } = useToast(); // Toast for notifications
+
   const [verseSet, setVerseSet] = useState<ScriptureItem[]>([]);
   const [currentVerseIndex, setCurrentVerseIndex] = useState(0);
   const [showVerseText, setShowVerseText] = useState(false);
@@ -133,18 +137,19 @@ export function ScriptureMemoryTool() {
 
   useEffect(() => {
     if (selectedTheme) {
-      // Select up to 21 verses for the session, grouped into sets of VERSES_PER_SET (e.g. 7)
       const allScriptures = selectedTheme.scriptures;
-      const sessionScriptures = allScriptures.slice(0, 21); // Max 21 per session
-      setVerseSet(sessionScriptures);
+      const sessionScriptures = allScriptures.slice(0, 21); 
+      setVerseSet(sessionScriptures); // Set verseSet here
       startReviewPhase(sessionScriptures);
     } else {
-      setVerseSet([]);
+      setVerseSet([]); // Clear verseSet if no theme is selected
+      setMode("review"); // Default to review mode (which will show theme selection)
     }
   }, [selectedTheme]);
 
   const startReviewPhase = (scriptures: ScriptureItem[]) => {
     setMode("review");
+    setVerseSet(scriptures); // Ensure verseSet is correctly populated for review
     setCurrentVerseIndex(0);
     setShowVerseText(false);
     setQuizQuestions([]);
@@ -156,21 +161,40 @@ export function ScriptureMemoryTool() {
     setSelectedThemeId(themeId);
   };
 
+  const handleThemeTextSearch = () => {
+    if (!themeInput.trim()) return;
+    const searchTerm = themeInput.trim().toLowerCase();
+    const foundTheme = KJV_THEMES_DATA.find(
+      (theme) =>
+        theme.name.toLowerCase().includes(searchTerm) ||
+        theme.description.toLowerCase().includes(searchTerm) ||
+        theme.id.toLowerCase() === searchTerm
+    );
+    if (foundTheme) {
+      setSelectedThemeId(foundTheme.id);
+      setThemeInput(""); // Clear input after successful search
+    } else {
+      toast({
+        title: "Theme Not Found",
+        description: "The entered theme was not found in the predefined list. Full KJV search by keyword is a future enhancement.",
+        variant: "default",
+      });
+    }
+  };
+
   const handleNextVerse = () => {
     if (currentVerseIndex < verseSet.length - 1) {
       setCurrentVerseIndex(prev => prev + 1);
       setShowVerseText(false);
     } else {
-      // All verses in the set reviewed, start quiz for this set
       prepareQuizForSet();
     }
   };
   
   const prepareQuizForSet = () => {
-    // For now, quiz on all verses reviewed in the current set
+    if (verseSet.length === 0) return; // Don't start quiz if no verses
     const questionsForQuiz = verseSet.flatMap(scripture => scripture.questions.map(q => ({...q, relatedVerseRef: scripture.reference})));
-    // Shuffle questions for variety (optional, simple for now)
-    setQuizQuestions(questionsForQuiz.slice(0, Math.min(questionsForQuiz.length, VERSES_PER_SET * 3))); // Limit questions for demo
+    setQuizQuestions(questionsForQuiz.slice(0, Math.min(questionsForQuiz.length, VERSES_PER_SET * 3))); 
     setCurrentQuestionIndex(0);
     setUserAnswer("");
     setAnswersFeedback([]);
@@ -199,23 +223,24 @@ export function ScriptureMemoryTool() {
     }
   };
   
-  const handleRestartSet = () => {
+  const restartCurrentSet = () => {
       if(verseSet.length > 0) {
         startReviewPhase(verseSet);
       } else if (selectedTheme) {
+        // This case handles if verseSet became empty but a theme was still logically selected
         startReviewPhase(selectedTheme.scriptures.slice(0,21));
       }
   };
 
   const renderReviewMode = () => {
-    if (!verseSet.length) return <p className="text-muted-foreground">Select a theme to begin.</p>;
+    if (!verseSet.length || !selectedTheme) return null; // Don't render if no verse set
     const verse = verseSet[currentVerseIndex];
     return (
       <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" />
-            Review Verse: {verse.reference}
+            Review Verse: {verse.reference} ({currentVerseIndex + 1}/{verseSet.length})
           </CardTitle>
           <Progress value={((currentVerseIndex + 1) / verseSet.length) * 100} className="mt-2" />
         </CardHeader>
@@ -228,9 +253,12 @@ export function ScriptureMemoryTool() {
             <p className="text-lg md:text-xl p-4 bg-muted rounded-md">{verse.text}</p>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2">
           <Button onClick={() => setShowVerseText(false)} variant="ghost" disabled={!showVerseText}>
             Hide Verse
+          </Button>
+           <Button onClick={restartCurrentSet} variant="outline">
+            <Repeat className="mr-2 h-4 w-4"/> Restart This Set
           </Button>
           <Button onClick={handleNextVerse} className="bg-primary hover:bg-primary/90">
             {currentVerseIndex === verseSet.length - 1 ? "Start Quiz" : "Next Verse"}
@@ -241,7 +269,7 @@ export function ScriptureMemoryTool() {
   };
 
   const renderQuizMode = () => {
-    if (!quizQuestions.length) return <p>No questions available for this set.</p>;
+    if (!quizQuestions.length || !selectedTheme) return null; // Don't render if no questions or theme
     const question = quizQuestions[currentQuestionIndex];
     return (
       <Card className="shadow-md">
@@ -256,12 +284,13 @@ export function ScriptureMemoryTool() {
         <CardContent className="space-y-4">
           <p className="text-md font-semibold">{question.questionText}</p>
           {question.type === "fill-in" && (
-            <input
+            <Input // Changed from <input> to <Input>
               type="text"
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
               className="w-full p-2 border rounded-md bg-background"
               placeholder="Your answer..."
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAnswerSubmit(); }}
             />
           )}
           {question.type === "multiple-choice" && question.options && (
@@ -279,7 +308,10 @@ export function ScriptureMemoryTool() {
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2">
+           <Button onClick={restartCurrentSet} variant="outline">
+            <Repeat className="mr-2 h-4 w-4"/> Restart This Set
+          </Button>
           <Button onClick={handleAnswerSubmit} disabled={!userAnswer.trim()} className="bg-primary hover:bg-primary/90">
             {currentQuestionIndex === quizQuestions.length - 1 ? "Show Results" : "Next Question"}
           </Button>
@@ -289,6 +321,7 @@ export function ScriptureMemoryTool() {
   };
 
   const renderResultsMode = () => {
+     if (!selectedTheme) return null; // Don't render if no theme context for results
     return (
       <Card className="shadow-md">
         <CardHeader>
@@ -325,8 +358,8 @@ export function ScriptureMemoryTool() {
             </AlertDescription>
           </Alert>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button onClick={handleRestartSet} variant="outline">
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-2">
+          <Button onClick={restartCurrentSet} variant="outline">
             <Repeat className="mr-2 h-4 w-4"/> Review Same Set Again
           </Button>
           <Button onClick={() => setSelectedThemeId(null)} className="bg-primary hover:bg-primary/90">
@@ -340,24 +373,52 @@ export function ScriptureMemoryTool() {
   return (
     <div className="space-y-6">
       {!selectedThemeId && (
-        <div className="space-y-2">
-          <label htmlFor="theme-select" className="block text-sm font-medium text-foreground">Select a Theme:</label>
-          <Select onValueChange={handleThemeChange}>
-            <SelectTrigger id="theme-select" className="w-full">
-              <SelectValue placeholder="Choose a theme..." />
-            </SelectTrigger>
-            <SelectContent>
-              {KJV_THEMES_DATA.map(theme => (
-                <SelectItem key={theme.id} value={theme.id}>{theme.name} - <span className="text-xs text-muted-foreground">{theme.description}</span></SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Card className="shadow-md p-6">
+          <CardTitle className="mb-4 text-xl">Select a Theme to Begin</CardTitle>
+          <div className="space-y-2 mb-4">
+            <label htmlFor="theme-select" className="block text-sm font-medium text-foreground">Choose from list:</label>
+            <Select onValueChange={handleThemeChange} value={selectedThemeId || undefined}>
+              <SelectTrigger id="theme-select" className="w-full">
+                <SelectValue placeholder="Choose a predefined theme..." />
+              </SelectTrigger>
+              <SelectContent>
+                {KJV_THEMES_DATA.map(theme => (
+                  <SelectItem key={theme.id} value={theme.id}>{theme.name} - <span className="text-xs text-muted-foreground">{theme.description}</span></SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+           <div className="space-y-2">
+             <label htmlFor="theme-text-input" className="block text-sm font-medium text-foreground">Or search theme by keyword:</label>
+            <div className="flex gap-2">
+              <Input 
+                id="theme-text-input"
+                placeholder="e.g., Creation, Sin..." 
+                value={themeInput} 
+                onChange={(e) => setThemeInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleThemeTextSearch(); }}
+                className="flex-grow"
+              />
+              <Button onClick={handleThemeTextSearch} variant="outline">
+                <Search className="mr-2 h-4 w-4"/> Search
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Note: Text search currently looks through predefined themes. Full KJV keyword search is a future enhancement.</p>
+          </div>
+        </Card>
       )}
 
       {selectedThemeId && mode === "review" && renderReviewMode()}
       {selectedThemeId && mode === "quiz" && renderQuizMode()}
       {selectedThemeId && mode === "results" && renderResultsMode()}
+
+      {selectedThemeId && (
+         <div className="mt-4 text-center">
+            <Button variant="link" onClick={() => setSelectedThemeId(null)}>
+              Back to Theme Selection
+            </Button>
+        </div>
+      )}
     </div>
   );
 }
