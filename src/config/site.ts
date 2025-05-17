@@ -1,6 +1,6 @@
 
 import type { NavItem, SidebarNavItem } from "@/types";
-import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info } from 'lucide-react'; // Added Info icon
+import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info, ShieldAlert } from 'lucide-react'; // Added ShieldAlert
 
 export type SiteConfig = {
   name: string;
@@ -55,6 +55,11 @@ export const siteConfig: SiteConfig = {
       title: "Isms Explained",
       href: "/isms-explained",
       icon: Info,
+    },
+    {
+      title: "Heresies in History",
+      href: "/heresies-history",
+      icon: ShieldAlert,
     },
     {
       title: "Library",
@@ -123,6 +128,12 @@ export const siteConfig: SiteConfig = {
           description: "Examine 'isms', heresies, and philosophies.",
         },
         {
+          title: "Heresies in History",
+          href: "/heresies-history",
+          icon: ShieldAlert,
+          description: "Overview of major historical heresies.",
+        },
+        {
           title: "Glossary",
           href: "/glossary",
           icon: BookOpen,
@@ -160,3 +171,4 @@ export const siteConfig: SiteConfig = {
     },
   ],
 };
+
