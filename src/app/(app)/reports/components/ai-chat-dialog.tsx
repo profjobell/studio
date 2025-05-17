@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { BrainCircuit, Loader2, Send, User, Bot } from "lucide-react";
+import { BrainCircuit, Loader2, Send, User, Bot, MessageCircleMore } from "lucide-react";
 // Import ChatMessageHistory type for consistency
 import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-internet-kjv-flow"; // Or from chat-with-report-flow
 
@@ -66,20 +66,10 @@ export function AiChatDialog({
     scrollToBottom();
   }, [chatMessages]);
 
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
-
-    const userMessage: ClientChatMessage = { id: `${Date.now()}-user`, sender: "user", text: inputValue };
-    const newChatMessages = [...chatMessages, userMessage];
-    setChatMessages(newChatMessages);
-    const currentQuestion = inputValue;
-    setInputValue("");
-
+  const sendMessage = async (messageText: string, currentMessages: ClientChatMessage[]) => {
     // Convert client chat messages to Genkit-compatible history
-    const historyForGenkit: GenkitChatMessage[] = newChatMessages
-      .slice(0, -1) // Exclude the current user message, it's passed as `currentQuestion`
+    // Pass all *previous* messages as history
+    const historyForGenkit: GenkitChatMessage[] = currentMessages
       .map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'model',
         parts: [{ text: msg.text }],
@@ -87,7 +77,7 @@ export function AiChatDialog({
 
     startTransition(async () => {
       try {
-        const result = await onSendMessageAction(currentQuestion, initialContextOrPrompt, historyForGenkit);
+        const result = await onSendMessageAction(messageText, initialContextOrPrompt, historyForGenkit);
 
         if (result && "error" in result) {
           toast({
@@ -127,6 +117,33 @@ export function AiChatDialog({
     });
   };
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!inputValue.trim() || isLoading) return;
+
+    const userMessage: ClientChatMessage = { id: `${Date.now()}-user`, sender: "user", text: inputValue };
+    const newChatMessages = [...chatMessages, userMessage];
+    setChatMessages(newChatMessages);
+    const currentQuestion = inputValue;
+    setInputValue("");
+
+    await sendMessage(currentQuestion, newChatMessages);
+  };
+  
+  const handleDigDeeper = (aiMessageText: string) => {
+    const deeperUserMessage: ClientChatMessage = { 
+      id: `${Date.now()}-user-deeper`, 
+      sender: "user", 
+      text: `Regarding your statement: "${aiMessageText.substring(0, 50)}...", could you please elaborate further or provide more details?` 
+    };
+    const newChatMessages = [...chatMessages, deeperUserMessage];
+    setChatMessages(newChatMessages);
+    
+    // The new user message is now the last one in newChatMessages
+    sendMessage(deeperUserMessage.text, newChatMessages);
+  };
+
+
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open) {
@@ -138,11 +155,6 @@ export function AiChatDialog({
             }]);
         }
     }
-    // if (!open) {
-        // Optionally reset chat when dialog is closed
-        // setChatMessages([]); 
-        // setInputValue("");
-    // }
   }
 
   return (
@@ -166,45 +178,64 @@ export function AiChatDialog({
         
         <ScrollArea className="flex-1 overflow-y-auto p-6" ref={scrollAreaRef}>
           <div className="space-y-4">
-            {chatMessages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex items-start gap-3 ${
-                  message.sender === "user" ? "justify-end" : ""
-                }`}
-              >
-                {message.sender === "ai" && (
-                  <span className="flex-shrink-0 p-2 bg-primary/10 rounded-full">
-                    <Bot className="h-5 w-5 text-primary" />
-                  </span>
-                )}
+            {chatMessages.map((message) => {
+              const isErrorResponse = message.text.toLowerCase().startsWith("error:") || 
+                                      message.text.toLowerCase().startsWith("sorry, i could not generate a response") ||
+                                      message.text.toLowerCase().startsWith("failed to get response:");
+              const showDigDeeper = message.sender === "ai" && message.id !== 'initial-greeting' && !isErrorResponse;
+
+              return (
                 <div
-                  className={`p-3 rounded-lg max-w-[75%] prose prose-sm dark:prose-invert ${
-                    message.sender === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
+                  key={message.id}
+                  className={`flex items-start gap-3 ${
+                    message.sender === "user" ? "justify-end" : ""
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                  {message.sources && message.sources.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-muted-foreground/20">
-                      <p className="text-xs font-semibold">Sources Consulted (Placeholder/Simulated):</p>
-                      <ul className="list-disc list-inside text-xs">
-                        {message.sources.map((source, idx) => (
-                          <li key={idx}><a href={source} target="_blank" rel="noopener noreferrer" className="hover:underline">{source}</a></li>
-                        ))}
-                      </ul>
-                    </div>
+                  {message.sender === "ai" && (
+                    <span className="flex-shrink-0 p-2 bg-primary/10 rounded-full">
+                      <Bot className="h-5 w-5 text-primary" />
+                    </span>
+                  )}
+                  <div
+                    className={`p-3 rounded-lg max-w-[75%] prose prose-sm dark:prose-invert ${
+                      message.sender === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                    {message.sources && message.sources.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-muted-foreground/20">
+                        <p className="text-xs font-semibold">Sources Consulted (Placeholder/Simulated):</p>
+                        <ul className="list-disc list-inside text-xs">
+                          {message.sources.map((source, idx) => (
+                            <li key={idx}><a href={source} target="_blank" rel="noopener noreferrer" className="hover:underline">{source}</a></li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {showDigDeeper && (
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        className="text-xs p-0 h-auto mt-2 text-primary/80 hover:text-primary"
+                        onClick={() => handleDigDeeper(message.text)}
+                        disabled={isLoading}
+                      >
+                        <MessageCircleMore className="mr-1 h-3 w-3" />
+                        Dig Deeper
+                      </Button>
+                    )}
+                  </div>
+                  {message.sender === "user" && (
+                   <span className="flex-shrink-0 p-2 bg-accent rounded-full">
+                      <User className="h-5 w-5 text-accent-foreground" />
+                    </span>
                   )}
                 </div>
-                {message.sender === "user" && (
-                 <span className="flex-shrink-0 p-2 bg-accent rounded-full">
-                    <User className="h-5 w-5 text-accent-foreground" />
-                  </span>
-                )}
-              </div>
-            ))}
-             {isLoading && (
+              );
+            })}
+             {isLoading && chatMessages.length > 0 && chatMessages[chatMessages.length -1].sender === 'user' && ( // Show loader only if last message was user
               <div className="flex items-center gap-3">
                  <span className="flex-shrink-0 p-2 bg-primary/10 rounded-full">
                     <Bot className="h-5 w-5 text-primary" />
