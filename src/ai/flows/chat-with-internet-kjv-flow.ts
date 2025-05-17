@@ -27,6 +27,7 @@ const performWebSearch = ai.defineTool(
   async (input) => {
     // Placeholder for actual web search implementation
     console.log(`Placeholder web search for: ${input.query}`);
+    // Removed specific mocked examples.
     const summary = `Placeholder search results for "${input.query}". In a live implementation, relevant information would be retrieved from the web here. This information must be carefully interpreted through KJV 1611 principles.`;
     const sources: string[] = [`https://placeholder.example.com/search?q=${encodeURIComponent(input.query)}`];
     return { summary, sources };
@@ -98,7 +99,7 @@ Instructions:
 You MUST NOT invent information. If a definitive KJV-based answer cannot be provided, or if search results are inconclusive or contrary to KJV, state that clearly.
 Your goal is to edify and equip the user with KJV-based understanding.
 
-IMPORTANT: You MUST provide your response in a valid JSON format that strictly adheres to the defined output schema. The main response text must be in the 'aiResponse' field. If you use sources, list them in the 'sourcesCited' field (which should be an array of strings, or omitted if no sources are cited). Even if you cannot find specific information or an error occurs internally, you must still formulate a response within the 'aiResponse' field explaining the situation (e.g., "I could not find specific information on that topic based on KJV 1611 principles and available search tools." or "An unexpected issue occurred."). Ensure 'aiResponse' is always a string.
+IMPORTANT: You MUST provide your response in a valid JSON format that strictly adheres to the defined output schema. The main response text must be in the 'aiResponse' field. If you use sources, list them in the 'sourcesCited' field (which should be an array of strings, or omitted if no sources are cited). Even if you cannot find specific information or an error occurs internally, you must still formulate a response within the 'aiResponse' field explaining the situation (e.g., "I could not find specific information on that topic based on KJV 1611 principles and available search tools." or "An unexpected issue occurred."). Ensure 'aiResponse' is always a string. Ensure that any string values within the JSON, especially for \`aiResponse\`, correctly escape special characters like quotes (\`\\"\`) and newlines (\`\\\\n\`) so the entire output is a valid JSON string.
 `,
 });
 
@@ -114,7 +115,6 @@ const chatWithInternetKJVFlow = ai.defineFlow(
     
     if (!resultOutput) {
       console.error("Genkit prompt returned no output. Raw response from prompt call:", response);
-      // Return a valid object adhering to ChatWithInternetKJVOutputSchema in case of null/undefined output
       return {
         aiResponse: "I'm sorry, but I encountered an issue and couldn't generate a response. Please try rephrasing your question or try again later.",
       };

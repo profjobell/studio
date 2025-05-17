@@ -47,6 +47,11 @@ const prompt = ai.definePrompt({
 Do not use any external knowledge or make assumptions beyond what is in the context.
 If the answer to the question cannot be found within the "Report Context", clearly state that the information is not available in the provided text.
 
+You MUST provide your response in a valid JSON format that strictly adheres to the defined output schema: { "aiResponse": "Your answer here" }.
+The main response text must be in the 'aiResponse' field.
+Even if you cannot find specific information or an error occurs internally, you must still formulate a response within the 'aiResponse' field explaining the situation.
+Ensure 'aiResponse' is always a string and any special characters (like quotes or newlines) within it are handled or escaped properly using standard JSON string escaping (e.g., \\" for quotes, \\\\n for newlines) to ensure the overall output is valid JSON.
+
 {{#if chatHistory}}
 Conversation History:
 {{#each chatHistory}}
@@ -62,7 +67,7 @@ Report Context:
 
 User Question: {{{userQuestion}}}
 
-Answer:`,
+Your JSON Response:`,
 });
 
 const chatWithReportFlow = ai.defineFlow(
@@ -74,9 +79,10 @@ const chatWithReportFlow = ai.defineFlow(
   async (input) => {
     const {output} = await prompt(input);
     if (!output) {
-      // throw new Error('AI failed to generate a response.');
+      // Return a valid object adhering to ChatWithReportOutputSchema in case of null/undefined output
       return { aiResponse: "I'm sorry, but I encountered an issue and couldn't generate a response based on the report." };
     }
     return output;
   }
 );
+
