@@ -25,17 +25,16 @@ async function callChatWithInternetKJVFlow(
   }
 }
 
-// This is the Server Action that will be passed to AiChatDialog from IsmsExplainedPage
+// This is the Server Action that will be passed to AiChatDialog from IsmsExplainedPage and HeresiesHistoryPage
 export async function generalIsmChatAction(
   userQuestion: string,
   _contextFromDialog: string, // This context is typically the initialContextOrPrompt from AiChatDialog
   chatHistory?: ChatMessageHistory[] // Added chatHistory parameter
 ): Promise<ChatWithInternetKJVOutput | { error: string }> {
-  // For the general 'isms' chat, we'll use a fixed topicContext.
-  // _contextFromDialog could be used if we wanted the AI to consider the dialog's initial prompt as part of its context more directly.
+  // Use the context passed from the dialog (which can be the list of heresies or a general ism context)
   return callChatWithInternetKJVFlow({ 
     userQuestion, 
-    topicContext: "General Isms Discussion", // Or use _contextFromDialog if it's more specific
+    topicContext: _contextFromDialog, // Pass the specific context from the page
     chatHistory 
   });
 }
