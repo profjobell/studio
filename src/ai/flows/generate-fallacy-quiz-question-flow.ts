@@ -10,14 +10,14 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GenerateFallacyQuizQuestionInputSchema = z.object({
+const GenerateFallacyQuizQuestionInputSchema = z.object({
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional().default('intermediate').describe("The difficulty level for the quiz question."),
   // Optionally, you could add a list of fallacy types to focus on in the future.
   // specificFallacy: z.string().optional().describe("If provided, generate a question specifically about this fallacy or one that uses it as a distractor.")
 });
 export type GenerateFallacyQuizQuestionInput = z.infer<typeof GenerateFallacyQuizQuestionInputSchema>;
 
-export const FallacyQuizQuestionSchema = z.object({
+const FallacyQuizQuestionSchema = z.object({
   questionText: z.string().describe("A scenario, argument, or statement that may or may not contain a fallacy."),
   options: z.array(z.object({
     id: z.string().describe("A unique ID for the option, e.g., 'A', 'B', 'C', 'D'."),

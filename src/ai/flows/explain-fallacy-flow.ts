@@ -10,12 +10,12 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const ExplainFallacyInputSchema = z.object({
+const ExplainFallacyInputSchema = z.object({
   fallacyName: z.string().optional().describe("The specific fallacy to explain. If empty, provide a general introduction to fallacies or a random common fallacy."),
 });
 export type ExplainFallacyInput = z.infer<typeof ExplainFallacyInputSchema>;
 
-export const ExplainFallacyOutputSchema = z.object({
+const ExplainFallacyOutputSchema = z.object({
   fallacyName: z.string().describe("The name of the fallacy explained (or 'General Introduction')."),
   explanation: z.string().describe("A detailed explanation of the fallacy: what it is, common characteristics."),
   examples: z.array(z.string()).describe("Clear examples of the fallacy in use."),
