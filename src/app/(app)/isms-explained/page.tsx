@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Download, Printer, Share2, BrainCircuit, Info, ExternalLink, List, Home } from "lucide-react";
-import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog"; // Re-using for AI chat
-import { IsmTopicViewer } from "./components/ism-topic-viewer"; // Placeholder component
+import { BrainCircuit, Info, Home } from "lucide-react"; // Removed unused icons
+import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog";
+// import { IsmTopicViewer } from "./components/ism-topic-viewer"; // Now handled by client component or future setup
+import { IsmTopicListClient } from "./components/ism-topic-list-client"; // New client component
 
 export const metadata = {
   title: "The 'ISMS' Exposed, Examined & Explained - KJV Sentinel",
@@ -24,6 +25,8 @@ const ismTopics = [
 export default function IsmsExplainedPage() {
   // For AI Chat Context - could be dynamically set based on selected 'ism' in future
   const generalIsmContext = "This section discusses various theological 'isms', heresies, and anti-Christ philosophies. Please provide KJV 1611 based insights related to user questions about these topics.";
+
+  // const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null); // State for IsmTopicViewer, move to client if needed
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
@@ -51,28 +54,18 @@ export default function IsmsExplainedPage() {
             Select a topic below to learn more. Each topic will eventually feature detailed explanations, multimedia resources, download options, and an AI assistant for deeper KJV-based insights.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {ismTopics.map((topic) => (
-              <Card key={topic.id} className="hover:shadow-xl transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-xl">{topic.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4 h-16 overflow-hidden">{topic.brief}</p>
-                   {/* In a full implementation, this button would set the selected topic for IsmTopicViewer */}
-                  <Button variant="outline" className="w-full" onClick={() => alert(`Placeholder: View details for ${topic.name}. Full content viewer coming soon.`)}>
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Examine Topic
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <IsmTopicListClient topics={ismTopics} />
+          
         </CardContent>
       </Card>
 
-      {/* Placeholder for where the selected IsmTopicViewer would render */}
-      {/* <IsmTopicViewer selectedTopicId={null} /> */}
+      {/* 
+        The IsmTopicViewer would likely be conditionally rendered based on a selection
+        made within IsmTopicListClient or similar mechanism.
+        For now, it's commented out from the server component.
+      */}
+      {/* <IsmTopicViewer selectedTopicId={selectedTopicId} /> */}
+      
       <Card className="mt-8 shadow-lg">
         <CardHeader>
             <CardTitle className="flex items-center">
