@@ -92,6 +92,8 @@ Instructions:
 
 You MUST NOT invent information. If a definitive KJV-based answer cannot be provided, or if search results are inconclusive or contrary to KJV, state that clearly.
 Your goal is to edify and equip the user with KJV-based understanding.
+
+IMPORTANT: You MUST provide your response in a valid JSON format that strictly adheres to the defined output schema. The main response text must be in the 'aiResponse' field. If you use sources, list them in the 'sourcesCited' field (which should be an array of strings, or omitted if no sources are cited). Even if you cannot find specific information or an error occurs internally, you must still formulate a response within the 'aiResponse' field explaining the situation (e.g., "I could not find specific information on that topic based on KJV 1611 principles and available search tools." or "An unexpected issue occurred."). Ensure 'aiResponse' is always a string.
 `,
 });
 
@@ -102,11 +104,18 @@ const chatWithInternetKJVFlow = ai.defineFlow(
     outputSchema: ChatWithInternetKJVOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('AI failed to generate a response for KJV internet chat.');
+    const response = await prompt(input);
+    const resultOutput = response.output;
+    
+    if (!resultOutput) {
+      console.error("Genkit prompt returned no output. Raw response from prompt call:", response);
+      // Construct a valid default error object if the model truly fails to produce anything matching the schema
+      return {
+        aiResponse: "I'm sorry, but I encountered an issue and couldn't generate a response. Please try rephrasing your question or try again later.",
+        // sourcesCited will be implicitly undefined, which is fine as it's optional
+      };
     }
-    return output;
+    return resultOutput;
   }
 );
 
