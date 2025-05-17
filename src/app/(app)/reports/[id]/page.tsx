@@ -1,5 +1,4 @@
 
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -7,14 +6,12 @@ import { ReportDisplay } from "../components/report-display";
 import type { AnalysisReport } from "@/types";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { fetchReportFromDatabase } from "../../analyze/actions"; // Adjusted import path
+import { fetchReportFromDatabase, chatWithReportAction } from "../../analyze/actions"; 
 import { CalvinismDeepDiveButton } from "./components/calvinism-deep-dive-button";
-import { AiChatDialog } from "../components/ai-chat-dialog"; // Newly added
+import { AiChatDialog } from "../components/ai-chat-dialog"; 
 import { ReportActions } from "./components/report-actions";
 import { format } from 'date-fns';
 
-
-// Metadata can be generated dynamically based on the report
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const report = await fetchReportFromDatabase(params.id);
   if (!report) {
@@ -37,6 +34,11 @@ export default async function ReportPage({ params }: { params: { id: string } })
     notFound();
   }
   
+  // Wrapper for the AiChatDialog's onSendMessageAction prop
+  const handleReportChatSendMessage = async (userQuestion: string, reportContext: string) => {
+    return chatWithReportAction({ reportContext, userQuestion });
+  };
+
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
       <Card className="w-full shadow-lg print:shadow-none print:border-none">
@@ -46,6 +48,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
               <CardTitle className="text-2xl md:text-3xl">{report.title}</CardTitle>
               <CardDescription>
                 Generated on: {format(new Date(report.createdAt), 'MM/dd/yyyy')} | Type: <span className="capitalize">{report.analysisType.replace(/_/g, " ")}</span>
+                 {report.fileName && <span className="block text-xs italic">File: {report.fileName}</span>}
               </CardDescription>
             </div>
             <ReportActions />
@@ -96,10 +99,11 @@ export default async function ReportPage({ params }: { params: { id: string } })
         </CardHeader>
         <CardContent>
           <AiChatDialog
-            reportId={report.id}
-            reportTitle={report.title}
-            initialContext={report.originalContent || JSON.stringify(report, null, 2)} // Fallback to full JSON if originalContent is missing
+            reportIdOrContextKey={report.id}
+            dialogTitle={report.title}
+            initialContextOrPrompt={report.originalContent || JSON.stringify(report, null, 2)}
             triggerButtonText="Chat About This Report"
+            onSendMessageAction={handleReportChatSendMessage}
           />
         </CardContent>
       </Card>
@@ -115,3 +119,5 @@ export default async function ReportPage({ params }: { params: { id: string } })
     </div>
   );
 }
+
+    

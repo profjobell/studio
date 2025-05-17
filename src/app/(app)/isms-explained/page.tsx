@@ -2,31 +2,35 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BrainCircuit, Info, Home } from "lucide-react"; // Removed unused icons
+import { BrainCircuit, Info, Home } from "lucide-react";
 import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog";
-// import { IsmTopicViewer } from "./components/ism-topic-viewer"; // Now handled by client component or future setup
-import { IsmTopicListClient } from "./components/ism-topic-list-client"; // New client component
+import { IsmTopicListClient } from "./components/ism-topic-list-client";
+import { getIsmExplanationChatAction } from "./actions"; // New server action
 
 export const metadata = {
   title: "The 'ISMS' Exposed, Examined & Explained - KJV Sentinel",
   description: "In-depth examination of various 'isms', heresies, and anti-Christ philosophies through the lens of the KJV 1611 Bible.",
 };
 
-// Placeholder data for "isms" - in a real app, this would come from a database or content management system
 const ismTopics = [
   { id: "arianism", name: "Arianism", brief: "A 4th-century Christological heresy denying the full divinity of Jesus Christ." },
   { id: "gnosticism", name: "Gnosticism", brief: "A collection of ancient religious ideas and systems which taught that the material world was created by an evil demiurge." },
   { id: "marcionism", name: "Marcionism", brief: "An Early Christian dualist belief system that originated from the teachings of Marcion of Sinope in Rome around the year 144." },
   { id: "pelagianism", name: "Pelagianism", brief: "A theological theory named after Pelagius, it denied original sin and affirmed humanity's inherent ability to fulfill God's commands without divine grace." },
   { id: "calvinism-overview", name: "Calvinism (Overview)", brief: "A major branch of Protestantism that follows the theological tradition and forms of Christian practice set down by John Calvin and other Reformation-era theologians." },
-  // Add more "isms" here as content is developed
 ];
 
 export default function IsmsExplainedPage() {
-  // For AI Chat Context - could be dynamically set based on selected 'ism' in future
-  const generalIsmContext = "This section discusses various theological 'isms', heresies, and anti-Christ philosophies. Please provide KJV 1611 based insights related to user questions about these topics.";
+  // The 'topicContext' for the AI chat action will be passed by AiChatDialog based on its 'initialContextOrPrompt' prop.
+  // Here, 'initialContextOrPrompt' will define the general scope of the chat.
+  const generalIsmContextForDialog = "General discussion about theological 'isms', heresies, and anti-Christ philosophies";
 
-  // const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null); // State for IsmTopicViewer, move to client if needed
+  const handleIsmChatSendMessage = async (userQuestion: string, topicContextFromDialog: string) => {
+    // topicContextFromDialog will be generalIsmContextForDialog here.
+    // The specific 'ism' context, if any (e.g., from IsmTopicViewer), would need to be part of the userQuestion or handled differently.
+    // For this general chat, topicContext in the action's input can be the dialog's title or a generic "General Isms".
+    return getIsmExplanationChatAction({ userQuestion, topicContext: "General Isms Discussion" });
+  };
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
@@ -58,13 +62,6 @@ export default function IsmsExplainedPage() {
           
         </CardContent>
       </Card>
-
-      {/* 
-        The IsmTopicViewer would likely be conditionally rendered based on a selection
-        made within IsmTopicListClient or similar mechanism.
-        For now, it's commented out from the server component.
-      */}
-      {/* <IsmTopicViewer selectedTopicId={selectedTopicId} /> */}
       
       <Card className="mt-8 shadow-lg">
         <CardHeader>
@@ -73,15 +70,16 @@ export default function IsmsExplainedPage() {
                 AI-Powered KJV Insight
             </CardTitle>
             <CardDescription>
-                Have general questions about &apos;isms&apos; or specific doctrines? Use our AI assistant for KJV 1611 based insights. For topic-specific AI chat, please select a topic above first (once fully implemented).
+                Have general questions about &apos;isms&apos; or specific doctrines? Use our AI assistant for KJV 1611 based insights.
             </CardDescription>
         </CardHeader>
         <CardContent>
             <AiChatDialog
-                reportId="general-isms-chat" // Generic ID for this context
-                reportTitle="General Isms Discussion"
-                initialContext={generalIsmContext}
+                reportIdOrContextKey="general-isms-chat"
+                dialogTitle="General Isms Discussion"
+                initialContextOrPrompt={generalIsmContextForDialog}
                 triggerButtonText="Ask AI About Isms (KJV Lens)"
+                onSendMessageAction={handleIsmChatSendMessage}
             />
         </CardContent>
       </Card>
@@ -94,3 +92,5 @@ export default function IsmsExplainedPage() {
     </div>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useTransition } from "react";
@@ -15,27 +16,32 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Loader2, Send, User, Bot } from "lucide-react";
-import { chatWithReportAction } from "../actions"; 
-import type { ChatWithReportInput, ChatWithReportOutput } from "@/ai/flows/chat-with-report-flow";
+// Removed direct import of chatWithReportAction, will be passed as a prop
 
 interface AiChatDialogProps {
-  reportId: string;
-  reportTitle: string;
-  initialContext: string;
+  reportIdOrContextKey: string; // Used as a key for chat history or general context
+  dialogTitle: string;
+  initialContextOrPrompt: string; // For reports, this is originalContent. For 'isms', general prompt.
   triggerButtonText?: string;
+  onSendMessageAction: (
+    userInput: string, 
+    context: string // This will be initialContextOrPrompt for report-chat, or topicContext for ism-chat
+  ) => Promise<{ aiResponse: string; sourcesCited?: string[] } | { error: string }>;
 }
 
 interface ChatMessage {
   id: string;
   sender: "user" | "ai";
   text: string;
+  sources?: string[];
 }
 
 export function AiChatDialog({
-  reportId,
-  reportTitle,
-  initialContext,
+  reportIdOrContextKey,
+  dialogTitle,
+  initialContextOrPrompt,
   triggerButtonText = "Examine with AI",
+  onSendMessageAction,
 }: AiChatDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -62,18 +68,17 @@ export function AiChatDialog({
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    const userMessage: ChatMessage = { id: Date.now().toString(), sender: "user", text: inputValue };
+    const userMessage: ChatMessage = { id: `${Date.now()}-user`, sender: "user", text: inputValue };
     setChatMessages((prev) => [...prev, userMessage]);
     const currentQuestion = inputValue;
     setInputValue("");
 
     startTransition(async () => {
       try {
-        const chatInput: ChatWithReportInput = {
-          reportContext: initialContext,
-          userQuestion: currentQuestion,
-        };
-        const result = await chatWithReportAction(chatInput);
+        // The `initialContextOrPrompt` is passed as the `context` argument to onSendMessageAction.
+        // For 'isms' chat, `initialContextOrPrompt` might be a general topic name or instruction.
+        // For report chat, it's the report content.
+        const result = await onSendMessageAction(currentQuestion, initialContextOrPrompt);
 
         if (result && "error" in result) {
           toast({
@@ -81,10 +86,15 @@ export function AiChatDialog({
             description: result.error,
             variant: "destructive",
           });
-          const errorMessage: ChatMessage = { id: Date.now().toString() + '-error', sender: 'ai', text: `Error: ${result.error}`};
+          const errorMessage: ChatMessage = { id: `${Date.now()}-error`, sender: 'ai', text: `Error: ${result.error}`};
           setChatMessages(prev => [...prev, errorMessage]);
         } else if (result && result.aiResponse) {
-          const aiMessage: ChatMessage = { id: Date.now().toString() + '-ai', sender: "ai", text: result.aiResponse };
+          const aiMessage: ChatMessage = { 
+            id: `${Date.now()}-ai`, 
+            sender: "ai", 
+            text: result.aiResponse,
+            sources: result.sourcesCited
+          };
           setChatMessages((prev) => [...prev, aiMessage]);
         } else {
           toast({
@@ -92,7 +102,7 @@ export function AiChatDialog({
             description: "Received no response from AI.",
             variant: "destructive",
           });
-           const errorMessage: ChatMessage = { id: Date.now().toString() + '-no-response', sender: 'ai', text: 'Sorry, I could not generate a response.'};
+           const errorMessage: ChatMessage = { id: `${Date.now()}-no-response`, sender: 'ai', text: 'Sorry, I could not generate a response.'};
            setChatMessages(prev => [...prev, errorMessage]);
         }
       } catch (error) {
@@ -102,7 +112,7 @@ export function AiChatDialog({
           description: errorMsg,
           variant: "destructive",
         });
-        const errorMessage: ChatMessage = { id: Date.now().toString() + '-catch', sender: 'ai', text: `Failed to get response: ${errorMsg}`};
+        const errorMessage: ChatMessage = { id: `${Date.now()}-catch`, sender: 'ai', text: `Failed to get response: ${errorMsg}`};
         setChatMessages(prev => [...prev, errorMessage]);
       }
     });
@@ -110,11 +120,21 @@ export function AiChatDialog({
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (!open) {
+    if (open) {
+        // Optionally add a default greeting or instruction when dialog opens
+        if (chatMessages.length === 0) {
+            setChatMessages([{
+                id: 'initial-greeting',
+                sender: 'ai',
+                text: `Hello! How can I help you understand "${dialogTitle}" based on KJV 1611 principles today?`
+            }]);
+        }
+    }
+    // if (!open) {
         // Optionally reset chat when dialog is closed
         // setChatMessages([]); 
         // setInputValue("");
-    }
+    // }
   }
 
   return (
@@ -129,21 +149,15 @@ export function AiChatDialog({
         <DialogHeader className="p-6 pb-2 border-b">
           <DialogTitle className="flex items-center">
             <BrainCircuit className="mr-2 h-5 w-5 text-primary" />
-            Deep Examination: {reportTitle}
+            {dialogTitle}
           </DialogTitle>
           <DialogDescription>
-            Ask questions about the report content. The AI will answer based on the provided text.
+            Ask questions about the content. AI responses are guided by KJV 1611 principles.
           </DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="flex-1 overflow-y-auto p-6" ref={scrollAreaRef}>
           <div className="space-y-4">
-            {chatMessages.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                    <Bot size={48} className="mx-auto mb-2"/>
-                    <p>Ask a question about the report to start the conversation.</p>
-                </div>
-            )}
             {chatMessages.map((message) => (
               <div
                 key={message.id}
@@ -157,13 +171,23 @@ export function AiChatDialog({
                   </span>
                 )}
                 <div
-                  className={`p-3 rounded-lg max-w-[75%] ${
+                  className={`p-3 rounded-lg max-w-[75%] prose prose-sm dark:prose-invert ${
                     message.sender === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                  {message.sources && message.sources.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-muted-foreground/20">
+                      <p className="text-xs font-semibold">Sources Consulted (Simulated):</p>
+                      <ul className="list-disc list-inside text-xs">
+                        {message.sources.map((source, idx) => (
+                          <li key={idx}><a href={source} target="_blank" rel="noopener noreferrer" className="hover:underline">{source}</a></li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
                 {message.sender === "user" && (
                  <span className="flex-shrink-0 p-2 bg-accent rounded-full">
@@ -188,8 +212,8 @@ export function AiChatDialog({
         <DialogFooter className="p-6 pt-2 border-t">
           <form onSubmit={handleSubmit} className="flex w-full items-center space-x-2">
             <Input
-              id="chat-input"
-              placeholder="Ask a question about the report..."
+              id={`chat-input-${reportIdOrContextKey}`} // Make ID unique if multiple dialogs can exist
+              placeholder="Ask a question..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               autoComplete="off"
@@ -206,3 +230,5 @@ export function AiChatDialog({
     </Dialog>
   );
 }
+
+    

@@ -3,6 +3,7 @@
 
 import { analyzeContent, type AnalyzeContentInput, type AnalyzeContentOutput } from "@/ai/flows/analyze-content";
 import { calvinismDeepDive, type CalvinismDeepDiveInput, type CalvinismDeepDiveOutput } from "@/ai/flows/calvinism-deep-dive";
+import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput } from "@/ai/flows/chat-with-report-flow";
 import type { AnalysisReport } from "@/types";
 import { z } from "zod";
 
@@ -20,16 +21,14 @@ interface StoredReportData extends AnalyzeContentOutput {
   originalContent: string;
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
-  fileName?: string; // Added for file-based analyses
+  fileName?: string; 
 }
 
 interface TempReportStore {
   [key: string]: StoredReportData;
 }
 
-// Make tempReportDatabase survive hot-reloads in dev by attaching to global
 declare global {
-  // eslint-disable-next-line no-var
   var tempReportDatabaseGlobal: TempReportStore | undefined;
 }
 
@@ -37,11 +36,9 @@ let tempReportDatabase: TempReportStore;
 
 if (process.env.NODE_ENV === 'production') {
   tempReportDatabase = {};
-  // Consider pre-populating production with a default sample if needed, or handle empty state gracefully.
 } else {
   if (!global.tempReportDatabaseGlobal) {
     global.tempReportDatabaseGlobal = {};
-    // Pre-populate sample report 'report-001' for development
     const sampleReportId = "report-001";
     const sampleReportData: StoredReportData = {
       title: "Sample Analysis: Sermon on Divine Sovereignty",
@@ -73,7 +70,6 @@ if (process.env.NODE_ENV === 'production') {
         { element: "Unconditional Election (Hinted)", description: "Suggests God chose specific individuals for salvation irrespective of their actions.", evidence: "Interpretation of Ephesians 1:4-5.", infiltrationTactic: "Subtle rephrasing of 'foreknowledge' as 'predetermination'."},
         { element: "Sovereignty (Emphasized)", description: "Strong focus on God's absolute control over all events, including salvation.", evidence: "Repeated phrases like 'God's sovereign decree'."},
       ],
-      // fileName: undefined, // No fileName for text type
     };
     global.tempReportDatabaseGlobal[sampleReportId] = sampleReportData;
   }
@@ -120,7 +116,7 @@ export async function saveReportToDatabase(
   title: string,
   originalContent: string,
   analysisType: AnalysisReport['analysisType'],
-  fileName?: string // Added fileName parameter
+  fileName?: string
 ): Promise<string | { error: string }> {
   try {
     console.log("Saving report to temporary database (simulated):", title);
@@ -182,3 +178,19 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
   console.log(`Report not found in tempDB for ID: ${reportId}`);
   return null;
 }
+
+// Action to be called by AiChatDialog for report-specific chats
+export async function chatWithReportAction(
+  input: ChatWithReportInput
+): Promise<ChatWithReportOutput | { error: string }> {
+  try {
+    // Input validation is implicitly handled by the Genkit flow's inputSchema
+    const result = await chatWithReport(input); 
+    return result;
+  } catch (error) {
+    console.error("Error in chatWithReportAction:", error);
+    return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat with report." };
+  }
+}
+
+    
