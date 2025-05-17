@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BrainCircuit, Info, Home } from "lucide-react";
-import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog";
+import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog"; // Corrected alias path
 import { IsmTopicListClient } from "./components/ism-topic-list-client";
-import { getIsmExplanationChatAction } from "./actions"; // New server action
+import { generalIsmChatAction } from "./actions"; // Import the new server action
 
 export const metadata = {
   title: "The 'ISMS' Exposed, Examined & Explained - KJV Sentinel",
@@ -21,16 +21,9 @@ const ismTopics = [
 ];
 
 export default function IsmsExplainedPage() {
-  // The 'topicContext' for the AI chat action will be passed by AiChatDialog based on its 'initialContextOrPrompt' prop.
-  // Here, 'initialContextOrPrompt' will define the general scope of the chat.
-  const generalIsmContextForDialog = "General discussion about theological 'isms', heresies, and anti-Christ philosophies";
+  const generalIsmContextForDialog = "General discussion about theological 'isms', heresies, and anti-Christ philosophies, focusing on KJV 1611 perspectives and using simulated web search for context.";
 
-  const handleIsmChatSendMessage = async (userQuestion: string, topicContextFromDialog: string) => {
-    // topicContextFromDialog will be generalIsmContextForDialog here.
-    // The specific 'ism' context, if any (e.g., from IsmTopicViewer), would need to be part of the userQuestion or handled differently.
-    // For this general chat, topicContext in the action's input can be the dialog's title or a generic "General Isms".
-    return getIsmExplanationChatAction({ userQuestion, topicContext: "General Isms Discussion" });
-  };
+  // The handleIsmChatSendMessage function is removed from here and its logic is encapsulated in generalIsmChatAction.
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
@@ -76,10 +69,10 @@ export default function IsmsExplainedPage() {
         <CardContent>
             <AiChatDialog
                 reportIdOrContextKey="general-isms-chat"
-                dialogTitle="General Isms Discussion"
-                initialContextOrPrompt={generalIsmContextForDialog}
+                dialogTitle="General Isms Discussion (KJV Lens)"
+                initialContextOrPrompt={generalIsmContextForDialog} // This will be passed as _contextFromDialog
                 triggerButtonText="Ask AI About Isms (KJV Lens)"
-                onSendMessageAction={handleIsmChatSendMessage}
+                onSendMessageAction={generalIsmChatAction} // Pass the Server Action directly
             />
         </CardContent>
       </Card>
@@ -92,5 +85,4 @@ export default function IsmsExplainedPage() {
     </div>
   );
 }
-
     
