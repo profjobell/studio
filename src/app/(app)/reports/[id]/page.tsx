@@ -11,6 +11,7 @@ import { CalvinismDeepDiveButton } from "./components/calvinism-deep-dive-button
 import { AiChatDialog } from "../components/ai-chat-dialog"; 
 import { ReportActions } from "./components/report-actions";
 import { format } from 'date-fns';
+import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-report-flow";
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const report = await fetchReportFromDatabase(params.id);
@@ -34,9 +35,8 @@ export default async function ReportPage({ params }: { params: { id: string } })
     notFound();
   }
   
-  // Wrapper for the AiChatDialog's onSendMessageAction prop
-  const handleReportChatSendMessage = async (userQuestion: string, reportContext: string) => {
-    return chatWithReportAction({ reportContext, userQuestion });
+  const handleReportChatSendMessage = async (userQuestion: string, reportContext: string, chatHistory?: GenkitChatMessage[]) => {
+    return chatWithReportAction({ reportContext, userQuestion, chatHistory });
   };
 
   return (

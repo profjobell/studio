@@ -16,25 +16,28 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Loader2, Send, User, Bot } from "lucide-react";
-// Removed direct import of chatWithReportAction, will be passed as a prop
+// Import ChatMessageHistory type for consistency
+import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-internet-kjv-flow"; // Or from chat-with-report-flow
 
-interface AiChatDialogProps {
-  reportIdOrContextKey: string; // Used as a key for chat history or general context
-  dialogTitle: string;
-  initialContextOrPrompt: string; // For reports, this is originalContent. For 'isms', general prompt.
-  triggerButtonText?: string;
-  onSendMessageAction: (
-    userInput: string, 
-    context: string // This will be initialContextOrPrompt for report-chat, or topicContext for ism-chat
-  ) => Promise<{ aiResponse: string; sourcesCited?: string[] } | { error: string }>;
-}
-
-interface ChatMessage {
+interface ClientChatMessage {
   id: string;
   sender: "user" | "ai";
   text: string;
   sources?: string[];
 }
+
+interface AiChatDialogProps {
+  reportIdOrContextKey: string; 
+  dialogTitle: string;
+  initialContextOrPrompt: string; 
+  triggerButtonText?: string;
+  onSendMessageAction: (
+    userInput: string, 
+    context: string,
+    chatHistory?: GenkitChatMessage[] // Pass chat history to the action
+  ) => Promise<{ aiResponse: string; sourcesCited?: string[] } | { error: string }>;
+}
+
 
 export function AiChatDialog({
   reportIdOrContextKey,
@@ -45,7 +48,7 @@ export function AiChatDialog({
 }: AiChatDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatMessages, setChatMessages] = useState<ClientChatMessage[]>([]);
   const [isLoading, startTransition] = useTransition();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -68,17 +71,23 @@ export function AiChatDialog({
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    const userMessage: ChatMessage = { id: `${Date.now()}-user`, sender: "user", text: inputValue };
-    setChatMessages((prev) => [...prev, userMessage]);
+    const userMessage: ClientChatMessage = { id: `${Date.now()}-user`, sender: "user", text: inputValue };
+    const newChatMessages = [...chatMessages, userMessage];
+    setChatMessages(newChatMessages);
     const currentQuestion = inputValue;
     setInputValue("");
 
+    // Convert client chat messages to Genkit-compatible history
+    const historyForGenkit: GenkitChatMessage[] = newChatMessages
+      .slice(0, -1) // Exclude the current user message, it's passed as `currentQuestion`
+      .map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }],
+      }));
+
     startTransition(async () => {
       try {
-        // The `initialContextOrPrompt` is passed as the `context` argument to onSendMessageAction.
-        // For 'isms' chat, `initialContextOrPrompt` might be a general topic name or instruction.
-        // For report chat, it's the report content.
-        const result = await onSendMessageAction(currentQuestion, initialContextOrPrompt);
+        const result = await onSendMessageAction(currentQuestion, initialContextOrPrompt, historyForGenkit);
 
         if (result && "error" in result) {
           toast({
@@ -86,10 +95,10 @@ export function AiChatDialog({
             description: result.error,
             variant: "destructive",
           });
-          const errorMessage: ChatMessage = { id: `${Date.now()}-error`, sender: 'ai', text: `Error: ${result.error}`};
+          const errorMessage: ClientChatMessage = { id: `${Date.now()}-error`, sender: 'ai', text: `Error: ${result.error}`};
           setChatMessages(prev => [...prev, errorMessage]);
         } else if (result && result.aiResponse) {
-          const aiMessage: ChatMessage = { 
+          const aiMessage: ClientChatMessage = { 
             id: `${Date.now()}-ai`, 
             sender: "ai", 
             text: result.aiResponse,
@@ -102,7 +111,7 @@ export function AiChatDialog({
             description: "Received no response from AI.",
             variant: "destructive",
           });
-           const errorMessage: ChatMessage = { id: `${Date.now()}-no-response`, sender: 'ai', text: 'Sorry, I could not generate a response.'};
+           const errorMessage: ClientChatMessage = { id: `${Date.now()}-no-response`, sender: 'ai', text: 'Sorry, I could not generate a response.'};
            setChatMessages(prev => [...prev, errorMessage]);
         }
       } catch (error) {
@@ -112,7 +121,7 @@ export function AiChatDialog({
           description: errorMsg,
           variant: "destructive",
         });
-        const errorMessage: ChatMessage = { id: `${Date.now()}-catch`, sender: 'ai', text: `Failed to get response: ${errorMsg}`};
+        const errorMessage: ClientChatMessage = { id: `${Date.now()}-catch`, sender: 'ai', text: `Failed to get response: ${errorMsg}`};
         setChatMessages(prev => [...prev, errorMessage]);
       }
     });
@@ -121,7 +130,6 @@ export function AiChatDialog({
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open) {
-        // Optionally add a default greeting or instruction when dialog opens
         if (chatMessages.length === 0) {
             setChatMessages([{
                 id: 'initial-greeting',
@@ -180,7 +188,7 @@ export function AiChatDialog({
                   <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                   {message.sources && message.sources.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-muted-foreground/20">
-                      <p className="text-xs font-semibold">Sources Consulted (Simulated):</p>
+                      <p className="text-xs font-semibold">Sources Consulted (Placeholder/Simulated):</p>
                       <ul className="list-disc list-inside text-xs">
                         {message.sources.map((source, idx) => (
                           <li key={idx}><a href={source} target="_blank" rel="noopener noreferrer" className="hover:underline">{source}</a></li>
@@ -212,7 +220,7 @@ export function AiChatDialog({
         <DialogFooter className="p-6 pt-2 border-t">
           <form onSubmit={handleSubmit} className="flex w-full items-center space-x-2">
             <Input
-              id={`chat-input-${reportIdOrContextKey}`} // Make ID unique if multiple dialogs can exist
+              id={`chat-input-${reportIdOrContextKey}`} 
               placeholder="Ask a question..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -230,5 +238,4 @@ export function AiChatDialog({
     </Dialog>
   );
 }
-
     

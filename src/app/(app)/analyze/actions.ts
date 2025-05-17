@@ -3,7 +3,7 @@
 
 import { analyzeContent, type AnalyzeContentInput, type AnalyzeContentOutput } from "@/ai/flows/analyze-content";
 import { calvinismDeepDive, type CalvinismDeepDiveInput, type CalvinismDeepDiveOutput } from "@/ai/flows/calvinism-deep-dive";
-import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput } from "@/ai/flows/chat-with-report-flow";
+import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory } from "@/ai/flows/chat-with-report-flow";
 import type { AnalysisReport } from "@/types";
 import { z } from "zod";
 
@@ -181,7 +181,7 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
 
 // Action to be called by AiChatDialog for report-specific chats
 export async function chatWithReportAction(
-  input: ChatWithReportInput
+  input: ChatWithReportInput, // Includes userQuestion, reportContext, and now chatHistory
 ): Promise<ChatWithReportOutput | { error: string }> {
   try {
     // Input validation is implicitly handled by the Genkit flow's inputSchema
@@ -192,5 +192,4 @@ export async function chatWithReportAction(
     return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat with report." };
   }
 }
-
     

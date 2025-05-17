@@ -4,6 +4,9 @@
 import { z } from 'zod';
 import { analyzeTeachingAgainstKJV, type AnalyzeTeachingInput, type AnalyzeTeachingOutput } from '@/ai/flows/analyze-teaching-flow';
 import type { TeachingAnalysisReport, PodcastData, AudioRecordingData } from '@/types';
+// Import chatWithReport and its types from chat-with-report-flow
+import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory } from '@/ai/flows/chat-with-report-flow';
+
 
 // Base schema for the form
 const BaseTeachingAnalysisFormSchema = z.object({
@@ -21,9 +24,9 @@ type BaseTeachingAnalysisFormData = z.infer<typeof BaseTeachingAnalysisFormSchem
 // Refinement function
 const teachingAnalysisRefinement = (data: BaseTeachingAnalysisFormData): boolean => {
   if ((data.outputFormats.includes('Email') || data.outputFormats.includes('Share')) && (!data.userEmail || data.userEmail.trim() === '')) {
-    return false; // Validation fails, refine message will be triggered
+    return false; 
   }
-  return true; // Validation passes
+  return true; 
 };
 
 // Final schema with refinement
@@ -31,7 +34,7 @@ export const TeachingAnalysisFormSchema = BaseTeachingAnalysisFormSchema.refine(
   teachingAnalysisRefinement,
   {
     message: 'Email address is required if Email or Share output format is selected.',
-    path: ['userEmail'], // Path to field where error message should appear
+    path: ['userEmail'], 
   }
 );
 
@@ -41,9 +44,7 @@ interface TempTeachingAnalysisStore {
   [key: string]: TeachingAnalysisReport;
 }
 
-// Make tempTeachingAnalysisDatabase survive hot-reloads in dev by attaching to global
 declare global {
-  // eslint-disable-next-line no-var
   var tempTeachingAnalysisDatabaseGlobal: TempTeachingAnalysisStore | undefined;
 }
 
@@ -54,11 +55,10 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   if (!global.tempTeachingAnalysisDatabaseGlobal) {
     global.tempTeachingAnalysisDatabaseGlobal = {};
-    // Pre-populate a sample teaching analysis for development
     const sampleTeachingAnalysisId = "teach-analysis-001";
     const sampleTeachingAnalysisData: TeachingAnalysisReport = {
       id: sampleTeachingAnalysisId,
-      userId: "user-123", // Simulated
+      userId: "user-123", 
       teaching: "The 'Word of Faith' teaching that believers can use faith as a force to create their own realities and material wealth.",
       recipientNameTitle: "Pastor Everyman",
       tonePreference: "firm",
@@ -90,7 +90,7 @@ if (process.env.NODE_ENV === 'production') {
 
 export async function submitTeachingAnalysisAction(
   formData: z.infer<typeof TeachingAnalysisFormSchema>,
-  audioDetails?: { audioUrl: string; transcription: string } // Optional audio details
+  audioDetails?: { audioUrl: string; transcription: string } 
 ): Promise<{ success: boolean; message: string; analysisId?: string }> {
   const validatedFields = TeachingAnalysisFormSchema.safeParse(formData);
 
@@ -102,7 +102,6 @@ export async function submitTeachingAnalysisAction(
   }
 
   const { recipientNameTitle, tonePreference, additionalNotes, outputFormats, userEmail } = validatedFields.data;
-  // Use transcription from audioDetails if available, otherwise use form's teaching field
   const teachingContent = audioDetails ? audioDetails.transcription : validatedFields.data.teaching;
 
   const aiInput: AnalyzeTeachingInput = {
@@ -118,7 +117,7 @@ export async function submitTeachingAnalysisAction(
     const newAnalysisId = `teach-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const newReport: TeachingAnalysisReport = {
       id: newAnalysisId,
-      userId: 'user-123', // Simulate current user
+      userId: 'user-123', 
       teaching: teachingContent,
       recipientNameTitle,
       tonePreference,
@@ -128,7 +127,7 @@ export async function submitTeachingAnalysisAction(
       analysisResult,
       createdAt: new Date(),
       status: 'completed',
-      analysisMode: "Full Summary", // Default or determine based on inputs
+      analysisMode: "Full Summary", 
       podcast: null,
       recording: audioDetails ? {
         status: 'transcribed',
@@ -166,8 +165,6 @@ export async function deleteTeachingAnalysisAction(id: string): Promise<{ succes
   console.log(`Attempting to delete teaching analysis report: ${id} from temp DB`);
   if (tempTeachingAnalysisDatabase[id]) {
     delete tempTeachingAnalysisDatabase[id];
-    // In a real app, revalidatePath would be used here.
-    // revalidatePath('/teaching-reports');
     return { success: true, message: `Teaching analysis ${id} deleted.` };
   }
   return { success: false, message: `Teaching analysis ${id} not found.` };
@@ -205,7 +202,6 @@ export async function generatePodcastAction(
 ): Promise<{ success: boolean; message: string; audioUrl?: string; podcastData?: PodcastData }> {
   console.log(`Server Action: Generating podcast for analysis ID: ${analysisId}`);
   console.log(`Treatment Type: ${treatmentType}, Content Scope: ${contentScope.join(', ')}`);
-  // Simulate AI podcast generation
 
   if (!tempTeachingAnalysisDatabase[analysisId]) {
     return { success: false, message: `Analysis report ${analysisId} not found.` };
@@ -292,21 +288,16 @@ export async function updateTeachingReportPodcastDataAction(
 
 // --- Audio Recording Related Server Actions ---
 export async function transcribeAudioAction(
-  audioDataUrl: string // The audio blob as a data URL from client
+  audioDataUrl: string 
 ): Promise<{ success: boolean; transcription?: string; audioStoragePath?: string; message: string }> {
   try {
-    // Simulate upload to storage
-    const simulatedFileName = `recording-${Date.now()}-${Math.random().toString(16).substring(2,6)}.webm`; // Assuming webm from recorder
+    const simulatedFileName = `recording-${Date.now()}-${Math.random().toString(16).substring(2,6)}.webm`; 
     const audioStoragePath = `/simulated-user-recordings/${simulatedFileName}`;
     console.log(`Simulating "upload" of audio data to (virtual path): ${audioStoragePath}`);
-    // In a real app, you'd convert DataURL to Blob/Buffer and upload to Firebase Storage.
-    // For now, we just generate a path.
 
-    // Simulate transcription process
     console.log("Simulating transcription...");
-    await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000)); // Simulate network and processing delay
+    await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000)); 
 
-    // Generate a more plausible, varied transcription
     const phrases = [
       "The user discussed the importance of faith in daily life, referencing several key scriptures from the King James Bible.",
       "An interesting point was raised about the historical context of the early church and its relevance today.",
@@ -323,12 +314,25 @@ export async function transcribeAudioAction(
     return { 
       success: true, 
       transcription, 
-      audioStoragePath, // This is the simulated path
+      audioStoragePath, 
       message: "Audio processed and transcribed successfully (simulated)." 
     };
   } catch (error) {
     console.error("Error in transcribeAudioAction (simulated):", error);
     const errorMessage = error instanceof Error ? error.message : "Transcription failed due to an unexpected server error.";
     return { success: false, message: errorMessage };
+  }
+}
+
+// Action for AI chat on teaching reports
+export async function chatWithTeachingReportAction(
+  input: ChatWithReportInput // This already includes userQuestion, reportContext, and optional chatHistory
+): Promise<ChatWithReportOutput | { error: string }> {
+  try {
+    const result = await chatWithReport(input); 
+    return result;
+  } catch (error) {
+    console.error("Error in chatWithTeachingReportAction:", error);
+    return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat with teaching report." };
   }
 }

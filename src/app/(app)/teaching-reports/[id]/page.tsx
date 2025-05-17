@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { TeachingAnalysisReport } from "@/types";
-import { fetchTeachingAnalysisFromDatabase } from "../../analyze-teaching/actions";
+import { fetchTeachingAnalysisFromDatabase, chatWithReportAction } from "../../analyze-teaching/actions"; // Updated import
 import { TeachingReportDisplay } from "./components/teaching-report-display";
 import { TeachingReportActions } from "./components/teaching-report-actions";
 import { AiChatDialog } from "../../reports/components/ai-chat-dialog"; // Re-use component
-import { PodcastGenerator } from "./components/podcast-generator"; // Import PodcastGenerator
+import { PodcastGenerator } from "./components/podcast-generator"; 
 import { format } from 'date-fns';
+import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-report-flow";
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const report = await fetchTeachingAnalysisFromDatabase(params.id);
@@ -33,7 +34,6 @@ export default async function TeachingReportPage({ params }: { params: { id: str
     notFound();
   }
   
-  // Construct a context string for AI Chat
   const aiChatContext = `
 Teaching Submitted:
 ${report.teaching}
@@ -47,6 +47,12 @@ Promoters/Demonstrators: ${report.analysisResult.promotersDemonstrators.map(p =>
 Church Council Summary: ${report.analysisResult.churchCouncilSummary}
 Letter of Clarification: ${report.analysisResult.letterOfClarification}
 Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
+
+  // Wrapper for AiChatDialog, ensures chatWithReportAction (now from analyze-teaching/actions) is used
+  const handleTeachingReportChatSendMessage = async (userQuestion: string, context: string, chatHistory?: GenkitChatMessage[]) => {
+    // The 'context' here is aiChatContext which is derived from the teaching report
+    return chatWithReportAction({ reportContext: context, userQuestion, chatHistory });
+  };
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
@@ -84,7 +90,6 @@ Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
         </CardFooter>
       </Card>
 
-      {/* Conditionally render PodcastGenerator if analysisResult exists */}
       {report.analysisResult && (
         <PodcastGenerator analysisId={report.id} initialReport={report} />
       )}
@@ -98,10 +103,11 @@ Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
         </CardHeader>
         <CardContent>
           <AiChatDialog
-            reportId={report.id}
-            reportTitle={`Analysis: ${report.teaching.substring(0, 30)}...`}
-            initialContext={aiChatContext}
+            reportIdOrContextKey={report.id} // Using report.id as context key
+            dialogTitle={`Chat about: ${report.teaching.substring(0, 30)}...`}
+            initialContextOrPrompt={aiChatContext} // Pass the constructed context
             triggerButtonText="Chat About This Teaching Analysis"
+            onSendMessageAction={handleTeachingReportChatSendMessage} // Pass the specific handler
           />
         </CardContent>
       </Card>
@@ -117,3 +123,4 @@ Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
     </div>
   );
 }
+
