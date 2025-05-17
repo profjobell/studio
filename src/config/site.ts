@@ -29,38 +29,47 @@ export const siteConfig: SiteConfig = {
     {
       title: "Dashboard",
       href: "/dashboard",
+      icon: Home,
     },
     {
       title: "Analyze Content",
       href: "/analyze",
+      icon: Search,
     },
     {
       title: "Content Reports",
       href: "/reports",
+      icon: FileText,
     },
     {
       title: "Analyze Teaching",
       href: "/analyze-teaching",
+      icon: FileSignature,
     },
     {
       title: "Teaching Reports",
       href: "/teaching-reports",
+      icon: History,
     },
     {
-      title: "Isms Explained", // New Nav Item
+      title: "Isms Explained",
       href: "/isms-explained",
+      icon: Info,
     },
     {
       title: "Library",
       href: "/library",
+      icon: Library,
     },
     {
       title: "Learning",
       href: "/learning",
+      icon: GraduationCap,
     },
     {
       title: "Glossary",
       href: "/glossary",
+      icon: BookOpen,
     },
   ],
   sidebarNav: [
@@ -81,36 +90,36 @@ export const siteConfig: SiteConfig = {
         {
           title: "Analyze Content",
           href: "/analyze",
-          icon: Search, // General content analysis
+          icon: Search, 
           description: "Submit sermons, articles for theological analysis.",
         },
         {
           title: "Content Reports",
           href: "/reports",
-          icon: FileText, // List of reports from general content analysis
+          icon: FileText, 
           description: "View your content analysis reports.",
         },
         {
           title: "Analyze Teaching",
           href: "/analyze-teaching",
-          icon: FileSignature, // Specific teaching/philosophy analysis
+          icon: FileSignature, 
           description: "Analyze specific teachings or philosophies.",
         },
         {
           title: "Teaching Reports",
           href: "/teaching-reports",
-          icon: History, // List of reports from teaching analysis
+          icon: History, 
           description: "View your teaching analysis reports.",
         },
       ],
     },
     {
-      title: "Knowledge Base", // New Group for Isms, Glossary etc.
+      title: "Knowledge Base", 
       items: [
         {
           title: "Isms Explained",
           href: "/isms-explained",
-          icon: Info, // Using Info icon for now, could be ShieldAlert or similar
+          icon: Info, 
           description: "Examine 'isms', heresies, and philosophies.",
         },
         {
