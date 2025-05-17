@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Download, Printer, Share2, BrainCircuit, Info, ExternalLink, List, Home } from "lucide-react";
-import { AiChatDialog } from "../../reports/components/ai-chat-dialog"; // Re-using for AI chat
+import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog"; // Re-using for AI chat
 import { IsmTopicViewer } from "./components/ism-topic-viewer"; // Placeholder component
 
 export const metadata = {
