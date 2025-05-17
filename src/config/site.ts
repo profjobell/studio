@@ -1,5 +1,6 @@
+
 import type { NavItem, SidebarNavItem } from "@/types";
-import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen } from 'lucide-react';
+import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info } from 'lucide-react'; // Added Info icon
 
 export type SiteConfig = {
   name: string;
@@ -44,6 +45,10 @@ export const siteConfig: SiteConfig = {
     {
       title: "Teaching Reports",
       href: "/teaching-reports",
+    },
+    {
+      title: "Isms Explained", // New Nav Item
+      href: "/isms-explained",
     },
     {
       title: "Library",
@@ -100,6 +105,23 @@ export const siteConfig: SiteConfig = {
       ],
     },
     {
+      title: "Knowledge Base", // New Group for Isms, Glossary etc.
+      items: [
+        {
+          title: "Isms Explained",
+          href: "/isms-explained",
+          icon: Info, // Using Info icon for now, could be ShieldAlert or similar
+          description: "Examine 'isms', heresies, and philosophies.",
+        },
+        {
+          title: "Glossary",
+          href: "/glossary",
+          icon: BookOpen,
+          description: "Definitions of key terms and concepts.",
+        }
+      ],
+    },
+    {
       title: "Resources",
       items: [
         {
@@ -114,12 +136,6 @@ export const siteConfig: SiteConfig = {
           icon: GraduationCap,
           description: "Interactive quizzes and study aids.",
         },
-        {
-          title: "Glossary",
-          href: "/glossary",
-          icon: BookOpen,
-          description: "Definitions of key terms and concepts.",
-        }
       ],
     },
     {
