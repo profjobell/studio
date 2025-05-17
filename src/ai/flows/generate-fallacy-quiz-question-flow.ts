@@ -12,8 +12,7 @@ import {z} from 'genkit';
 
 const GenerateFallacyQuizQuestionInputSchema = z.object({
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional().default('intermediate').describe("The difficulty level for the quiz question."),
-  // Optionally, you could add a list of fallacy types to focus on in the future.
-  // specificFallacy: z.string().optional().describe("If provided, generate a question specifically about this fallacy or one that uses it as a distractor.")
+  specificFallacy: z.string().optional().describe("If provided, generate a question specifically about this fallacy or one that uses it as a distractor.")
 });
 export type GenerateFallacyQuizQuestionInput = z.infer<typeof GenerateFallacyQuizQuestionInputSchema>;
 
@@ -47,21 +46,24 @@ const prompt = ai.definePrompt({
   output: {schema: FallacyQuizQuestionSchema},
   prompt: `You are a quiz master specializing in logical fallacies.
 Generate a quiz question for {{{difficulty}}} difficulty.
-The question should present a short scenario, argument, or statement.
-The user needs to identify the fallacy present, or determine if there is no fallacy.
+{{#if specificFallacy}}
+The question should specifically focus on or involve the fallacy: "{{{specificFallacy}}}". Ensure the scenario clearly exemplifies this fallacy or that "{{{specificFallacy}}}" is the correct answer. Distractor options should still be plausible fallacy names from the list provided.
+{{else}}
+The question should present a short scenario, argument, or statement. The user needs to identify the fallacy present, or determine if there is no fallacy.
+{{/if}}
 
 Instructions:
 1.  **Question Text**: Create a clear scenario or argument.
 2.  **Options**:
     *   Provide 3 or 4 distinct options. Each option should have a unique ID (e.g., "A", "B", "C", "D").
     *   One option must be the correct answer.
-    *   At least one option should be "No fallacy present" if appropriate for the question.
-    *   Other options should be plausible but incorrect fallacy names. Choose from the list: ${commonFallacies.join(', ')}.
+    *   At least one option should be "No fallacy present" if appropriate for the question, unless a specific fallacy is requested.
+    *   Other options should be plausible but incorrect fallacy names. Choose from the list: ${commonFallacies.join(', ')}. If a specificFallacy is provided, ensure it is a key option (likely the correct one).
 3.  **Correct Option ID**: Specify the ID of the correct option.
-4.  **Fallacy Committed**: If a fallacy is present, state its name. If 'No fallacy present' is correct, this can be null or empty.
+4.  **Fallacy Committed**: If a fallacy is present, state its name. If 'No fallacy present' is correct, this can be null or empty. This should match specificFallacy if one was provided and it's the correct answer.
 5.  **Explanation**: Provide a concise but thorough explanation detailing:
     *   Why the correct option is correct.
-    *   If a fallacy is present, define it briefly and explain how it applies to the question text.
+    *   If a fallacy is present (especially if it's the specificFallacy), define it briefly and explain how it applies to the question text.
     *   Briefly explain why other common distractors might seem plausible but are incorrect in this context.
 
 Example Output Format (Illustrative):
@@ -82,6 +84,7 @@ Focus on common fallacies for {{{difficulty}}} level.
 Ensure the scenario is relatable and the fallacy (if present) is clearly identifiable for the given difficulty.
 For 'beginner' difficulty, use very common and distinct fallacies.
 For 'advanced' difficulty, the scenarios can be more subtle or involve less common fallacies or nuanced distinctions.
+If 'specificFallacy' is given, ensure the question is directly about it or uses it as the correct answer.
 `,
 });
 
@@ -92,13 +95,11 @@ const generateFallacyQuizQuestionFlow = ai.defineFlow(
     outputSchema: FallacyQuizQuestionSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input); // Input includes optional specificFallacy
     if (!output) {
       throw new Error('AI failed to generate a quiz question.');
     }
-    // Ensure options have unique IDs if AI doesn't guarantee it, though it should.
-    // For example, by re-assigning A, B, C, D if needed.
-    // For simplicity now, we trust the AI based on prompt.
     return output;
   }
 );
+

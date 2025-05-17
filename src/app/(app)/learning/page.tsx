@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Puzzle, BookOpen, Brain } from "lucide-react";
+import { Lightbulb, Puzzle, BookOpen, Brain, ListChecks } from "lucide-react"; // Added ListChecks
 import Image from "next/image";
 
 export const metadata = {
@@ -11,19 +11,27 @@ export const metadata = {
 
 const learningModules = [
   {
-    title: "Fallacy Detection Quiz",
-    description: "Test your ability to identify logical fallacies in theological arguments. Quizzes are generated based on analyses you've performed.",
+    title: "General Fallacy Quiz & Tutor", // Updated title for clarity
+    description: "Test your ability to identify logical fallacies in various contexts. Learn with AI-powered tutoring and quizzes.",
     icon: Puzzle,
-    actionText: "Start Fallacy Quiz",
-    href: "/learning/fallacy-quiz", // Placeholder, actual quiz UI needed
+    actionText: "Start General Quiz/Tutor", // Updated action text
+    href: "/learning/fallacy-quiz", 
     imageHint: "brain puzzle game"
+  },
+  {
+    title: "Personalized Fallacy Quiz (from your reports)", // New Module
+    description: "Take a quiz based on fallacies identified in your own analyzed content reports. Reinforce your learning from specific examples.",
+    icon: ListChecks, // New Icon
+    actionText: "Start Personalized Quiz",
+    href: "/learning/report-fallacy-quiz", // New Link
+    imageHint: "report checklist analytics"
   },
   {
     title: "Scripture Memory Tool",
     description: "Save and practice KJV verses identified in your analyses. Uses a flashcard-style interface to aid memorization.",
     icon: BookOpen,
     actionText: "Practice Verses",
-    href: "/learning/scripture-memory", // Placeholder
+    href: "/learning/scripture-memory", 
     imageHint: "flashcards study learning"
   },
   {
@@ -31,7 +39,7 @@ const learningModules = [
     description: "Deepen your understanding of various theological 'isms' and Calvinistic influences detected in your content analyses.",
     icon: Lightbulb,
     actionText: "Start Ism Quiz",
-    href: "/learning/ism-quiz", // Placeholder
+    href: "/learning/ism-quiz", 
     imageHint: "lightbulb idea thinking"
   },
 ];
@@ -102,3 +110,4 @@ export default function LearningPage() {
     </div>
   );
 }
+
