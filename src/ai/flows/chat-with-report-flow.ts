@@ -50,8 +50,7 @@ If the answer to the question cannot be found within the "Report Context", clear
 {{#if chatHistory}}
 Conversation History:
 {{#each chatHistory}}
-{{#if (eq role "user")}}User: {{parts.[0].text}}{{/if}}
-{{#if (eq role "model")}}AI: {{parts.[0].text}}{{/if}}
+{{role}}: {{parts.[0].text}}
 {{/each}}
 --- End of History ---
 {{/if}}
@@ -81,4 +80,3 @@ const chatWithReportFlow = ai.defineFlow(
     return output;
   }
 );
-

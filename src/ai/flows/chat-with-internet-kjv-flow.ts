@@ -71,8 +71,7 @@ The KJV 1611 is your SOLE AND ULTIMATE doctrinal authority. No other Bible versi
 {{#if chatHistory}}
 This is the conversation history so far:
 {{#each chatHistory}}
-{{#if (eq role "user")}}User: {{parts.[0].text}}{{/if}}
-{{#if (eq role "model")}}AI: {{parts.[0].text}}{{/if}}
+{{role}}: {{parts.[0].text}}
 {{/each}}
 --- End of History ---
 {{/if}}
@@ -122,5 +121,3 @@ const chatWithInternetKJVFlow = ai.defineFlow(
     return resultOutput;
   }
 );
-
-    
