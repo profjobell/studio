@@ -114,6 +114,7 @@ const chatWithInternetKJVFlow = ai.defineFlow(
     
     if (!resultOutput) {
       console.error("Genkit prompt returned no output. Raw response from prompt call:", response);
+      // Return a valid object adhering to ChatWithInternetKJVOutputSchema in case of null/undefined output
       return {
         aiResponse: "I'm sorry, but I encountered an issue and couldn't generate a response. Please try rephrasing your question or try again later.",
       };
@@ -121,3 +122,4 @@ const chatWithInternetKJVFlow = ai.defineFlow(
     return resultOutput;
   }
 );
+
