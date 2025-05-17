@@ -2,9 +2,11 @@
 // src/app/(app)/heresies-history/page.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookMarked, ShieldAlert } from "lucide-react";
+import { BookMarked, ShieldAlert, Home, BrainCircuit } from "lucide-react"; // Added BrainCircuit
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog"; // Corrected alias path if needed
+import { generalIsmChatAction } from "@/app/(app)/isms-explained/actions"; // Import the server action
 
 export const metadata = {
   title: "Major Heresies in Christian History - KJV Sentinel",
@@ -39,6 +41,18 @@ const post18thCenturyHeresies = [
 ];
 
 export default function HeresiesHistoryPage() {
+  const allHeresiesText = `
+Early Apostolic and Ante-Nicene Heresies (1st–4th Century):
+${earlyHeresies.map(h => `- ${h.name}: ${h.description}`).join('\n')}
+
+Post-18th Century Heresies and Heterodox Movements:
+${post18thCenturyHeresies.map(h => `- ${h.name}: ${h.description}`).join('\n')}
+`.trim();
+
+  const initialContextForDialog = `The user is viewing a page titled "Major Heresies in Christian History". The page lists the following heresies:
+${allHeresiesText}
+Please assist the user with questions about these heresies, providing explanations, historical context, and scriptural counterpoints based on KJV 1611 principles. Use simulated web search for broader context where necessary.`;
+
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -51,8 +65,10 @@ export default function HeresiesHistoryPage() {
             An overview of significant deviations from orthodox Christian doctrine, based on KJV 1611 understanding.
             </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/isms-explained">Back to Isms Explained</Link>
+         <Button asChild variant="outline">
+            <Link href="/dashboard">
+                <Home className="mr-2 h-4 w-4" /> Home
+            </Link>
         </Button>
       </div>
 
@@ -115,6 +131,28 @@ export default function HeresiesHistoryPage() {
           </p>
         </CardContent>
       </Card>
+
+      <Card className="mt-8 shadow-lg">
+        <CardHeader>
+            <CardTitle className="flex items-center">
+                <BrainCircuit className="mr-2 h-6 w-6 text-primary"/>
+                AI Deep Dive on Heresies
+            </CardTitle>
+            <CardDescription>
+                Have questions about these heresies? Use our AI assistant for KJV 1611 based insights.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <AiChatDialog
+                reportIdOrContextKey="heresies-history-chat"
+                dialogTitle="Heresies Discussion (KJV Lens)"
+                initialContextOrPrompt={initialContextForDialog}
+                triggerButtonText="Discuss Heresies with AI (KJV Lens)"
+                onSendMessageAction={generalIsmChatAction}
+            />
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
