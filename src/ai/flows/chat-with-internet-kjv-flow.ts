@@ -53,7 +53,7 @@ const ChatWithInternetKJVInputSchema = z.object({
 export type ChatWithInternetKJVInput = z.infer<typeof ChatWithInternetKJVInputSchema>;
 
 const ChatWithInternetKJVOutputSchema = z.object({
-  aiResponse: z.string().describe("The AI's comprehensive answer, grounded in KJV 1611 principles, possibly informed by simulated web search results. It should avoid profanity and unbiblical assertions, and may suggest areas for deeper research."),
+  aiResponse: z.string().describe("The AI's comprehensive answer, grounded in KJV 1611 principles, possibly informed by simulated web search results. It should avoid profanity and unbiblical assertions, and may suggest areas for deeper research, and should ask if the user wants a deeper dive."),
   sourcesCited: z.array(z.string()).optional().describe("A list of (simulated) sources used to inform the response, if web search was utilized."),
 });
 export type ChatWithInternetKJVOutput = z.infer<typeof ChatWithInternetKJVOutputSchema>;
@@ -86,7 +86,8 @@ Instructions:
     *   DO NOT present opinions or doctrines as fact if they are not explicitly supported by the KJV 1611. Clearly distinguish between direct scriptural teaching and biblically-informed interpretations.
     *   AVOID ALL PROFANITY and any language that is disrespectful or uncharitable.
     *   DO NOT ENDORSE OR PROMOTE any "ism" or philosophy that contradicts the KJV 1611. Your role is to explain and analyze them FROM a KJV 1611 perspective.
-6.  **Suggest Deeper Research**: If appropriate, suggest specific KJV passages, related biblical themes, or areas for further personal study (always centered on the KJV 1611).
+    *   **After providing the main answer, ask the user if they would like a more detailed explanation or a deeper investigation into the topic.** For example: "Would you like me to elaborate further on any aspect of this or provide a deeper investigation?"
+6.  **Suggest Deeper Research (if user declines further elaboration or as a concluding part)**: If appropriate, and if the user does not request an immediate deeper dive, suggest specific KJV passages, related biblical themes, or areas for further personal study (always centered on the KJV 1611).
 7.  **Cite Sources (Simulated)**: If the 'performWebSearch' tool provided sources and you used its information, list up to 2-3 of these (simulated) sources at the end of your response under a "Sources Consulted (Simulated):" heading.
 
 You MUST NOT invent information. If a definitive KJV-based answer cannot be provided, or if search results are inconclusive or contrary to KJV, state that clearly.
