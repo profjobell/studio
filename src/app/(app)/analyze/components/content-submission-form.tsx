@@ -14,6 +14,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+// Input component is removed if not used elsewhere, or kept if used by other fields.
+// For this change, assuming it might still be used by analysisTitle or similar.
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -61,20 +63,29 @@ const formSchema = z.object({
         path: ["file"],
       });
     } else {
-      const file = data.file[0];
-      if (file.size > MAX_FILE_SIZE) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `File size must be less than ${MAX_FILE_SIZE / (1024*1024)}MB.`,
-          path: ["file"],
-        });
-      }
-      if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Unsupported file type. Please upload MP3, WAV, MP4, AVI, PDF, TXT, or DOCX.",
-          path: ["file"],
-        });
+      const fileList = data.file as FileList; // Ensure we're treating it as FileList
+      if (fileList[0]) {
+        const file = fileList[0];
+        if (file.size > MAX_FILE_SIZE) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `File size must be less than ${MAX_FILE_SIZE / (1024*1024)}MB.`,
+            path: ["file"],
+          });
+        }
+        if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Unsupported file type. Please upload MP3, WAV, MP4, AVI, PDF, TXT, or DOCX.",
+            path: ["file"],
+          });
+        }
+      } else { // Should not happen if data.file.length > 0, but good to be safe
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Invalid file data.",
+            path: ["file"],
+          });
       }
     }
   }
@@ -92,7 +103,7 @@ export function ContentSubmissionForm() {
       analysisTitle: "",
       submissionType: "text",
       textContent: "",
-      file: undefined, // Ensure file is part of defaultValues for reset
+      file: undefined,
     },
   });
 
@@ -106,8 +117,8 @@ export function ContentSubmissionForm() {
         if (values.submissionType === "text" && values.textContent) {
           analysisInput = values.textContent;
           analysisTypeString = "text";
-        } else if (values.submissionType === "file" && values.file && values.file.length > 0 && values.file[0]) {
-          const file = values.file[0] as File;
+        } else if (values.submissionType === "file" && values.file && (values.file as FileList).length > 0) {
+          const file = (values.file as FileList)[0];
           submittedFileName = file.name; 
 
           if (file.type === "text/plain" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/pdf") {
@@ -283,31 +294,27 @@ export function ContentSubmissionForm() {
           <FormField
             control={form.control}
             name="file"
-            render={({ field }) => {
-              // Exclude 'value' from being passed to the native file input
-              // RHF handles file inputs via 'ref' and by listening to 'onChange'
-              const { value, ...fieldProps } = field;
-              return (
-                <FormItem>
-                  <FormLabel>Upload File</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="file" 
-                      accept={SUPPORTED_FILE_TYPES.join(",")}
-                      {...fieldProps} // Pass name, onBlur, ref, disabled from RHF
-                      onChange={(e) => {
-                        field.onChange(e.target.files); // Update RHF with the FileList
-                      }}
-                      // Do NOT set 'value' for file input using RHF's field.value
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
+            render={({ field: { onChange, onBlur, name, ref, disabled } }) => ( // Explicitly destructure field properties
+              <FormItem>
+                <FormLabel>Upload File</FormLabel>
+                <FormControl>
+                  <input // Using native input element
+                    type="file"
+                    accept={SUPPORTED_FILE_TYPES.join(",")}
+                    name={name}
+                    ref={ref} // Pass ref from RHF
+                    onBlur={onBlur} // Pass onBlur from RHF
+                    onChange={(e) => onChange(e.target.files)} // Pass FileList to RHF's onChange
+                    disabled={disabled} // Pass disabled state from RHF
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </FormControl>
+                <FormDescription>
+                  Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         )}
         
