@@ -92,6 +92,7 @@ export function ContentSubmissionForm() {
       analysisTitle: "",
       submissionType: "text",
       textContent: "",
+      file: undefined, // Ensure file is part of defaultValues for reset
     },
   });
 
@@ -105,9 +106,9 @@ export function ContentSubmissionForm() {
         if (values.submissionType === "text" && values.textContent) {
           analysisInput = values.textContent;
           analysisTypeString = "text";
-        } else if (values.submissionType === "file" && values.file && values.file[0]) {
+        } else if (values.submissionType === "file" && values.file && values.file.length > 0 && values.file[0]) {
           const file = values.file[0] as File;
-          submittedFileName = file.name; // Capture file name
+          submittedFileName = file.name; 
 
           if (file.type === "text/plain" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/pdf") {
              if (file.type === "text/plain") {
@@ -134,7 +135,11 @@ export function ContentSubmissionForm() {
           else analysisTypeString = "file_document";
 
         } else {
-          toast({ title: "Error", description: "No content provided.", variant: "destructive" });
+          if (values.submissionType === "file") {
+             toast({ title: "Error", description: "No file selected or file is empty.", variant: "destructive" });
+          } else {
+             toast({ title: "Error", description: "No content provided.", variant: "destructive" });
+          }
           return;
         }
         
@@ -163,7 +168,7 @@ export function ContentSubmissionForm() {
           values.analysisTitle, 
           analysisInput, 
           analysisTypeString,
-          submittedFileName // Pass fileName if available
+          submittedFileName 
         );
 
         if (typeof saveResult === 'string') {
@@ -278,23 +283,31 @@ export function ContentSubmissionForm() {
           <FormField
             control={form.control}
             name="file"
-            render={({ field: { onChange, value, ...restField } }) => ( 
-              <FormItem>
-                <FormLabel>Upload File</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="file" 
-                    accept={SUPPORTED_FILE_TYPES.join(",")}
-                    onChange={(e) => onChange(e.target.files)} 
-                    {...restField}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              // Exclude 'value' from being passed to the native file input
+              // RHF handles file inputs via 'ref' and by listening to 'onChange'
+              const { value, ...fieldProps } = field;
+              return (
+                <FormItem>
+                  <FormLabel>Upload File</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept={SUPPORTED_FILE_TYPES.join(",")}
+                      {...fieldProps} // Pass name, onBlur, ref, disabled from RHF
+                      onChange={(e) => {
+                        field.onChange(e.target.files); // Update RHF with the FileList
+                      }}
+                      // Do NOT set 'value' for file input using RHF's field.value
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         )}
         
