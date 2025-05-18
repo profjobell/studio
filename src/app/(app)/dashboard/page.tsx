@@ -167,18 +167,18 @@ export default async function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <ExternalLink className="mr-2 h-5 w-5 text-primary" />
-              External Resource
+              RTN TV
             </CardTitle>
             <CardDescription>Recommended reading material.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <Image
               src="https://placehold.co/300x150.png" // Placeholder thumbnail
-              alt="External Resource Thumbnail"
+              alt="RTN TV"
               width={300}
               height={150}
               className="rounded-md shadow-md object-cover"
-              data-ai-hint="resource link"
+              data-ai-hint="rtntv logo"
             />
             <p className="text-sm text-muted-foreground text-center">
               Explore additional insights and information at RTNTV.org.
@@ -194,3 +194,4 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
