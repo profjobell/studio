@@ -177,7 +177,7 @@ export default async function DashboardPage() {
                 width={300}
                 height={150}
                 className="rounded-md shadow-md object-contain hover:opacity-80 transition-opacity"
-                data-ai-hint="rtntv channel index"
+                data-ai-hint="rtntv moriel"
               />
             </Link>
             <p className="text-sm text-muted-foreground text-center">
