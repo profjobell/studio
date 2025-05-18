@@ -48,11 +48,7 @@ Church Council Summary: ${report.analysisResult.churchCouncilSummary}
 Letter of Clarification: ${report.analysisResult.letterOfClarification}
 Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
 
-  // Wrapper for AiChatDialog, ensures chatWithReportAction (now from analyze-teaching/actions) is used
-  const handleTeachingReportChatSendMessage = async (userQuestion: string, context: string, chatHistory?: GenkitChatMessage[]) => {
-    // The 'context' here is aiChatContext which is derived from the teaching report
-    return chatWithReportAction({ reportContext: context, userQuestion, chatHistory });
-  };
+  // Removed local handleTeachingReportChatSendMessage function definition
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
@@ -103,11 +99,17 @@ Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
         </CardHeader>
         <CardContent>
           <AiChatDialog
-            reportIdOrContextKey={report.id} // Using report.id as context key
+            reportIdOrContextKey={report.id} 
             dialogTitle={`Chat about: ${report.teaching.substring(0, 30)}...`}
-            initialContextOrPrompt={aiChatContext} // Pass the constructed context
+            initialContextOrPrompt={aiChatContext} 
             triggerButtonText="Chat About This Teaching Analysis"
-            onSendMessageAction={handleTeachingReportChatSendMessage} // Pass the specific handler
+            onSendMessageAction={
+              async (userInput: string, context: string, chatHistory?: GenkitChatMessage[]) => {
+                "use server"; // Make this inline function a Server Action
+                // The 'context' here is aiChatContext which is derived from the teaching report
+                return chatWithReportAction({ reportContext: context, userQuestion: userInput, chatHistory });
+              }
+            }
           />
         </CardContent>
       </Card>

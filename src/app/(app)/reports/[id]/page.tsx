@@ -35,9 +35,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
     notFound();
   }
   
-  const handleReportChatSendMessage = async (userQuestion: string, reportContext: string, chatHistory?: GenkitChatMessage[]) => {
-    return chatWithReportAction({ reportContext, userQuestion, chatHistory });
-  };
+  // Removed the local handleReportChatSendMessage function definition
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
@@ -103,7 +101,12 @@ export default async function ReportPage({ params }: { params: { id: string } })
             dialogTitle={report.title}
             initialContextOrPrompt={report.originalContent || JSON.stringify(report, null, 2)}
             triggerButtonText="Chat About This Report"
-            onSendMessageAction={handleReportChatSendMessage}
+            onSendMessageAction={
+              async (userInput: string, context: string, chatHistory?: GenkitChatMessage[]) => {
+                "use server"; // Make this inline function a Server Action
+                return chatWithReportAction({ reportContext: context, userQuestion: userInput, chatHistory });
+              }
+            }
           />
         </CardContent>
       </Card>
