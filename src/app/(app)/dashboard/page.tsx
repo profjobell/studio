@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, FileText, Search, Trash2 } from "lucide-react";
+import { Activity, FileText, Search, Trash2, ExternalLink } from "lucide-react"; // Added ExternalLink
 import Image from "next/image";
 import { fetchReportsList } from "../reports/actions"; 
 import { fetchLibraryDocuments } from "../library/actions"; // Import fetchLibraryDocuments
@@ -11,10 +11,10 @@ import type { AnalysisReport, DocumentReference } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClearHistoryButton } from "./components/clear-history-button";
 import { format } from 'date-fns';
-import { FeaturesGuideModal } from "@/components/features-guide"; // Added import
+import { FeaturesGuideModal } from "@/components/features-guide";
 
 export default async function DashboardPage() {
-  const allReports: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput >[] = await fetchReportsList();
+  const allReports: AnalysisReport[] = await fetchReportsList(); // Updated type to full AnalysisReport
   const libraryDocuments: DocumentReference[] = await fetchLibraryDocuments(); // Fetch library documents
   
   const recentAnalyses = allReports
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
                           {analysis.title}
                         </Link>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(analysis.createdAt), 'MM/dd/yyyy')} - 
+                          {format(new Date(analysis.createdAt), 'PPP')} - 
                           <span className={`ml-1 capitalize ${
                             analysis.status === "completed" ? "text-green-600" :
                             analysis.status === "processing" ? "text-yellow-600" :
@@ -128,41 +128,69 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-       <Card>
-        <CardHeader>
-          <CardTitle>Welcome to KJV Sentinel</CardTitle>
-          <CardDescription>Your guide to understanding theological content through the lens of the KJV 1611 Bible.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col md:flex-row items-center gap-6">
-          <Image 
-            src="https://picsum.photos/seed/biblebooks/300/225" 
-            alt="KJV Bible study"
-            width={300}
-            height={225}
-            className="rounded-lg shadow-md object-contain"
-            data-ai-hint="bible books"
-          />
-          <div>
-            <p className="mb-4 text-muted-foreground">
-              KJV Sentinel helps you analyze religious texts, sermons, and discussions for theological accuracy, historical context, potential manipulative tactics, and influences from various theological systems like Calvinism. Our analysis is grounded in the King James Version (KJV) 1611 Bible.
-            </p>
-            <p className="mb-4 text-muted-foreground">
-              Get started by submitting content for analysis, uploading reference materials to your personal library, or exploring our interactive learning tools.
-            </p>
-            <div className="flex gap-2">
-              <Button asChild>
-                <Link href="/analyze">Analyze Content</Link>
-              </Button>
-              <FeaturesGuideModal>
-                  <Button variant="secondary">Learn More</Button>
-              </FeaturesGuideModal>
+      
+      <div className="grid gap-4 md:grid-cols-2"> {/* New row for Welcome and External Link */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome to KJV Sentinel</CardTitle>
+            <CardDescription>Your guide to understanding theological content through the lens of the KJV 1611 Bible.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col md:flex-row items-center gap-6">
+            <Image 
+              src="https://picsum.photos/seed/biblebooks/300/225" 
+              alt="KJV Bible study"
+              width={300}
+              height={225}
+              className="rounded-lg shadow-md object-contain"
+              data-ai-hint="bible books"
+            />
+            <div>
+              <p className="mb-4 text-muted-foreground">
+                KJV Sentinel helps you analyze religious texts, sermons, and discussions for theological accuracy, historical context, potential manipulative tactics, and influences from various theological systems like Calvinism. Our analysis is grounded in the King James Version (KJV) 1611 Bible.
+              </p>
+              <p className="mb-4 text-muted-foreground">
+                Get started by submitting content for analysis, uploading reference materials to your personal library, or exploring our interactive learning tools.
+              </p>
+              <div className="flex gap-2">
+                <Button asChild>
+                  <Link href="/analyze">Analyze Content</Link>
+                </Button>
+                <FeaturesGuideModal>
+                    <Button variant="secondary">Learn More</Button>
+                </FeaturesGuideModal>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <ExternalLink className="mr-2 h-5 w-5 text-primary" />
+              External Resource
+            </CardTitle>
+            <CardDescription>Recommended reading material.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            <Image
+              src="https://placehold.co/300x150.png" // Placeholder thumbnail
+              alt="External Resource Thumbnail"
+              width={300}
+              height={150}
+              className="rounded-md shadow-md object-cover"
+              data-ai-hint="resource link"
+            />
+            <p className="text-sm text-muted-foreground text-center">
+              Explore additional insights and information at RTNTV.org.
+            </p>
+            <Button asChild variant="outline">
+              <Link href="https://rtntv.org/IndexA?id=3" target="_blank" rel="noopener noreferrer">
+                Visit RTNTV.org <ExternalLink className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div> {/* End of new row */}
     </div>
   );
 }
-
-
-
