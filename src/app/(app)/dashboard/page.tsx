@@ -135,7 +135,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-col md:flex-row items-center gap-6">
             <Image 
-              src="https://picsum.photos/seed/biblebooks/300/225" 
+              src="https://placehold.co/300x225.png" 
               alt="KJV Bible study"
               width={300}
               height={225}
@@ -177,7 +177,7 @@ export default async function DashboardPage() {
                 width={300}
                 height={150}
                 className="rounded-md shadow-md object-contain hover:opacity-80 transition-opacity"
-                data-ai-hint="rtntv moriel channel index"
+                data-ai-hint="tv logo" 
               />
             </Link>
             <p className="text-sm text-muted-foreground text-center">
@@ -194,3 +194,4 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
