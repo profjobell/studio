@@ -1,12 +1,11 @@
 
-
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, FileText, Search, Trash2, ExternalLink } from "lucide-react"; // Added ExternalLink
+import { Activity, FileText, Search, Trash2, ExternalLink } from "lucide-react"; 
 import Image from "next/image";
 import { fetchReportsList } from "../reports/actions"; 
-import { fetchLibraryDocuments } from "../library/actions"; // Import fetchLibraryDocuments
+import { fetchLibraryDocuments } from "../library/actions"; 
 import type { AnalysisReport, DocumentReference } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClearHistoryButton } from "./components/clear-history-button";
@@ -14,16 +13,15 @@ import { format } from 'date-fns';
 import { FeaturesGuideModal } from "@/components/features-guide";
 
 export default async function DashboardPage() {
-  const allReports: AnalysisReport[] = await fetchReportsList(); // Updated type to full AnalysisReport
-  const libraryDocuments: DocumentReference[] = await fetchLibraryDocuments(); // Fetch library documents
+  const allReports: AnalysisReport[] = await fetchReportsList(); 
+  const libraryDocuments: DocumentReference[] = await fetchLibraryDocuments(); 
   
   const recentAnalyses = allReports
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    // .slice(0, 5); // Optionally limit to a certain number if not using scroll or for above-the-fold
 
   const stats = [
     { title: "Total Analyses", value: recentAnalyses.length.toString(), icon: FileText, change: "", href:"/reports" },
-    { title: "Documents in Library", value: libraryDocuments.length.toString(), icon: Search, change: "+ View/Upload", href: "/library" }, // Updated value and added href
+    { title: "Documents in Library", value: libraryDocuments.length.toString(), icon: Search, change: "+ View/Upload", href: "/library" }, 
   ];
 
   const hasReports = recentAnalyses.length > 0;
@@ -129,7 +127,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2"> {/* New row for Welcome and External Link */}
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Welcome to KJV Sentinel</CardTitle>
@@ -172,16 +170,18 @@ export default async function DashboardPage() {
             <CardDescription>Recommended reading material.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <Image
-              src="https://placehold.co/300x150.png" // Placeholder thumbnail
-              alt="RTN TV"
-              width={300}
-              height={150}
-              className="rounded-md shadow-md object-cover"
-              data-ai-hint="rtntv logo"
-            />
+            <Link href="https://rtntv.org/IndexA?id=3" target="_blank" rel="noopener noreferrer" className="block">
+              <Image
+                src="https://placehold.co/300x150.png" 
+                alt="RTN TV Channel Index"
+                width={300}
+                height={150}
+                className="rounded-md shadow-md object-contain hover:opacity-80 transition-opacity"
+                data-ai-hint="rtntv channel index"
+              />
+            </Link>
             <p className="text-sm text-muted-foreground text-center">
-              Explore additional insights and information at RTNTV.org.
+              Explore additional insights and information at RTNTV.org. Click the image or button below.
             </p>
             <Button asChild variant="outline">
               <Link href="https://rtntv.org/IndexA?id=3" target="_blank" rel="noopener noreferrer">
@@ -190,8 +190,7 @@ export default async function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
-      </div> {/* End of new row */}
+      </div>
     </div>
   );
 }
-
