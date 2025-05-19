@@ -22,6 +22,7 @@ interface StoredReportData extends AnalyzeContentOutput {
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
   fileName?: string; 
+  calvinismDeepDiveAnalysis?: string; // Added field
 }
 
 interface TempReportStore {
@@ -70,6 +71,7 @@ if (process.env.NODE_ENV === 'production') {
         { element: "Unconditional Election (Hinted)", description: "Suggests God chose specific individuals for salvation irrespective of their actions.", evidence: "Interpretation of Ephesians 1:4-5.", infiltrationTactic: "Subtle rephrasing of 'foreknowledge' as 'predetermination'."},
         { element: "Sovereignty (Emphasized)", description: "Strong focus on God's absolute control over all events, including salvation.", evidence: "Repeated phrases like 'God's sovereign decree'."},
       ],
+      calvinismDeepDiveAnalysis: undefined, // Initialize sample data
     };
     global.tempReportDatabaseGlobal[sampleReportId] = sampleReportData;
   }
@@ -95,15 +97,26 @@ export async function analyzeSubmittedContent(
 }
 
 export async function initiateCalvinismDeepDive(
-  input: CalvinismDeepDiveInput
+  input: CalvinismDeepDiveInput & { reportId: string } // Added reportId
 ): Promise<CalvinismDeepDiveOutput | { error: string }> {
-  const validatedInput = calvinismDeepDiveSchema.safeParse(input);
+  const validatedInput = calvinismDeepDiveSchema.safeParse({ content: input.content });
   if (!validatedInput.success) {
     return { error: validatedInput.error.errors.map(e => e.message).join(", ") };
   }
   
   try {
-    const result = await calvinismDeepDive(validatedInput.data);
+    const result = await calvinismDeepDive({content: validatedInput.data.content}); // Pass only content to the flow
+
+    if ('analysis' in result && tempReportDatabase[input.reportId]) {
+      tempReportDatabase[input.reportId].calvinismDeepDiveAnalysis = result.analysis;
+      console.log(`Updated report ${input.reportId} with Calvinism deep dive analysis.`);
+    } else if ('error' in result) {
+      console.error("Error in initiateCalvinismDeepDive flow call:", result.error);
+      return result; // Propagate error
+    } else if (!tempReportDatabase[input.reportId]){
+      console.warn(`Report ID ${input.reportId} not found in temp database after deep dive.`);
+    }
+    
     return result;
   } catch (error) {
     console.error("Error in initiateCalvinismDeepDive:", error);
@@ -128,6 +141,7 @@ export async function saveReportToDatabase(
       originalContent,
       analysisType,
       createdAt: new Date(),
+      calvinismDeepDiveAnalysis: undefined, // Initialize as undefined
     };
 
     if (analysisType !== 'text' && fileName) {
@@ -172,6 +186,7 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       biblicalRemonstrance: data.biblicalRemonstrance,
       identifiedIsms: data.identifiedIsms,
       calvinismAnalysis: data.calvinismAnalysis,
+      calvinismDeepDiveAnalysis: data.calvinismDeepDiveAnalysis, // Include the field
     };
   }
   

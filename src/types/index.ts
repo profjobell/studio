@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from "lucide-react";
 import type { AnalyzeContentOutput } from "@/ai/flows/analyze-content";
 import type { z } from "zod";
@@ -42,6 +43,7 @@ export type AnalysisReport = AnalyzeContentOutput & {
   createdAt: Date; // Or string if you store as ISO string
   updatedAt: Date; // Or string
   originalContent?: string; // For text submissions
+  calvinismDeepDiveAnalysis?: string; // Added for deep dive results
 };
 
 export type UserProfile = {
@@ -112,3 +114,4 @@ export type TeachingAnalysisReport = {
   podcast?: PodcastData | null; // Added for podcast feature
   recording?: AudioRecordingData | null; // Added for audio recording feature
 };
+

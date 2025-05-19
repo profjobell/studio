@@ -4,8 +4,9 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { initiateCalvinismDeepDive } from "../../../analyze/actions"; // Adjust path as needed
+import { initiateCalvinismDeepDive } from "../../../analyze/actions"; 
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation"; // Import useRouter
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,16 +27,19 @@ interface CalvinismDeepDiveButtonProps {
 export function CalvinismDeepDiveButton({ reportId, contentToAnalyze }: CalvinismDeepDiveButtonProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const router = useRouter(); // Initialize router
   const [showDialog, setShowDialog] = useState(false);
   const [deepDiveResult, setDeepDiveResult] = useState<string | null>(null);
 
   const handleDeepDive = async () => {
     startTransition(async () => {
-      setDeepDiveResult(null); // Reset previous result
-      setShowDialog(true); // Open dialog to show result later
+      setDeepDiveResult(null); 
+      setShowDialog(true); 
 
       try {
-        const result = await initiateCalvinismDeepDive({ content: contentToAnalyze });
+        // Pass reportId along with content
+        const result = await initiateCalvinismDeepDive({ reportId, content: contentToAnalyze });
+        
         if (result && 'error' in result) {
           toast({
             title: "Deep Dive Failed",
@@ -46,9 +50,9 @@ export function CalvinismDeepDiveButton({ reportId, contentToAnalyze }: Calvinis
           setDeepDiveResult(result.analysis);
           toast({
             title: "Calvinism Deep Dive Complete",
-            description: "The detailed analysis is now available.",
+            description: "The detailed analysis is now available in this dialog and has been added to the main report.",
           });
-          // Dialog will show the result
+          router.refresh(); // Refresh the page to show updated report data
         } else {
            toast({
             title: "Deep Dive Issue",
@@ -84,7 +88,7 @@ export function CalvinismDeepDiveButton({ reportId, contentToAnalyze }: Calvinis
           <AlertDialogHeader>
             <AlertDialogTitle>In-Depth Calvinism Analysis Result</AlertDialogTitle>
             <AlertDialogDescription>
-              Below is the detailed analysis of Calvinistic elements for report ID: {reportId}.
+              Below is the detailed analysis of Calvinistic elements for report ID: {reportId}. This has also been added to the main report.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="max-h-[60vh] overflow-y-auto py-4 px-1">

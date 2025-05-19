@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { AnalysisReport } from "@/types"; 
@@ -104,6 +105,15 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
     { title: "Biblical Remonstrance", content: reportData.biblicalRemonstrance, type: "paragraph" as const, isHtml: true },
   ];
 
+  // Add the deep dive analysis as a new section if it exists
+  if (reportData.calvinismDeepDiveAnalysis) {
+    baseSections.push({
+      title: "In-Depth Calvinism Examination",
+      content: reportData.calvinismDeepDiveAnalysis,
+      type: "paragraph" as const,
+    });
+  }
+
   const sections = [...baseSections];
 
   if (reportData.originalContent) {
@@ -126,6 +136,10 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
     if (reportData.originalContent && !openValues.includes(slugify("Original Content Submitted"))){
         openValues.unshift(slugify("Original Content Submitted"));
     }
+     // Ensure In-Depth Calvinism Examination is open by default if it exists
+    if (reportData.calvinismDeepDiveAnalysis && !openValues.includes(slugify("In-Depth Calvinism Examination"))) {
+      openValues.push(slugify("In-Depth Calvinism Examination"));
+    }
     return openValues;
   }
 
@@ -144,17 +158,17 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
             if (element) {
               element.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-          }, 100); // Delay to ensure DOM update and smooth scroll
+          }, 100); 
         }
       }
     };
 
-    handleHashChange(); // Check hash on initial mount
+    handleHashChange(); 
     window.addEventListener('hashchange', handleHashChange, false);
     return () => {
       window.removeEventListener('hashchange', handleHashChange, false);
     };
-  }, [sections, reportData.summary, reportData.originalContent]); // Re-run if sections change
+  }, [sections, reportData.summary, reportData.originalContent, reportData.calvinismDeepDiveAnalysis]); 
 
 
   return (
@@ -180,7 +194,7 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
                   <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed print:text-xs">{section.content}</p>
                 )
               )}
-              {section.type === "table" && section.data && (
+              {section.type === "table" && section.data && section.headers && section.columns && (
                 <ReportTable title="" headers={section.headers} data={section.data} columns={section.columns} />
               )}
             </AccordionContent>
