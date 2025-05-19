@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { generateContentReportTxtOutput } from "../../actions"; // Server action for TXT
+import { generateContentReportTxtOutput } from "../../actions"; 
 import { useToast } from "@/hooks/use-toast";
 import type { AnalysisReport } from "@/types";
 
@@ -19,12 +19,6 @@ interface ReportActionsProps {
 
 export function ReportActions({ report }: ReportActionsProps) {
   const { toast } = useToast();
-
-  const handlePrint = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
-    }
-  };
 
   const handleDownloadTxt = async () => {
     if (!report || !report.id) {
@@ -58,11 +52,13 @@ export function ReportActions({ report }: ReportActionsProps) {
       toast({ title: "Error", description: "Report data is missing for sharing.", variant: "destructive" });
       return;
     }
-    const reportUrl = typeof window !== 'undefined' ? window.location.href : `View report: ${report.title}`;
+    const reportUrl = typeof window !== 'undefined' ? window.location.href : `(Link to report: ${report.id})`;
     const subject = `KJV Sentinel Analysis: ${report.title}`;
     const summaryText = report.summary ? report.summary.substring(0, 100) + '...' : 'View the full analysis.';
     const body = `Check out this KJV Sentinel analysis report:\nTitle: ${report.title}\nLink: ${reportUrl}\n\nSummary: ${summaryText}`;
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    if (typeof window !== 'undefined') {
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
   };
 
   const handleShareViaWhatsApp = () => {
@@ -70,16 +66,25 @@ export function ReportActions({ report }: ReportActionsProps) {
       toast({ title: "Error", description: "Report data is missing for sharing.", variant: "destructive" });
       return;
     }
-    const reportUrl = typeof window !== 'undefined' ? window.location.href : `View report: ${report.title}`;
+    const reportUrl = typeof window !== 'undefined' ? window.location.href : `(Link to report: ${report.id})`;
     const whatsappText = `Check out this KJV Sentinel analysis report: ${report.title}\n${reportUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
     alert(`To share on WhatsApp, copy this link or message:\n${whatsappUrl}\n\nMessage prepared:\n${whatsappText}`);
     console.log("WhatsApp URL:", whatsappUrl);
   };
 
+
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrint}>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => {
+          if (typeof window !== 'undefined') {
+            window.print();
+          }
+        }}
+      >
         <Download className="mr-2 h-4 w-4" /> PDF
       </Button>
       <Button variant="outline" size="sm" onClick={handleDownloadTxt}>
@@ -100,7 +105,15 @@ export function ReportActions({ report }: ReportActionsProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button variant="outline" size="sm" onClick={handlePrint}>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => {
+          if (typeof window !== 'undefined') {
+            window.print();
+          }
+        }}
+      >
         <Printer className="mr-2 h-4 w-4" /> Print
       </Button>
     </div>

@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Printer, Share2, Mail, MessageCircle } from 'lucide-react'; // Added MessageCircle
+import { Download, FileText, Printer, Share2, Mail, MessageCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,12 +20,6 @@ interface TeachingReportActionsProps {
 export function TeachingReportActions({ report }: TeachingReportActionsProps) {
   const { toast } = useToast();
   
-  const handlePrint = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
-    }
-  };
-
   const handleDownloadTxt = async () => {
     if (!report || !report.teaching) {
       toast({ title: "Error", description: "Report data is missing for TXT generation.", variant: "destructive"});
@@ -49,17 +43,16 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
     }
   };
   
-  const handleShareViaEmailSpecific = () => { // Renamed for clarity
-    if (!report || !report.teaching) {
-      toast({ title: "Error", description: "Report data is missing for sharing.", variant: "destructive" });
+  const handleEmailToSelf = () => {
+    if (!report || !report.teaching || !report.userEmail || !report.outputFormats.includes('Email')) {
+      toast({ title: "Email Option Not Available", description: "Email to self option not available or user email not provided for this report.", variant: "default" });
       return;
     }
-    if(report.userEmail && report.outputFormats.includes('Email')){ // Check if Email format was selected
-        const subject = `KJV Sentinel Teaching Analysis: ${report.teaching.substring(0,30)}...`;
-        const body = `Please find the KJV Sentinel teaching analysis for: "${report.teaching}"\n\nThis report includes:\n- Church History Context\n- Promoters/Demonstrators\n- Church Council Summary\n- Letter of Clarification\n- Biblical Warnings\n\n(Report content would be here or as an attachment - This is a simulation of email body content)\n\nConsider accessing the full interactive report if a link was shared with you.`;
-        window.location.href = `mailto:${report.userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    } else {
-        toast({ title: "Email Option Not Available", description: "Email output format was not selected or user email not provided for this report.", variant: "default" });
+    const subject = `KJV Sentinel Teaching Analysis: ${report.teaching.substring(0,30)}...`;
+    // A more complete body would ideally include the report or a link.
+    const body = `Your KJV Sentinel teaching analysis for: "${report.teaching}" is ready.\n\n(This is a simulated email. In a full implementation, the report might be attached or linked here.)\n\nView on KJV Sentinel: ${typeof window !== 'undefined' ? window.location.href : 'Please open the report in your KJV Sentinel app.'}`;
+    if (typeof window !== 'undefined') {
+      window.location.href = `mailto:${report.userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
   };
 
@@ -71,7 +64,9 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
     const reportUrl = typeof window !== 'undefined' ? window.location.href : `(Link to report: ${report.id})`;
     const subject = `KJV Sentinel Teaching Analysis: ${report.teaching.substring(0,30)}...`;
     const body = `Check out this KJV Sentinel Teaching Analysis: "${report.teaching.substring(0, 50)}..."\nLink: ${reportUrl}`;
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    if (typeof window !== 'undefined') {
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
   }
 
   const handleShareViaWhatsApp = () => {
@@ -82,6 +77,7 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
     const reportUrl = typeof window !== 'undefined' ? window.location.href : `(Link to report: ${report.id})`;
     const shareText = `Check out this KJV Sentinel Teaching Analysis: "${report.teaching.substring(0, 50)}..."\nLink: ${reportUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    // Using alert for simplicity as direct WhatsApp sharing can be inconsistent across devices/setups
     alert(`To share on WhatsApp, copy this link or message:\n${whatsappUrl}\n\nMessage prepared:\n${shareText}`);
     console.log("WhatsApp URL:", whatsappUrl);
   };
@@ -90,7 +86,15 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrint}>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => {
+          if (typeof window !== 'undefined') {
+            window.print();
+          }
+        }}
+      >
         <Download className="mr-2 h-4 w-4" /> PDF
       </Button>
       {report.outputFormats.includes('TXT') && (
@@ -100,7 +104,7 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
       )}
        {report.outputFormats.includes('RTF') && (
         <Button variant="outline" size="sm" onClick={() => alert("RTF generation is a placeholder. TXT format is available.")}>
-          <Download className="mr-2 h-4 w-4" /> RTF
+          <FileText className="mr-2 h-4 w-4" /> RTF 
         </Button>
       )}
       
@@ -113,7 +117,7 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {report.outputFormats.includes('Email') && report.userEmail && (
-              <DropdownMenuItem onClick={handleShareViaEmailSpecific}>
+              <DropdownMenuItem onClick={handleEmailToSelf}>
                 <Mail className="mr-2 h-4 w-4" /> Email to Self ({report.userEmail})
               </DropdownMenuItem>
             )}
@@ -131,7 +135,15 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
         </DropdownMenu>
       )}
 
-      <Button variant="outline" size="sm" onClick={handlePrint}>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => {
+          if (typeof window !== 'undefined') {
+            window.print();
+          }
+        }}
+      >
         <Printer className="mr-2 h-4 w-4" /> Print
       </Button>
     </div>
