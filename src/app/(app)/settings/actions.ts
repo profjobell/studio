@@ -87,7 +87,6 @@ const generalSettingsSchema = z.object({
 });
 
 export async function saveGeneralSettings(
-  //prevState: any, // For useActionState - if we switch to it
   formData: FormData
 ): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
   const appName = formData.get("appName") as string;
@@ -115,7 +114,6 @@ const aiSettingsSchema = z.object({
 });
 
 export async function saveAiSettings(
-  //prevState: any,
   formData: FormData
 ): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
     const defaultModel = formData.get("defaultModel") as string;
@@ -160,7 +158,6 @@ const featureFlagsSchema = z.object({
 });
 
 export async function saveFeatureFlags(
-  //prevState: any,
   formData: FormData
 ): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
   
@@ -197,8 +194,6 @@ export async function editLearnMoreAction() {
 
 export async function manageUsersAction() {
   console.log("Server Action: Manage Users (placeholder)");
-  // This would typically navigate to a user management page or open a detailed dialog.
-  // For now, just a log and a toast message precursor.
   return { success: true, message: "User management interface would open here (placeholder)." };
 }
 
@@ -210,10 +205,21 @@ const addUserProfileSchema = z.object({
   isAdmin: z.boolean().optional(),
 });
 
+// Define initial state for the useActionState hook
+export const initialAddUserState: {
+    success: boolean;
+    message: string;
+    errors?: z.ZodIssue[];
+} = {
+    message: "",
+    success: false,
+    errors: undefined,
+};
+
 export async function addUserProfileAction(
-  prevState: { success: boolean; message: string; errors?: z.ZodIssue[] },
+  prevState: typeof initialAddUserState,
   formData: FormData
-): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
+): Promise<typeof initialAddUserState> {
   const data = {
     newUserEmail: formData.get("newUserEmail") as string,
     newDisplayName: formData.get("newDisplayName") as string,
@@ -234,5 +240,5 @@ export async function addUserProfileAction(
   // 3. Store additional profile info in Firestore if needed.
   
   // For this demo, we just log it.
-  return { success: true, message: `User profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added conceptually.` };
+  return { success: true, message: `User profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added conceptually.`, errors: undefined };
 }

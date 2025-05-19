@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useTransition, FormEvent, useActionState } from "react";
+import { useEffect, useState, useTransition, FormEvent, useActionState as useReactActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,9 +30,11 @@ import {
   editLearnMoreAction,
   manageUsersAction,
   addUserProfileAction,
+  initialAddUserState,
   type AppSettings
 } from "./actions";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
+import type { ZodIssue } from "zod";
 
 // Mock admin email for UI simulation
 const ADMIN_EMAIL = "admin@kjvsentinel.com"; 
@@ -40,11 +42,6 @@ const ADMIN_EMAIL = "admin@kjvsentinel.com";
 // Simulate getting current user's email. In a real app, this would come from an auth context.
 const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; // Change this to test non-admin view
 
-const initialAddUserState = {
-    message: "",
-    success: false,
-    errors: undefined as any[] | undefined, // ZodIssue[] type for errors
-};
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -55,7 +52,8 @@ export default function SettingsPage() {
   const [isSavingAi, startSavingAiTransition] = useTransition();
   const [isSavingFeatures, startSavingFeaturesTransition] = useTransition();
 
-  const [addUserFormState, addUserFormAction, isAddingUserPending] = useActionState(addUserProfileAction, initialAddUserState);
+  // State for Add User Profile Dialog
+  const [addUserFormState, addUserFormAction, isAddingUserPending] = useReactActionState(addUserProfileAction, initialAddUserState);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
 
 
@@ -86,15 +84,16 @@ export default function SettingsPage() {
     loadSettings();
   }, [isUserAdmin, toast]);
 
+  // Effect to handle addUserFormState changes (e.g., show toast, close dialog)
   useEffect(() => {
-    if (addUserFormState.message) {
+    if (addUserFormState.message && (addUserFormState.success || addUserFormState.errors)) { // Check if there's a message and an actionable state
         if (addUserFormState.success) {
-            toast({ title: "User Added (Simulated)", description: addUserFormState.message });
+            toast({ title: "User Action", description: addUserFormState.message });
             setIsAddUserDialogOpen(false); // Close dialog on success
         } else {
             toast({
                 title: "Failed to Add User",
-                description: addUserFormState.message + (addUserFormState.errors ? ` ${addUserFormState.errors.map((e: any) => e.message).join(', ')}` : ''),
+                description: addUserFormState.message + (addUserFormState.errors ? ` ${addUserFormState.errors.map((e: ZodIssue) => e.message).join(', ')}` : ''),
                 variant: "destructive",
             });
         }
@@ -104,7 +103,7 @@ export default function SettingsPage() {
 
   const handleFormSubmit = async (
     event: FormEvent<HTMLFormElement>,
-    saveAction: (formData: FormData) => Promise<{ success: boolean; message: string; errors?: any[] }>,
+    saveAction: (formData: FormData) => Promise<{ success: boolean; message: string; errors?: ZodIssue[] }>,
     startTransition: React.TransitionStartFunction
   ) => {
     event.preventDefault();
@@ -125,7 +124,7 @@ export default function SettingsPage() {
     });
   };
   
-  if (!isUserAdmin) {
+  if (!isUserAdmin && !isLoading) { 
     return (
       <div className="container mx-auto py-8 px-4 md:px-6 flex flex-col items-center justify-center min-h-[60vh]">
         <Card className="w-full max-w-md text-center p-8">
@@ -225,7 +224,6 @@ export default function SettingsPage() {
                 <SelectContent>
                   <SelectItem value="googleai/gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
                   <SelectItem value="googleai/gemini-pro">Gemini Pro (Example)</SelectItem>
-                  {/* Add other models as needed */}
                 </SelectContent>
               </Select>
             </div>
@@ -351,7 +349,7 @@ export default function SettingsPage() {
                     <Label htmlFor="isAdmin">Grant Admin Privileges?</Label>
                   </div>
                   {addUserFormState.message && !addUserFormState.success && (
-                     <p className="col-span-4 text-sm text-destructive">{addUserFormState.message}</p>
+                     <p className="col-span-4 text-sm text-destructive text-center">{addUserFormState.message}</p>
                   )}
                   <DialogFooter>
                     <DialogClose asChild>
@@ -369,7 +367,6 @@ export default function SettingsPage() {
             <Button variant="outline" onClick={async () => {
                 const res = await manageUsersAction();
                 toast({title: "User Management", description: res.message });
-                // Potentially navigate or open another dialog for user list
             }}>Manage Existing Users</Button>
           </div>
         </CardContent>
