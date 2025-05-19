@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { TeachingAnalysisReport } from '@/types';
-import { generateTxtOutput } from '../../../analyze-teaching/actions'; 
+import { generateTxtOutput } from '../../../analyze-teaching/actions';
 import { useToast } from "@/hooks/use-toast";
 
 interface TeachingReportActionsProps {
@@ -19,6 +19,12 @@ interface TeachingReportActionsProps {
 
 export function TeachingReportActions({ report }: TeachingReportActionsProps) {
   const { toast } = useToast();
+
+  const handlePrint = () => {
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
+  };
   
   const handleDownloadTxt = async () => {
     if (!report || !report.teaching) {
@@ -27,10 +33,10 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
     }
     try {
       const txtContent = await generateTxtOutput(report);
-      const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+      const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-tF-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      const fileName = report.teaching ? report.teaching.substring(0,30).replace(/\s+/g, '_') + '_analysis.txt' : 'teaching_analysis.txt';
+      const fileName = report.teaching ? report.teaching.substring(0,30).replace(/[^\w\s]/gi, '').replace(/\s+/g, '_') + '_analysis.txt' : 'teaching_analysis.txt';
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
@@ -44,13 +50,12 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
   };
   
   const handleEmailToSelf = () => {
-    if (!report || !report.teaching || !report.userEmail || !report.outputFormats.includes('Email')) {
-      toast({ title: "Email Option Not Available", description: "Email to self option not available or user email not provided for this report.", variant: "default" });
+    if (!report || !report.teaching || !report.userEmail) {
+      toast({ title: "Email Option Not Available", description: "User email not provided for this report.", variant: "default" });
       return;
     }
     const subject = `KJV Sentinel Teaching Analysis: ${report.teaching.substring(0,30)}...`;
-    // A more complete body would ideally include the report or a link.
-    const body = `Your KJV Sentinel teaching analysis for: "${report.teaching}" is ready.\n\n(This is a simulated email. In a full implementation, the report might be attached or linked here.)\n\nView on KJV Sentinel: ${typeof window !== 'undefined' ? window.location.href : 'Please open the report in your KJV Sentinel app.'}`;
+    const body = `Your KJV Sentinel teaching analysis for: "${report.teaching}" is ready.\n\n(This is a simulated email. In a full implementation, the report might be attached or linked here.)\n\nView on KJV Sentinel: ${typeof window !== 'undefined' ? window.location.href : `Report ID: ${report.id}`}`;
     if (typeof window !== 'undefined') {
       window.location.href = `mailto:${report.userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
@@ -69,31 +74,40 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
     }
   }
 
-  const handleShareViaWhatsApp = () => {
+  const handleShareViaWhatsApp = async () => {
     if (!report || !report.teaching) {
       toast({ title: "Error", description: "Report data is missing for sharing.", variant: "destructive" });
       return;
     }
     const reportUrl = typeof window !== 'undefined' ? window.location.href : `(Link to report: ${report.id})`;
-    const shareText = `Check out this KJV Sentinel Teaching Analysis: "${report.teaching.substring(0, 50)}..."\nLink: ${reportUrl}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-    // Using alert for simplicity as direct WhatsApp sharing can be inconsistent across devices/setups
-    alert(`To share on WhatsApp, copy this link or message:\n${whatsappUrl}\n\nMessage prepared:\n${shareText}`);
-    console.log("WhatsApp URL:", whatsappUrl);
+    const whatsappText = `Check out this KJV Sentinel Teaching Analysis: "${report.teaching.substring(0, 50)}..."\nLink: ${reportUrl}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(whatsappText);
+        toast({ title: "Copied to Clipboard", description: "Report link and title copied. Paste it into WhatsApp."});
+      } else {
+         toast({ title: "Manual Copy Needed", description: "Could not copy to clipboard automatically. Please copy the text from the prompt.", variant: "default" });
+      }
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      toast({ title: "Copy Failed", description: "Failed to copy link. Please copy manually from the prompt.", variant: "destructive" });
+    }
+
+    if (typeof window !== 'undefined') {
+      window.open(whatsappUrl, '_blank');
+    }
   };
 
   const canShareOrEmailViaDropdown = report.outputFormats.includes('Share') || (report.outputFormats.includes('Email') && !!report.userEmail);
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={() => {
-          if (typeof window !== 'undefined') {
-            window.print();
-          }
-        }}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handlePrint}
       >
         <Download className="mr-2 h-4 w-4" /> PDF
       </Button>
@@ -103,8 +117,8 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
         </Button>
       )}
        {report.outputFormats.includes('RTF') && (
-        <Button variant="outline" size="sm" onClick={() => alert("RTF generation is a placeholder. TXT format is available.")}>
-          <FileText className="mr-2 h-4 w-4" /> RTF 
+        <Button variant="outline" size="sm" onClick={() => toast({title: "RTF Generation", description: "RTF generation is a placeholder. TXT format is available."})}>
+          <FileText className="mr-2 h-4 w-4" /> RTF
         </Button>
       )}
       
@@ -118,7 +132,7 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
           <DropdownMenuContent align="end">
             {report.outputFormats.includes('Email') && report.userEmail && (
               <DropdownMenuItem onClick={handleEmailToSelf}>
-                <Mail className="mr-2 h-4 w-4" /> Email to Self ({report.userEmail})
+                <Mail className="mr-2 h-4 w-4" /> Email to Self ({report.userEmail.length > 15 ? report.userEmail.substring(0,12) + "..." : report.userEmail})
               </DropdownMenuItem>
             )}
             {report.outputFormats.includes('Share') && (
@@ -135,14 +149,10 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
         </DropdownMenu>
       )}
 
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={() => {
-          if (typeof window !== 'undefined') {
-            window.print();
-          }
-        }}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handlePrint}
       >
         <Printer className="mr-2 h-4 w-4" /> Print
       </Button>
