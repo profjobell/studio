@@ -19,20 +19,23 @@ declare global {
       analysisType: AnalysisReport['analysisType'];
       createdAt: Date;
       fileName?: string;
+      fallacies: Array<{ type: string; description: string; }>; // Added for personalized quiz
+      calvinismDeepDiveAnalysis?: string; // Ensured for deep dive
     }
   } | undefined;
 }
 
 
-export async function fetchReportsList(): Promise<Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput>[]> {
-  console.log("Server Action: Fetching reports list from global store (simulated)");
+export async function fetchReportsList(): Promise<AnalysisReport[]> {
+  console.log("Server Action: Fetching reports list from global store (simulated for full reports)");
   
-  const reportsList: Omit<AnalysisReport, keyof import('@/ai/flows/analyze-content').AnalyzeContentOutput>[] = [];
+  const reportsList: AnalysisReport[] = [];
   const currentDb = global.tempReportDatabaseGlobal || {};
 
   for (const reportId in currentDb) {
     const reportData = currentDb[reportId];
     if (reportData) {
+      // Constructing the full AnalysisReport object
       reportsList.push({
         id: reportId,
         userId: "user-123", // Placeholder
@@ -41,8 +44,20 @@ export async function fetchReportsList(): Promise<Omit<AnalysisReport, keyof imp
         analysisType: reportData.analysisType,
         status: "completed", // Assuming all saved reports are completed
         createdAt: reportData.createdAt,
-        updatedAt: reportData.createdAt, // Or new Date() for last access simulation
-        originalContent: reportData.originalContent, // Include for potential use in list/deep dive trigger
+        updatedAt: reportData.createdAt, 
+        originalContent: reportData.originalContent,
+        // Spreading the rest of AnalyzeContentOutput fields
+        summary: reportData.summary,
+        scripturalAnalysis: reportData.scripturalAnalysis,
+        historicalContext: reportData.historicalContext,
+        etymology: reportData.etymology,
+        exposure: reportData.exposure,
+        fallacies: reportData.fallacies,
+        manipulativeTactics: reportData.manipulativeTactics,
+        biblicalRemonstrance: reportData.biblicalRemonstrance,
+        identifiedIsms: reportData.identifiedIsms,
+        calvinismAnalysis: reportData.calvinismAnalysis,
+        calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis,
       });
     }
   }
@@ -58,7 +73,8 @@ export async function deleteReportAction(reportId: string): Promise<{ success: b
   if (global.tempReportDatabaseGlobal && global.tempReportDatabaseGlobal[reportId]) {
     delete global.tempReportDatabaseGlobal[reportId];
     revalidatePath("/reports");
-    revalidatePath("/dashboard"); // Also revalidate dashboard as it shows recent reports
+    revalidatePath("/dashboard"); 
+    revalidatePath("/learning/report-fallacy-quiz");
     return { success: true, message: `Report ${reportId} deleted successfully.` };
   } else {
     return { success: false, message: `Report ${reportId} not found.` };
@@ -73,16 +89,16 @@ export async function deleteAllReportsAction(): Promise<{ success: boolean; mess
     if (reportCount === 0) {
       return { success: true, message: "Report history is already empty." };
     }
-    global.tempReportDatabaseGlobal = {}; // Clears the in-memory database
-    revalidatePath("/reports"); // Revalidate the reports list page
-    revalidatePath("/dashboard"); // Revalidate the dashboard page
+    global.tempReportDatabaseGlobal = {}; 
+    revalidatePath("/reports"); 
+    revalidatePath("/dashboard"); 
+    revalidatePath("/learning/report-fallacy-quiz");
     return { success: true, message: `Successfully cleared ${reportCount} report(s) from history.` };
   } else {
-    // This case implies the database was never initialized, or already cleared in a way that made it undefined.
-    // We ensure it's an empty object.
     global.tempReportDatabaseGlobal = {};
     revalidatePath("/reports");
     revalidatePath("/dashboard");
+    revalidatePath("/learning/report-fallacy-quiz");
     return { success: true, message: "Report history store was not initialized or already empty, now ensured clear." };
   }
 }
@@ -102,6 +118,11 @@ export async function generateInDepthCalvinismReportAction(reportId: string): Pr
         return { success: false, message: `Deep dive failed: ${deepDiveResult.error}` };
     }
     if (deepDiveResult && deepDiveResult.analysis) {
+        // Update the report in the temp DB with the deep dive analysis
+        if (global.tempReportDatabaseGlobal && global.tempReportDatabaseGlobal[reportId]) {
+          global.tempReportDatabaseGlobal[reportId].calvinismDeepDiveAnalysis = deepDiveResult.analysis;
+          revalidatePath(`/reports/${reportId}`); // Revalidate the specific report page
+        }
         return { success: true, message: "In-depth Calvinism report generated.", analysis: deepDiveResult.analysis };
     }
     return { success: false, message: "Deep dive completed but no analysis returned." };
@@ -114,17 +135,87 @@ export async function generateInDepthCalvinismReportAction(reportId: string): Pr
 export async function chatWithReportAction(
   input: ChatWithReportInput
 ): Promise<ChatWithReportOutput | { error: string }> {
-  // Rely on Genkit flow to validate input based on its defined schema.
-  // const validatedInput = ChatWithReportInputSchema.safeParse(input);
-  // if (!validatedInput.success) {
-  //   return { error: validatedInput.error.errors.map(e => e.message).join(", ") };
-  // }
-
   try {
-    const result = await chatWithReport(input); // Pass input directly
+    const result = await chatWithReport(input); 
     return result;
   } catch (error) {
     console.error("Error in chatWithReportAction:", error);
     return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat." };
   }
+}
+
+export async function generateContentReportTxtOutput(reportId: string): Promise<string> {
+  const report = await fetchReportData(reportId);
+  if (!report) {
+    return "Error: Report not found.";
+  }
+
+  let output = `KJV Sentinel - Content Analysis Report\n`;
+  output += `Title: ${report.title}\n`;
+  output += `Generated: ${new Date(report.createdAt).toLocaleString()}\n`;
+  if (report.fileName) output += `Original File: ${report.fileName}\n`;
+  output += `Analysis Type: ${report.analysisType.replace(/_/g, " ")}\n\n`;
+
+  output += `--- Summary ---\n${report.summary || 'N/A'}\n\n`;
+  
+  if (report.originalContent) {
+    output += `--- Original Content Submitted ---\n${report.originalContent}\n\n`;
+  }
+
+  output += `--- Scriptural Analysis ---\n`;
+  if (report.scripturalAnalysis && report.scripturalAnalysis.length > 0) {
+    report.scripturalAnalysis.forEach(sa => {
+      output += `Verse: ${sa.verse}\nAnalysis: ${sa.analysis}\n\n`;
+    });
+  } else {
+    output += `N/A\n\n`;
+  }
+
+  output += `--- Historical Context ---\n${report.historicalContext || 'N/A'}\n\n`;
+  output += `--- Etymology ---\n${report.etymology || 'N/A'}\n\n`;
+  output += `--- Exposure ---\n${report.exposure || 'N/A'}\n\n`;
+
+  output += `--- Logical Fallacies ---\n`;
+  if (report.fallacies && report.fallacies.length > 0) {
+    report.fallacies.forEach(f => {
+      output += `Type: ${f.type}\nDescription: ${f.description}\n\n`;
+    });
+  } else {
+    output += `N/A\n\n`;
+  }
+
+  output += `--- Manipulative Tactics ---\n`;
+  if (report.manipulativeTactics && report.manipulativeTactics.length > 0) {
+    report.manipulativeTactics.forEach(mt => {
+      output += `Technique: ${mt.technique}\nDescription: ${mt.description}\n\n`;
+    });
+  } else {
+    output += `N/A\n\n`;
+  }
+  
+  output += `--- Identified Isms ---\n`;
+  if (report.identifiedIsms && report.identifiedIsms.length > 0) {
+    report.identifiedIsms.forEach(ism => {
+      output += `Ism: ${ism.ism}\nDescription: ${ism.description}\nEvidence: ${ism.evidence}\n\n`;
+    });
+  } else {
+    output += `N/A\n\n`;
+  }
+  
+  output += `--- Calvinism Analysis ---\n`;
+  if (report.calvinismAnalysis && report.calvinismAnalysis.length > 0) {
+    report.calvinismAnalysis.forEach(ca => {
+      output += `Element: ${ca.element}\nDescription: ${ca.description}\nEvidence: ${ca.evidence}\nInfiltration Tactic: ${ca.infiltrationTactic || 'N/A'}\n\n`;
+    });
+  } else {
+    output += `N/A\n\n`;
+  }
+
+  if (report.calvinismDeepDiveAnalysis) {
+    output += `--- In-Depth Calvinism Examination ---\n${report.calvinismDeepDiveAnalysis}\n\n`;
+  }
+  
+  output += `--- Biblical Remonstrance ---\n${report.biblicalRemonstrance || 'N/A'}\n\n`;
+
+  return output;
 }

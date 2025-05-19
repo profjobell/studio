@@ -35,8 +35,6 @@ export default async function ReportPage({ params }: { params: { id: string } })
     notFound();
   }
   
-  // Removed the local handleReportChatSendMessage function definition
-
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
       <Card className="w-full shadow-lg print:shadow-none print:border-none">
@@ -49,13 +47,14 @@ export default async function ReportPage({ params }: { params: { id: string } })
                  {report.fileName && <span className="block text-xs italic">File: {report.fileName}</span>}
               </CardDescription>
             </div>
-            <ReportActions />
+            <ReportActions report={report} />
           </div>
         </CardHeader>
         
         <div className="hidden print:block mb-4 p-4">
             <h1 className="text-2xl font-bold">{report.title}</h1>
             <p className="text-sm text-gray-600">Generated on: {format(new Date(report.createdAt), 'MM/dd/yyyy')} | Type: <span className="capitalize">{report.analysisType.replace(/_/g, " ")}</span></p>
+            {report.fileName && <p className="text-xs italic text-gray-500">Original File: {report.fileName}</p>}
             <Separator className="my-2"/>
         </div>
 
@@ -103,7 +102,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
             triggerButtonText="Chat About This Report"
             onSendMessageAction={
               async (userInput: string, context: string, chatHistory?: GenkitChatMessage[]) => {
-                "use server"; // Make this inline function a Server Action
+                "use server"; 
                 return chatWithReportAction({ reportContext: context, userQuestion: userInput, chatHistory });
               }
             }
@@ -122,5 +121,4 @@ export default async function ReportPage({ params }: { params: { id: string } })
     </div>
   );
 }
-
     
