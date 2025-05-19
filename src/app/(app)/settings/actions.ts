@@ -87,6 +87,7 @@ const generalSettingsSchema = z.object({
 });
 
 export async function saveGeneralSettings(
+  //prevState: any, // For useActionState
   formData: FormData
 ): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
   const appName = formData.get("appName") as string;
@@ -114,6 +115,7 @@ const aiSettingsSchema = z.object({
 });
 
 export async function saveAiSettings(
+  //prevState: any,
   formData: FormData
 ): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
     const defaultModel = formData.get("defaultModel") as string;
@@ -158,6 +160,7 @@ const featureFlagsSchema = z.object({
 });
 
 export async function saveFeatureFlags(
+  //prevState: any,
   formData: FormData
 ): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
   
@@ -184,7 +187,6 @@ export async function saveFeatureFlags(
 
 export async function manageGlossaryAction() {
   console.log("Server Action: Manage Glossary Terms (placeholder)");
-  // In a real app, this might redirect to a glossary management page or open a modal
   return { success: true, message: "Navigating to glossary management (placeholder)." };
 }
 
@@ -197,3 +199,40 @@ export async function manageUsersAction() {
   console.log("Server Action: Manage Users (placeholder)");
   return { success: true, message: "Navigating to user management (placeholder)." };
 }
+
+// New Action for Adding User Profile
+const addUserProfileSchema = z.object({
+  newUserEmail: z.string().email("Invalid email address."),
+  newDisplayName: z.string().min(3, "Display name must be at least 3 characters."),
+  newPassword: z.string().min(6, "Password must be at least 6 characters."),
+  isAdmin: z.boolean().optional(),
+});
+
+export async function addUserProfileAction(
+  prevState: { success: boolean; message: string; errors?: z.ZodIssue[] },
+  formData: FormData
+): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
+  const data = {
+    newUserEmail: formData.get("newUserEmail") as string,
+    newDisplayName: formData.get("newDisplayName") as string,
+    newPassword: formData.get("newPassword") as string,
+    isAdmin: formData.get("isAdmin") === "on",
+  };
+
+  const validation = addUserProfileSchema.safeParse(data);
+
+  if (!validation.success) {
+    return { success: false, message: "Validation failed.", errors: validation.error.issues };
+  }
+
+  console.log("Server Action: Adding New User Profile (Simulated):", validation.data);
+  // In a real app, you would:
+  // 1. Call Firebase Auth to create the user: admin.auth().createUser({...})
+  // 2. If successful, potentially set custom claims for admin role.
+  // 3. Store additional profile info in Firestore if needed.
+  
+  // For this demo, we just log it.
+  return { success: true, message: `User profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added conceptually.` };
+}
+
+    

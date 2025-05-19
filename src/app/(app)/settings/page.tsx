@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useTransition, FormEvent } from "react";
+import { useEffect, useState, useTransition, FormEvent, useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,17 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Loader2, AlertTriangle, ShieldCheck, UserPlus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   fetchAppSettings,
   saveGeneralSettings,
@@ -19,16 +29,22 @@ import {
   manageGlossaryAction,
   editLearnMoreAction,
   manageUsersAction,
+  addUserProfileAction, // New action
   type AppSettings
 } from "./actions";
-import { useRouter } from "next/navigation"; // For redirection
+import { useRouter } from "next/navigation"; 
 
 // Mock admin email for UI simulation
 const ADMIN_EMAIL = "admin@kjvsentinel.com"; 
 
 // Simulate getting current user's email. In a real app, this would come from an auth context.
-// For demo purposes, we'll simulate it. You can change this value to test admin/non-admin view.
-const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; // Change to "user@example.com" to see non-admin view
+const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; 
+
+const initialAddUserState = {
+    message: "",
+    success: false,
+    errors: undefined as any[] | undefined,
+};
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -39,14 +55,15 @@ export default function SettingsPage() {
   const [isSavingAi, startSavingAiTransition] = useTransition();
   const [isSavingFeatures, startSavingFeaturesTransition] = useTransition();
 
+  const [addUserFormState, addUserFormAction, isAddingUserPending] = useActionState(addUserProfileAction, initialAddUserState);
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+
+
   // Simulated admin check
   const isUserAdmin = MOCK_CURRENT_USER_EMAIL === ADMIN_EMAIL;
 
   useEffect(() => {
     if (!isUserAdmin) {
-        // Optionally redirect non-admins
-        // router.push("/dashboard"); 
-        // For now, just prevent loading settings and show access denied message
         setIsLoading(false); 
         return;
     }
@@ -69,6 +86,22 @@ export default function SettingsPage() {
     loadSettings();
   }, [isUserAdmin, toast]);
 
+  useEffect(() => {
+    if (addUserFormState.message) {
+        if (addUserFormState.success) {
+            toast({ title: "User Added (Simulated)", description: addUserFormState.message });
+            setIsAddUserDialogOpen(false); // Close dialog on success
+        } else {
+            toast({
+                title: "Failed to Add User",
+                description: addUserFormState.message + (addUserFormState.errors ? ` ${addUserFormState.errors.map((e: any) => e.message).join(', ')}` : ''),
+                variant: "destructive",
+            });
+        }
+    }
+  }, [addUserFormState, toast]);
+
+
   const handleFormSubmit = async (
     event: FormEvent<HTMLFormElement>,
     saveAction: (formData: FormData) => Promise<{ success: boolean; message: string; errors?: any[] }>,
@@ -80,7 +113,6 @@ export default function SettingsPage() {
       const result = await saveAction(formData);
       if (result.success) {
         toast({ title: "Settings Saved", description: result.message });
-        // Re-fetch settings to reflect changes if needed, though revalidatePath should handle it.
         const fetchedSettings = await fetchAppSettings();
         setSettings(fetchedSettings);
       } else {
@@ -193,7 +225,6 @@ export default function SettingsPage() {
                 <SelectContent>
                   <SelectItem value="googleai/gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
                   <SelectItem value="googleai/gemini-pro">Gemini Pro (Example)</SelectItem>
-                  {/* Add other models as needed */}
                 </SelectContent>
               </Select>
             </div>
@@ -265,11 +296,11 @@ export default function SettingsPage() {
       
       <Separator />
 
-      {/* Content & User Management (Placeholders) */}
+      {/* Content & User Management */}
       <Card>
         <CardHeader>
           <CardTitle>Content & User Management</CardTitle>
-          <CardDescription>Manage application data and users (Placeholder Actions).</CardDescription>
+          <CardDescription>Manage application data and users.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -281,13 +312,68 @@ export default function SettingsPage() {
                 const res = await editLearnMoreAction();
                 toast({title: "'Learn More' Guide", description: res.message });
             }}>Edit 'Learn More' Guide</Button>
+            
+            <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <UserPlus className="mr-2 h-4 w-4" /> Add New Profile
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Add New User Profile</DialogTitle>
+                  <DialogDescription>
+                    Enter the details for the new user. This is a conceptual feature and does not create real accounts.
+                  </DialogDescription>
+                </DialogHeader>
+                <form action={addUserFormAction} className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="newUserEmail" className="text-right">
+                      Email
+                    </Label>
+                    <Input id="newUserEmail" name="newUserEmail" type="email" className="col-span-3" required />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="newDisplayName" className="text-right">
+                      Display Name
+                    </Label>
+                    <Input id="newDisplayName" name="newDisplayName" className="col-span-3" required />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="newPassword" className="text-right">
+                      Password
+                    </Label>
+                    <Input id="newPassword" name="newPassword" type="password" className="col-span-3" required />
+                  </div>
+                  <div className="flex items-center space-x-2 mt-2 pl-4">
+                    <Switch id="isAdmin" name="isAdmin" />
+                    <Label htmlFor="isAdmin">Grant Admin Privileges?</Label>
+                  </div>
+                  {addUserFormState.message && !addUserFormState.success && (
+                     <p className="col-span-4 text-sm text-destructive">{addUserFormState.message}</p>
+                  )}
+                  <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button type="submit" disabled={isAddingUserPending}>
+                      {isAddingUserPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Add User (Simulated)
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
             <Button variant="outline" onClick={async () => {
                 const res = await manageUsersAction();
                 toast({title: "User Management", description: res.message });
-            }}>Manage Users</Button>
+            }}>Manage Existing Users</Button>
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+    
