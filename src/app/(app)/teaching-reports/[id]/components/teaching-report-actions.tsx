@@ -1,8 +1,14 @@
 
-'use client';
+"use client";
 
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Printer, Share2, Mail } from 'lucide-react';
+import { Download, FileText, Printer, Share2, Mail, MessageCircle } from 'lucide-react'; // Added MessageCircle
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { TeachingAnalysisReport } from '@/types';
 import { generateTxtOutput } from '../../../analyze-teaching/actions'; 
 import { useToast } from "@/hooks/use-toast";
@@ -21,12 +27,17 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
   };
 
   const handleDownloadTxt = async () => {
+    if (!report || !report.teaching) {
+      toast({ title: "Error", description: "Report data is missing for TXT generation.", variant: "destructive"});
+      return;
+    }
     try {
       const txtContent = await generateTxtOutput(report);
       const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${report.teaching.substring(0,30).replace(/\s+/g, '_')}_analysis.txt`;
+      const fileName = report.teaching ? report.teaching.substring(0,30).replace(/\s+/g, '_') + '_analysis.txt' : 'teaching_analysis.txt';
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -38,33 +49,44 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
     }
   };
   
-  const handleEmailShare = () => {
+  const handleShareViaEmailSpecific = () => { // Renamed for clarity
+    if (!report || !report.teaching) {
+      toast({ title: "Error", description: "Report data is missing for sharing.", variant: "destructive" });
+      return;
+    }
     if(report.userEmail){
         const subject = `KJV Sentinel Teaching Analysis: ${report.teaching.substring(0,30)}...`;
         const body = `Please find the KJV Sentinel teaching analysis for: "${report.teaching}"\n\nThis report includes:\n- Church History Context\n- Promoters/Demonstrators\n- Church Council Summary\n- Letter of Clarification\n- Biblical Warnings\n\n(Report content would be here or as an attachment - This is a simulation of email body content)\n\nConsider accessing the full interactive report if a link was shared with you.`;
         window.location.href = `mailto:${report.userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     } else {
-        toast({ title: "Email Not Available", description: "User email not provided for this report.", variant: "default" });
+        toast({ title: "Email Not Available", description: "User email not provided for this report. Cannot use 'Email to Self' option.", variant: "default" });
     }
   };
 
-  const handleGenericShare = () => {
+  const handleGenericEmailShare = () => {
+    if (!report || !report.teaching) {
+      toast({ title: "Error", description: "Report data is missing for sharing.", variant: "destructive" });
+      return;
+    }
+    const reportUrl = typeof window !== 'undefined' ? window.location.href : `(Link to report: ${report.id})`;
+    const subject = `KJV Sentinel Teaching Analysis: ${report.teaching.substring(0,30)}...`;
+    const body = `Check out this KJV Sentinel Teaching Analysis: "${report.teaching.substring(0, 50)}..."\nLink: ${reportUrl}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  const handleShareViaWhatsApp = () => {
+    if (!report || !report.teaching) {
+      toast({ title: "Error", description: "Report data is missing for sharing.", variant: "destructive" });
+      return;
+    }
     const reportUrl = typeof window !== 'undefined' ? window.location.href : `(Link to report: ${report.id})`;
     const shareText = `Check out this KJV Sentinel Teaching Analysis: "${report.teaching.substring(0, 50)}..."\nLink: ${reportUrl}`;
-    
-    // Option 1: Copy to clipboard (if navigator.clipboard is available)
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareText)
-        .then(() => toast({ title: "Copied to Clipboard", description: "Report title and link copied." }))
-        .catch(err => toast({ title: "Copy Failed", description: "Could not copy to clipboard.", variant: "destructive" }));
-    }
-    
-    // Option 2: Alert with WhatsApp guidance
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-    alert(`Share this teaching analysis:\n\nTitle: ${report.teaching.substring(0,50)}...\nLink: ${reportUrl}\n\nTo share on WhatsApp, you can use this link (will open WhatsApp if installed):\n${whatsappUrl}\n\n(You might need to copy the text above manually if direct sharing isn't configured on your device)`);
+    alert(`To share on WhatsApp, copy this link or message:\n${whatsappUrl}\n\nMessage prepared:\n${shareText}`);
     console.log("WhatsApp URL:", whatsappUrl);
   };
 
+  const canShareOrEmail = report.outputFormats.includes('Share') || (report.outputFormats.includes('Email') && !!report.userEmail);
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -83,16 +105,34 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
           <Download className="mr-2 h-4 w-4" /> RTF
         </Button>
       )}
-      {report.outputFormats.includes('Email') && (
-        <Button variant="outline" size="sm" onClick={handleEmailShare} disabled={!report.userEmail}>
-          <Mail className="mr-2 h-4 w-4" /> Email to Self
-        </Button>
+      
+      {canShareOrEmail && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Share2 className="mr-2 h-4 w-4" /> Share Options
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {report.outputFormats.includes('Email') && report.userEmail && (
+              <DropdownMenuItem onClick={handleShareViaEmailSpecific}>
+                <Mail className="mr-2 h-4 w-4" /> Email to Self ({report.userEmail})
+              </DropdownMenuItem>
+            )}
+            {report.outputFormats.includes('Share') && (
+              <>
+                <DropdownMenuItem onClick={handleGenericEmailShare}>
+                  <Mail className="mr-2 h-4 w-4" /> Share via Email
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleShareViaWhatsApp}>
+                  <MessageCircle className="mr-2 h-4 w-4" /> Share via WhatsApp
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
-      {report.outputFormats.includes('Share') && (
-         <Button variant="outline" size="sm" onClick={handleGenericShare}>
-          <Share2 className="mr-2 h-4 w-4" /> Share
-        </Button>
-      )}
+
       {report.outputFormats.includes('Print') && (
         <Button variant="outline" size="sm" onClick={handlePrint}>
           <Printer className="mr-2 h-4 w-4" /> Print
