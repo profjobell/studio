@@ -79,7 +79,7 @@ export function ReportActions({ report }: ReportActionsProps) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={() => alert("PDF generation is a placeholder. For now, please use your browser's 'Print to PDF' feature.")}>
+      <Button variant="outline" size="sm" onClick={handlePrint}>
         <Download className="mr-2 h-4 w-4" /> PDF
       </Button>
       <Button variant="outline" size="sm" onClick={handleDownloadTxt}>

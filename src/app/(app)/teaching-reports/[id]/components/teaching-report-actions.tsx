@@ -90,11 +90,9 @@ export function TeachingReportActions({ report }: TeachingReportActionsProps) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      {report.outputFormats.includes('PDF') && (
-        <Button variant="outline" size="sm" onClick={() => alert("PDF generation is a placeholder. For now, please use your browser's 'Print to PDF' feature.")}>
-          <Download className="mr-2 h-4 w-4" /> PDF
-        </Button>
-      )}
+      <Button variant="outline" size="sm" onClick={handlePrint}>
+        <Download className="mr-2 h-4 w-4" /> PDF
+      </Button>
       {report.outputFormats.includes('TXT') && (
         <Button variant="outline" size="sm" onClick={handleDownloadTxt}>
           <FileText className="mr-2 h-4 w-4" /> TXT
