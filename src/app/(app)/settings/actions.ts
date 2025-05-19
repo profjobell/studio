@@ -57,11 +57,11 @@ const initialSettings: AppSettings = {
 
 if (process.env.NODE_ENV === 'production') {
   if (!global.tempAppSettingsStoreGlobal) {
-    global.tempAppSettingsStoreGlobal = initialSettings;
+    global.tempAppSettingsStoreGlobal = JSON.parse(JSON.stringify(initialSettings));
   }
 } else {
   if (!global.tempAppSettingsStoreGlobal) {
-    global.tempAppSettingsStoreGlobal = initialSettings;
+    global.tempAppSettingsStoreGlobal = JSON.parse(JSON.stringify(initialSettings));
   }
 }
 const tempAppSettingsStore = global.tempAppSettingsStoreGlobal;
@@ -87,7 +87,7 @@ const generalSettingsSchema = z.object({
 });
 
 export async function saveGeneralSettings(
-  //prevState: any, // For useActionState
+  //prevState: any, // For useActionState - if we switch to it
   formData: FormData
 ): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
   const appName = formData.get("appName") as string;
@@ -103,7 +103,7 @@ export async function saveGeneralSettings(
     tempAppSettingsStore.general = validation.data;
   }
   revalidatePath("/settings");
-  return { success: true, message: "General settings saved successfully (simulated)." };
+  return { success: true, message: "General settings saved successfully." };
 }
 
 const aiSettingsSchema = z.object({
@@ -149,7 +149,7 @@ export async function saveAiSettings(
     };
   }
   revalidatePath("/settings");
-  return { success: true, message: "AI settings saved successfully (simulated)." };
+  return { success: true, message: "AI settings saved successfully." };
 }
 
 const featureFlagsSchema = z.object({
@@ -182,7 +182,7 @@ export async function saveFeatureFlags(
     tempAppSettingsStore.featureFlags = validation.data;
   }
   revalidatePath("/settings");
-  return { success: true, message: "Feature flags saved successfully (simulated)." };
+  return { success: true, message: "Feature flags saved successfully." };
 }
 
 export async function manageGlossaryAction() {
@@ -197,7 +197,9 @@ export async function editLearnMoreAction() {
 
 export async function manageUsersAction() {
   console.log("Server Action: Manage Users (placeholder)");
-  return { success: true, message: "Navigating to user management (placeholder)." };
+  // This would typically navigate to a user management page or open a detailed dialog.
+  // For now, just a log and a toast message precursor.
+  return { success: true, message: "User management interface would open here (placeholder)." };
 }
 
 // New Action for Adding User Profile
@@ -234,5 +236,3 @@ export async function addUserProfileAction(
   // For this demo, we just log it.
   return { success: true, message: `User profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added conceptually.` };
 }
-
-    

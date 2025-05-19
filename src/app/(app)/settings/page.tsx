@@ -29,7 +29,7 @@ import {
   manageGlossaryAction,
   editLearnMoreAction,
   manageUsersAction,
-  addUserProfileAction, // New action
+  addUserProfileAction,
   type AppSettings
 } from "./actions";
 import { useRouter } from "next/navigation"; 
@@ -38,12 +38,12 @@ import { useRouter } from "next/navigation";
 const ADMIN_EMAIL = "admin@kjvsentinel.com"; 
 
 // Simulate getting current user's email. In a real app, this would come from an auth context.
-const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; 
+const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; // Change this to test non-admin view
 
 const initialAddUserState = {
     message: "",
     success: false,
-    errors: undefined as any[] | undefined,
+    errors: undefined as any[] | undefined, // ZodIssue[] type for errors
 };
 
 export default function SettingsPage() {
@@ -113,7 +113,7 @@ export default function SettingsPage() {
       const result = await saveAction(formData);
       if (result.success) {
         toast({ title: "Settings Saved", description: result.message });
-        const fetchedSettings = await fetchAppSettings();
+        const fetchedSettings = await fetchAppSettings(); // Re-fetch to update UI
         setSettings(fetchedSettings);
       } else {
         toast({
@@ -225,6 +225,7 @@ export default function SettingsPage() {
                 <SelectContent>
                   <SelectItem value="googleai/gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
                   <SelectItem value="googleai/gemini-pro">Gemini Pro (Example)</SelectItem>
+                  {/* Add other models as needed */}
                 </SelectContent>
               </Select>
             </div>
@@ -368,6 +369,7 @@ export default function SettingsPage() {
             <Button variant="outline" onClick={async () => {
                 const res = await manageUsersAction();
                 toast({title: "User Management", description: res.message });
+                // Potentially navigate or open another dialog for user list
             }}>Manage Existing Users</Button>
           </div>
         </CardContent>
@@ -375,5 +377,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
