@@ -73,15 +73,13 @@ export function ReportActions({ report }: ReportActionsProps) {
     const reportUrl = typeof window !== 'undefined' ? window.location.href : `View report: ${report.title}`;
     const whatsappText = `Check out this KJV Sentinel analysis report: ${report.title}\n${reportUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
-    // For a better UX, one might open this in a new tab: window.open(whatsappUrl, '_blank');
-    // Or use navigator.share if available and desired.
     alert(`To share on WhatsApp, copy this link or message:\n${whatsappUrl}\n\nMessage prepared:\n${whatsappText}`);
     console.log("WhatsApp URL:", whatsappUrl);
   };
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={() => alert("PDF generation for this report type is a placeholder.")}>
+      <Button variant="outline" size="sm" onClick={() => alert("PDF generation is a placeholder. For now, please use your browser's 'Print to PDF' feature.")}>
         <Download className="mr-2 h-4 w-4" /> PDF
       </Button>
       <Button variant="outline" size="sm" onClick={handleDownloadTxt}>
