@@ -1,8 +1,14 @@
+
 "use server";
 
 // Placeholder for actual Firebase Auth or DB operations
 
-export async function updateProfileAction(formData: FormData): Promise<{ success: boolean; message: string }> {
+// The server action now accepts `prevState` as the first argument,
+// and `formData` as the second, as expected by `useActionState`.
+export async function updateProfileAction(
+  prevState: { success: boolean; message: string }, // Or `any` if you don't use prevState
+  formData: FormData
+): Promise<{ success: boolean; message: string }> {
   const displayName = formData.get("displayName") as string;
   const email = formData.get("email") as string;
   // const newPassword = formData.get("newPassword") as string; // if handling password
@@ -30,3 +36,4 @@ export async function deleteAccountAction(): Promise<{ success: boolean; message
   // Simulate success
   return { success: true, message: "Account deletion process initiated (simulated). You would be signed out and redirected." };
 }
+
