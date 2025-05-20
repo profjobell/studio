@@ -17,14 +17,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Loader2, Send, User, Bot, MessageCircleMore, Save } from "lucide-react";
 import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-internet-kjv-flow";
-import { saveChatToReportAction } from "../actions";
+import { saveChatToReportAction } from "../actions"; 
+import type { ClientChatMessage } from "@/types";
 
-interface ClientChatMessage {
-  id: string;
-  sender: "user" | "ai";
-  text: string;
-  sources?: string[];
-}
 
 interface AiChatDialogProps {
   reportIdOrContextKey: string;
@@ -36,7 +31,7 @@ interface AiChatDialogProps {
     context: string,
     chatHistory?: GenkitChatMessage[]
   ) => Promise<{ aiResponse: string; sourcesCited?: string[] } | { error: string }>;
-  isReportContext?: boolean; // New prop
+  isReportContext?: boolean;
 }
 
 
@@ -46,7 +41,7 @@ export function AiChatDialog({
   initialContextOrPrompt,
   triggerButtonText = "Examine with AI",
   onSendMessageAction,
-  isReportContext = false, // Default to false
+  isReportContext = false,
 }: AiChatDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -71,7 +66,7 @@ export function AiChatDialog({
 
   const sendMessage = async (messageText: string, currentMessages: ClientChatMessage[]) => {
     const historyForGenkit: GenkitChatMessage[] = currentMessages
-      .filter(msg => msg.id !== 'initial-greeting') // Don't send initial greeting as history
+      .filter(msg => msg.id !== 'initial-greeting')
       .map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'model',
         parts: [{ text: msg.text }],
@@ -146,14 +141,14 @@ export function AiChatDialog({
   };
 
   const handleSaveChat = async () => {
-    if (!reportIdOrContextKey || chatMessages.length <= 1) {
-      toast({ title: "Cannot Save Chat", description: "Not enough messages or report context missing.", variant: "destructive" });
+    if (!isReportContext || !reportIdOrContextKey || chatMessages.length <= 1) {
+      toast({ title: "Cannot Save Chat", description: "Not enough messages or context is not a report.", variant: "destructive" });
       return;
     }
     startSavingChatTransition(async () => {
       const result = await saveChatToReportAction(reportIdOrContextKey, chatMessages.filter(m => m.id !== 'initial-greeting'));
       if (result.success) {
-        toast({ title: "Chat Saved", description: "The chat transcript has been added to the report. Refresh the main report page if it doesn't update automatically." });
+        toast({ title: "Chat Saved", description: "The chat transcript has been added to the report. Refresh the main report page to see updates." });
       } else {
         toast({ title: "Failed to Save Chat", description: result.message, variant: "destructive" });
       }
@@ -170,10 +165,6 @@ export function AiChatDialog({
                 text: `Hello! How can I help you understand "${dialogTitle}" based on KJV 1611 principles today?`
             }]);
         }
-    } else {
-      // Optionally clear chat when dialog closes, or persist it if you want it to reopen with old messages
-      // setChatMessages([]);
-      // setInputValue("");
     }
   }
 
@@ -287,7 +278,7 @@ export function AiChatDialog({
           {isReportContext && (
             <Button
               onClick={handleSaveChat}
-              disabled={isSavingChat || chatMessages.length <= 1} // Disable if saving or only initial greeting exists
+              disabled={isSavingChat || chatMessages.length <= 1}
               variant="outline"
               size="sm"
               className="w-full sm:w-auto mt-2 sm:mt-0"
@@ -301,4 +292,3 @@ export function AiChatDialog({
     </Dialog>
   );
 }
-    

@@ -31,6 +31,13 @@ export type SidebarNavItem = {
     }
 );
 
+// For AI Chat Dialog
+export interface ClientChatMessage {
+  id: string;
+  sender: "user" | "ai";
+  text: string;
+  sources?: string[];
+}
 
 export type AnalysisReport = AnalyzeContentOutput & {
   id: string;
@@ -44,6 +51,7 @@ export type AnalysisReport = AnalyzeContentOutput & {
   updatedAt: Date; // Or string
   originalContent?: string; // For text submissions
   calvinismDeepDiveAnalysis?: string; // Added for deep dive results
+  aiChatTranscript?: ClientChatMessage[]; // For storing AI chat
 };
 
 export type UserProfile = {
