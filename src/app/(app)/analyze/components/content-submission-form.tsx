@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition } from "react";
-import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions"; // Added transcribeYouTubeVideoAction
+import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
@@ -45,7 +45,7 @@ const formSchema = z.object({
   }),
   submissionType: z.enum(["text", "file", "youtubeLink"]),
   textContent: z.string().optional(),
-  file: z.any().optional(), 
+  file: z.any().optional(),
   youtubeUrl: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.submissionType === "text") {
@@ -64,7 +64,7 @@ const formSchema = z.object({
         path: ["file"],
       });
     } else {
-      const fileList = data.file as FileList; 
+      const fileList = data.file as FileList;
       if (fileList[0]) {
         const file = fileList[0];
         if (file.size > MAX_FILE_SIZE) {
@@ -81,7 +81,7 @@ const formSchema = z.object({
             path: ["file"],
           });
         }
-      } else { 
+      } else {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Invalid file data.",
@@ -132,7 +132,7 @@ export function ContentSubmissionForm() {
           analysisTypeString = "text";
         } else if (values.submissionType === "file" && values.file && (values.file as FileList).length > 0) {
           const file = (values.file as FileList)[0];
-          submittedFileName = file.name; 
+          submittedFileName = file.name;
 
           if (file.type === "text/plain" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/pdf") {
              if (file.type === "text/plain") {
@@ -145,7 +145,7 @@ export function ContentSubmissionForm() {
                     variant: "default",
                  });
              }
-          } else { 
+          } else {
             analysisInput = `File submitted: ${file.name} (type: ${file.type}). Audio/Video transcription not yet implemented. Using file name as content for now.`;
             toast({
               title: "File Submitted (Transcription Simulation)",
@@ -212,11 +212,11 @@ export function ContentSubmissionForm() {
         }
         
         const saveResult = await saveReportToDatabase(
-          analysisResult, 
-          values.analysisTitle, 
-          analysisInput, 
+          analysisResult,
+          values.analysisTitle,
+          analysisInput,
           analysisTypeString,
-          submittedFileName 
+          submittedFileName
         );
 
         if (typeof saveResult === 'string') {
@@ -227,7 +227,7 @@ export function ContentSubmissionForm() {
           });
           router.push(`/reports/${reportId}`);
           form.reset();
-          setSubmissionTypeState("text"); 
+          setSubmissionTypeState("text");
         } else {
           toast({
             title: "Failed to Save Report",
@@ -276,37 +276,37 @@ export function ContentSubmissionForm() {
               <FormLabel>Submission Type</FormLabel>
               <FormControl>
                  <div className="flex flex-wrap gap-4">
-                    <Button 
+                    <Button
                         type="button"
                         variant={submissionTypeState === 'text' ? 'default' : 'outline'}
                         onClick={() => {
                             setSubmissionTypeState('text');
                             field.onChange('text');
-                            form.setValue('file', undefined); 
-                            form.setValue('youtubeUrl', ''); 
+                            form.setValue('file', undefined);
+                            form.setValue('youtubeUrl', '');
                         }}
                     >
                         Text Input
                     </Button>
-                    <Button 
+                    <Button
                         type="button"
                         variant={submissionTypeState === 'file' ? 'default' : 'outline'}
                         onClick={() => {
                             setSubmissionTypeState('file');
                             field.onChange('file');
-                            form.setValue('textContent', ''); 
-                            form.setValue('youtubeUrl', ''); 
+                            form.setValue('textContent', '');
+                            form.setValue('youtubeUrl', '');
                         }}
                     >
                         File Upload
                     </Button>
-                    <Button 
+                    <Button
                         type="button"
                         variant={submissionTypeState === 'youtubeLink' ? 'default' : 'outline'}
                         onClick={() => {
                             setSubmissionTypeState('youtubeLink');
                             field.onChange('youtubeLink');
-                            form.setValue('textContent', ''); 
+                            form.setValue('textContent', '');
                             form.setValue('file', undefined);
                         }}
                     >
@@ -321,6 +321,7 @@ export function ContentSubmissionForm() {
         
         {submissionTypeState === "text" && (
           <FormField
+            key="text-input-field"
             control={form.control}
             name="textContent"
             render={({ field }) => (
@@ -344,22 +345,22 @@ export function ContentSubmissionForm() {
 
         {submissionTypeState === "file" && (
           <FormField
+            key="file-input-field"
             control={form.control}
             name="file"
-            render={({ field: { onChange, onBlur, name, ref, disabled, value, ...fieldProps } }) => ( 
+            render={({ field: { onChange, onBlur, name, ref, disabled } }) => (
               <FormItem>
                 <FormLabel>Upload File</FormLabel>
                 <FormControl>
-                  <input 
+                  <input
                     type="file"
                     accept={SUPPORTED_FILE_TYPES.join(",")}
                     name={name}
-                    ref={ref} 
-                    onBlur={onBlur} 
-                    onChange={(e) => onChange(e.target.files)} 
-                    disabled={disabled} 
+                    ref={ref}
+                    onBlur={onBlur}
+                    onChange={(e) => onChange(e.target.files)}
+                    disabled={disabled}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    {...fieldProps}
                   />
                 </FormControl>
                 <FormDescription>
@@ -373,6 +374,7 @@ export function ContentSubmissionForm() {
 
         {submissionTypeState === "youtubeLink" && (
           <FormField
+            key="youtube-input-field"
             control={form.control}
             name="youtubeUrl"
             render={({ field }) => (
