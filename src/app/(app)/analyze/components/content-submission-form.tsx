@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition } from "react";
-import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
+import { analyzeSubmittedContent, saveReportToDatabase } from "../actions";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
@@ -105,8 +105,6 @@ export function ContentSubmissionForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
-  const [isTranscribing, setIsTranscribing] = useState(false);
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -120,8 +118,32 @@ export function ContentSubmissionForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (values.submissionType === "youtubeLink") {
+        // Zod validation should have already ensured values.youtubeUrl is valid.
+        // This is an additional safeguard before opening the link.
+        if (!values.youtubeUrl || !YOUTUBE_URL_REGEX.test(values.youtubeUrl)) {
+            toast({
+                title: "Invalid YouTube URL",
+                description: "Please provide a valid YouTube URL to proceed to the external transcription site.",
+                variant: "destructive",
+            });
+            return;
+        }
+        window.open("https://youtubetotranscript.com/", "_blank", "noopener,noreferrer");
+        toast({
+            title: "Redirected for Transcription",
+            description: "Please obtain the transcript from the opened site, then paste it into the 'Text Input' section above and submit for analysis.",
+            duration: 10000, // Increased duration for better visibility
+        });
+        // Optionally, guide user back to text input and clear YouTube URL
+        // form.setValue('submissionType', 'text');
+        // setSubmissionTypeState('text');
+        // form.setValue('youtubeUrl', '');
+        return; // Stop further processing for YouTube links here
+    }
+
+    // For "text" and "file" submissions
     startTransition(async () => {
-      setIsTranscribing(false);
       try {
         let analysisInput = "";
         let analysisTypeString: AnalysisReport['analysisType'] = "text";
@@ -158,36 +180,10 @@ export function ContentSubmissionForm() {
           else if (file.type.startsWith("video/")) analysisTypeString = "file_video";
           else analysisTypeString = "file_document";
 
-        } else if (values.submissionType === "youtubeLink" && values.youtubeUrl) {
-            setIsTranscribing(true);
-            toast({
-              title: "Processing YouTube Link...",
-              description: "Attempting to fetch and simulate transcription. This may take a moment.",
-            });
-            const transcriptionResult = await transcribeYouTubeVideoAction(values.youtubeUrl);
-            setIsTranscribing(false);
-
-            if (transcriptionResult.status === 'success' && transcriptionResult.transcript) {
-              analysisInput = transcriptionResult.transcript;
-              analysisTypeString = "youtube_video";
-              submittedFileName = `YouTube: ${values.youtubeUrl.match(YOUTUBE_URL_REGEX)?.[3] || 'video'}`;
-              toast({
-                title: "YouTube Processed (Simulated Transcription)",
-                description: "Using simulated transcript for AI analysis.",
-                variant: "default",
-              });
-            } else {
-              toast({ title: "YouTube Processing Failed", description: transcriptionResult.errorMessage || "Could not process YouTube link.", variant: "destructive" });
-              return;
-            }
         } else {
-          if (values.submissionType === "file") {
-             toast({ title: "Error", description: "No file selected or file is empty.", variant: "destructive" });
-          } else if (values.submissionType === "youtubeLink") {
-             toast({ title: "Error", description: "No YouTube URL provided.", variant: "destructive" });
-          } else {
-             toast({ title: "Error", description: "No content provided.", variant: "destructive" });
-          }
+          // This case should ideally not be reached if submissionType is not 'youtubeLink'
+          // due to Zod validation for text/file content.
+          toast({ title: "Error", description: "No content provided for text or file submission.", variant: "destructive" });
           return;
         }
         
@@ -238,7 +234,6 @@ export function ContentSubmissionForm() {
 
       } catch (error) {
         console.error("Submission error:", error);
-        setIsTranscribing(false);
         toast({
           title: "Submission Failed",
           description: error instanceof Error ? error.message : "An unexpected error occurred.",
@@ -335,7 +330,7 @@ export function ContentSubmissionForm() {
                   />
                 </FormControl>
                 <FormDescription>
-                  Directly input the text you want to analyze.
+                  Directly input the text you want to analyze. If transcribing from YouTube, paste the transcript here.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -354,13 +349,14 @@ export function ContentSubmissionForm() {
                 <FormControl>
                   <input
                     type="file"
+                    id={name}
                     accept={SUPPORTED_FILE_TYPES.join(",")}
                     name={name}
                     ref={ref}
                     onBlur={onBlur}
                     onChange={(e) => onChange(e.target.files)}
-                    disabled={disabled}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={disabled || isPending}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 p-2 border-red-500"
                   />
                 </FormControl>
                 <FormDescription>
@@ -384,10 +380,11 @@ export function ContentSubmissionForm() {
                   <Input
                     placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
                     {...field}
+                    disabled={isPending}
                   />
                 </FormControl>
                 <FormDescription>
-                  Enter the full URL of the YouTube video you want to analyze.
+                  Enter the YouTube URL. Clicking 'Submit' will open an external site for transcription.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -395,11 +392,11 @@ export function ContentSubmissionForm() {
           />
         )}
         
-        <Button type="submit" disabled={isPending || isTranscribing} className="w-full">
-          {isPending || isTranscribing ? (
+        <Button type="submit" disabled={isPending} className="w-full">
+          {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isTranscribing ? "Processing Link..." : "Submitting..."}
+              Submitting...
             </>
           ) : (
             "Submit for Analysis"
