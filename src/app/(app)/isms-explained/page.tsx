@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BrainCircuit, Info, Home } from "lucide-react";
-import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog"; // Corrected alias path
+import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog";
 import { IsmTopicListClient } from "./components/ism-topic-list-client";
-import { generalIsmChatAction } from "./actions"; // Import the new server action
+import { generalIsmChatAction } from "./actions";
 
 export const metadata = {
   title: "The 'ISMS' Exposed, Examined & Explained - KJV Sentinel",
@@ -22,8 +22,6 @@ const ismTopics = [
 
 export default function IsmsExplainedPage() {
   const generalIsmContextForDialog = "General discussion about theological 'isms', heresies, and anti-Christ philosophies, focusing on KJV 1611 perspectives and using simulated web search for context.";
-
-  // The handleIsmChatSendMessage function is removed from here and its logic is encapsulated in generalIsmChatAction.
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
@@ -50,12 +48,12 @@ export default function IsmsExplainedPage() {
           <p className="mb-6 text-muted-foreground">
             Select a topic below to learn more. Each topic will eventually feature detailed explanations, multimedia resources, download options, and an AI assistant for deeper KJV-based insights.
           </p>
-          
+
           <IsmTopicListClient topics={ismTopics} />
-          
+
         </CardContent>
       </Card>
-      
+
       <Card className="mt-8 shadow-lg">
         <CardHeader>
             <CardTitle className="flex items-center">
@@ -70,9 +68,10 @@ export default function IsmsExplainedPage() {
             <AiChatDialog
                 reportIdOrContextKey="general-isms-chat"
                 dialogTitle="General Isms Discussion (KJV Lens)"
-                initialContextOrPrompt={generalIsmContextForDialog} // This will be passed as _contextFromDialog
+                initialContextOrPrompt={generalIsmContextForDialog}
                 triggerButtonText="Ask AI About Isms (KJV Lens)"
-                onSendMessageAction={generalIsmChatAction} // Pass the Server Action directly
+                onSendMessageAction={generalIsmChatAction}
+                isReportContext={false} // Explicitly set for non-report context
             />
         </CardContent>
       </Card>

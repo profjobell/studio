@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { TeachingAnalysisReport } from "@/types";
-import { fetchTeachingAnalysisFromDatabase, chatWithReportAction } from "../../analyze-teaching/actions"; // Updated import
+import { fetchTeachingAnalysisFromDatabase, chatWithReportAction } from "../../analyze-teaching/actions";
 import { TeachingReportDisplay } from "./components/teaching-report-display";
 import { TeachingReportActions } from "./components/teaching-report-actions";
-import { AiChatDialog } from "../../reports/components/ai-chat-dialog"; // Re-use component
-import { PodcastGenerator } from "./components/podcast-generator"; 
+import { AiChatDialog } from "../../reports/components/ai-chat-dialog";
+import { PodcastGenerator } from "./components/podcast-generator";
 import { format } from 'date-fns';
 import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-report-flow";
 
@@ -33,7 +33,7 @@ export default async function TeachingReportPage({ params }: { params: { id: str
   if (!report) {
     notFound();
   }
-  
+
   const aiChatContext = `
 Teaching Submitted:
 ${report.teaching}
@@ -47,8 +47,6 @@ Promoters/Demonstrators: ${report.analysisResult.promotersDemonstrators.map(p =>
 Church Council Summary: ${report.analysisResult.churchCouncilSummary}
 Letter of Clarification: ${report.analysisResult.letterOfClarification}
 Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
-
-  // Removed local handleTeachingReportChatSendMessage function definition
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
@@ -66,7 +64,7 @@ Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
             <TeachingReportActions report={report} />
           </div>
         </CardHeader>
-        
+
         <div className="hidden print:block mb-4 p-4">
             <h1 className="text-2xl font-bold">Teaching Analysis Report</h1>
             <p className="text-sm text-gray-600">Teaching: &quot;{report.teaching}&quot;</p>
@@ -99,14 +97,14 @@ Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
         </CardHeader>
         <CardContent>
           <AiChatDialog
-            reportIdOrContextKey={report.id} 
+            reportIdOrContextKey={report.id}
             dialogTitle={`Chat about: ${report.teaching.substring(0, 30)}...`}
-            initialContextOrPrompt={aiChatContext} 
+            initialContextOrPrompt={aiChatContext}
             triggerButtonText="Chat About This Teaching Analysis"
+            isReportContext={true} // Explicitly set for report context
             onSendMessageAction={
               async (userInput: string, context: string, chatHistory?: GenkitChatMessage[]) => {
-                "use server"; // Make this inline function a Server Action
-                // The 'context' here is aiChatContext which is derived from the teaching report
+                "use server";
                 return chatWithReportAction({ reportContext: context, userQuestion: userInput, chatHistory });
               }
             }

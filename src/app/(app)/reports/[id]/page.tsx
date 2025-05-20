@@ -6,9 +6,9 @@ import { ReportDisplay } from "../components/report-display";
 import type { AnalysisReport } from "@/types";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { fetchReportFromDatabase, chatWithReportAction } from "../../analyze/actions"; 
+import { fetchReportFromDatabase, chatWithReportAction } from "../../analyze/actions";
 import { CalvinismDeepDiveButton } from "./components/calvinism-deep-dive-button";
-import { AiChatDialog } from "../components/ai-chat-dialog"; 
+import { AiChatDialog } from "../components/ai-chat-dialog";
 import { ReportActions } from "./components/report-actions";
 import { format } from 'date-fns';
 import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-report-flow";
@@ -34,7 +34,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
   if (!report) {
     notFound();
   }
-  
+
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 print:py-0 print:px-0">
       <Card className="w-full shadow-lg print:shadow-none print:border-none">
@@ -50,7 +50,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
             <ReportActions report={report} />
           </div>
         </CardHeader>
-        
+
         <div className="hidden print:block mb-4 p-4">
             <h1 className="text-2xl font-bold">{report.title}</h1>
             <p className="text-sm text-gray-600">Generated on: {format(new Date(report.createdAt), 'MM/dd/yyyy')} | Type: <span className="capitalize">{report.analysisType.replace(/_/g, " ")}</span></p>
@@ -100,9 +100,10 @@ export default async function ReportPage({ params }: { params: { id: string } })
             dialogTitle={report.title}
             initialContextOrPrompt={report.originalContent || JSON.stringify(report, null, 2)}
             triggerButtonText="Chat About This Report"
+            isReportContext={true} // Explicitly set for report context
             onSendMessageAction={
               async (userInput: string, context: string, chatHistory?: GenkitChatMessage[]) => {
-                "use server"; 
+                "use server";
                 return chatWithReportAction({ reportContext: context, userQuestion: userInput, chatHistory });
               }
             }

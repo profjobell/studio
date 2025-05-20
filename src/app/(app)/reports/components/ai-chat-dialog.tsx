@@ -15,9 +15,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { BrainCircuit, Loader2, Send, User, Bot, MessageCircleMore } from "lucide-react";
-// Import ChatMessageHistory type for consistency
-import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-internet-kjv-flow"; // Or from chat-with-report-flow
+import { BrainCircuit, Loader2, Send, User, Bot, MessageCircleMore, Save } from "lucide-react";
+import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-internet-kjv-flow";
+import { saveChatToReportAction } from "../actions";
 
 interface ClientChatMessage {
   id: string;
@@ -27,15 +27,16 @@ interface ClientChatMessage {
 }
 
 interface AiChatDialogProps {
-  reportIdOrContextKey: string; 
+  reportIdOrContextKey: string;
   dialogTitle: string;
-  initialContextOrPrompt: string; 
+  initialContextOrPrompt: string;
   triggerButtonText?: string;
   onSendMessageAction: (
-    userInput: string, 
+    userInput: string,
     context: string,
-    chatHistory?: GenkitChatMessage[] // Pass chat history to the action
+    chatHistory?: GenkitChatMessage[]
   ) => Promise<{ aiResponse: string; sourcesCited?: string[] } | { error: string }>;
+  isReportContext?: boolean; // New prop
 }
 
 
@@ -45,11 +46,13 @@ export function AiChatDialog({
   initialContextOrPrompt,
   triggerButtonText = "Examine with AI",
   onSendMessageAction,
+  isReportContext = false, // Default to false
 }: AiChatDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [chatMessages, setChatMessages] = useState<ClientChatMessage[]>([]);
   const [isLoading, startTransition] = useTransition();
+  const [isSavingChat, startSavingChatTransition] = useTransition();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -61,15 +64,14 @@ export function AiChatDialog({
       }
     }
   };
-  
+
   useEffect(() => {
     scrollToBottom();
   }, [chatMessages]);
 
   const sendMessage = async (messageText: string, currentMessages: ClientChatMessage[]) => {
-    // Convert client chat messages to Genkit-compatible history
-    // Pass all *previous* messages as history
     const historyForGenkit: GenkitChatMessage[] = currentMessages
+      .filter(msg => msg.id !== 'initial-greeting') // Don't send initial greeting as history
       .map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'model',
         parts: [{ text: msg.text }],
@@ -88,9 +90,9 @@ export function AiChatDialog({
           const errorMessage: ClientChatMessage = { id: `${Date.now()}-error`, sender: 'ai', text: `Error: ${result.error}`};
           setChatMessages(prev => [...prev, errorMessage]);
         } else if (result && result.aiResponse) {
-          const aiMessage: ClientChatMessage = { 
-            id: `${Date.now()}-ai`, 
-            sender: "ai", 
+          const aiMessage: ClientChatMessage = {
+            id: `${Date.now()}-ai`,
+            sender: "ai",
             text: result.aiResponse,
             sources: result.sourcesCited
           };
@@ -129,31 +131,49 @@ export function AiChatDialog({
 
     await sendMessage(currentQuestion, newChatMessages);
   };
-  
+
   const handleDigDeeper = (aiMessageText: string) => {
-    const deeperUserMessage: ClientChatMessage = { 
-      id: `${Date.now()}-user-deeper`, 
-      sender: "user", 
-      text: `Regarding your statement: "${aiMessageText.substring(0, 50)}...", could you please elaborate further or provide more details?` 
+    const deeperUserMessageText = `Regarding your statement: "${aiMessageText.substring(0, 70)}...", could you please elaborate further or provide more details?`;
+    const deeperUserMessage: ClientChatMessage = {
+      id: `${Date.now()}-user-deeper`,
+      sender: "user",
+      text: deeperUserMessageText
     };
     const newChatMessages = [...chatMessages, deeperUserMessage];
     setChatMessages(newChatMessages);
-    
-    // The new user message is now the last one in newChatMessages
+
     sendMessage(deeperUserMessage.text, newChatMessages);
   };
 
+  const handleSaveChat = async () => {
+    if (!reportIdOrContextKey || chatMessages.length <= 1) {
+      toast({ title: "Cannot Save Chat", description: "Not enough messages or report context missing.", variant: "destructive" });
+      return;
+    }
+    startSavingChatTransition(async () => {
+      const result = await saveChatToReportAction(reportIdOrContextKey, chatMessages.filter(m => m.id !== 'initial-greeting'));
+      if (result.success) {
+        toast({ title: "Chat Saved", description: "The chat transcript has been added to the report. Refresh the main report page if it doesn't update automatically." });
+      } else {
+        toast({ title: "Failed to Save Chat", description: result.message, variant: "destructive" });
+      }
+    });
+  };
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open) {
-        if (chatMessages.length === 0) {
+        if (chatMessages.length === 0 || (chatMessages.length === 1 && chatMessages[0].id === 'initial-greeting')) {
             setChatMessages([{
                 id: 'initial-greeting',
                 sender: 'ai',
                 text: `Hello! How can I help you understand "${dialogTitle}" based on KJV 1611 principles today?`
             }]);
         }
+    } else {
+      // Optionally clear chat when dialog closes, or persist it if you want it to reopen with old messages
+      // setChatMessages([]);
+      // setInputValue("");
     }
   }
 
@@ -175,11 +195,11 @@ export function AiChatDialog({
             Ask questions about the content. AI responses are guided by KJV 1611 principles.
           </DialogDescription>
         </DialogHeader>
-        
+
         <ScrollArea className="flex-1 overflow-y-auto p-6" ref={scrollAreaRef}>
           <div className="space-y-4">
             {chatMessages.map((message) => {
-              const isErrorResponse = message.text.toLowerCase().startsWith("error:") || 
+              const isErrorResponse = message.text.toLowerCase().startsWith("error:") ||
                                       message.text.toLowerCase().startsWith("sorry, i could not generate a response") ||
                                       message.text.toLowerCase().startsWith("failed to get response:");
               const showDigDeeper = message.sender === "ai" && message.id !== 'initial-greeting' && !isErrorResponse;
@@ -215,9 +235,9 @@ export function AiChatDialog({
                       </div>
                     )}
                     {showDigDeeper && (
-                      <Button 
-                        variant="link" 
-                        size="sm" 
+                      <Button
+                        variant="link"
+                        size="sm"
                         className="text-xs p-0 h-auto mt-2 text-primary/80 hover:text-primary"
                         onClick={() => handleDigDeeper(message.text)}
                         disabled={isLoading}
@@ -235,7 +255,7 @@ export function AiChatDialog({
                 </div>
               );
             })}
-             {isLoading && chatMessages.length > 0 && chatMessages[chatMessages.length -1].sender === 'user' && ( // Show loader only if last message was user
+             {isLoading && chatMessages.length > 0 && chatMessages[chatMessages.length -1].sender === 'user' && (
               <div className="flex items-center gap-3">
                  <span className="flex-shrink-0 p-2 bg-primary/10 rounded-full">
                     <Bot className="h-5 w-5 text-primary" />
@@ -248,10 +268,10 @@ export function AiChatDialog({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="p-6 pt-2 border-t">
-          <form onSubmit={handleSubmit} className="flex w-full items-center space-x-2">
+        <DialogFooter className="p-6 pt-2 border-t flex-col sm:flex-row items-center gap-2">
+          <form onSubmit={handleSubmit} className="flex w-full items-center space-x-2 flex-grow">
             <Input
-              id={`chat-input-${reportIdOrContextKey}`} 
+              id={`chat-input-${reportIdOrContextKey}`}
               placeholder="Ask a question..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -264,6 +284,18 @@ export function AiChatDialog({
               <span className="sr-only">Send</span>
             </Button>
           </form>
+          {isReportContext && (
+            <Button
+              onClick={handleSaveChat}
+              disabled={isSavingChat || chatMessages.length <= 1} // Disable if saving or only initial greeting exists
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto mt-2 sm:mt-0"
+            >
+              {isSavingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Save Chat to Report
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

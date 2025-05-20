@@ -2,11 +2,11 @@
 // src/app/(app)/heresies-history/page.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookMarked, ShieldAlert, Home, BrainCircuit } from "lucide-react"; // Added BrainCircuit
+import { BookMarked, ShieldAlert, Home, BrainCircuit } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog"; // Corrected alias path if needed
-import { generalIsmChatAction } from "@/app/(app)/isms-explained/actions"; // Import the server action
+import { AiChatDialog } from "@/app/(app)/reports/components/ai-chat-dialog";
+import { generalIsmChatAction } from "@/app/(app)/isms-explained/actions";
 
 export const metadata = {
   title: "Major Heresies in Christian History - KJV Sentinel",
@@ -149,6 +149,7 @@ Please assist the user with questions about these heresies, providing explanatio
                 initialContextOrPrompt={initialContextForDialog}
                 triggerButtonText="Discuss Heresies with AI (KJV Lens)"
                 onSendMessageAction={generalIsmChatAction}
+                isReportContext={false} // Explicitly set for non-report context
             />
         </CardContent>
       </Card>
