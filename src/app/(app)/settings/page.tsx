@@ -30,8 +30,9 @@ import {
   editLearnMoreAction,
   manageUsersAction,
   addUserProfileAction,
-  initialAddUserState,
-  type AppSettings
+  // initialAddUserState, // No longer imported
+  type AppSettings,
+  type AddUserFormState // Import the type
 } from "./actions";
 import { useRouter } from "next/navigation";
 import type { ZodIssue } from "zod";
@@ -43,6 +44,13 @@ const ADMIN_EMAIL = "admin@kjvsentinel.com";
 // To test admin view, ensure this matches ADMIN_EMAIL.
 // To test non-admin view, change this to something else like "user@example.com"
 const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; 
+
+// Define initial state for the useActionState hook directly in the client component
+const initialAddUserState: AddUserFormState = {
+    message: "",
+    success: false,
+    errors: undefined,
+};
 
 
 export default function SettingsPage() {

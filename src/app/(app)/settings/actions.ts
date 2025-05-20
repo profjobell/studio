@@ -206,21 +206,23 @@ const addUserProfileSchema = z.object({
   isAdmin: z.boolean().optional(),
 });
 
-// Define initial state for the useActionState hook
-export const initialAddUserState: {
+// Define type for the initial state, but don't export the state itself.
+export type AddUserFormState = {
     success: boolean;
     message: string;
     errors?: z.ZodIssue[];
-} = {
+};
+
+const initialAddUserStateInternal: AddUserFormState = {
     message: "",
     success: false,
     errors: undefined,
 };
 
 export async function addUserProfileAction(
-  prevState: typeof initialAddUserState,
+  prevState: AddUserFormState,
   formData: FormData
-): Promise<typeof initialAddUserState> {
+): Promise<AddUserFormState> {
   const data = {
     newUserEmail: formData.get("newUserEmail") as string,
     newDisplayName: formData.get("newDisplayName") as string,
