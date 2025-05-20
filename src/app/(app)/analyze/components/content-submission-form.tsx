@@ -22,6 +22,14 @@ import { analyzeSubmittedContent, saveReportToDatabase } from "../actions";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -105,6 +113,7 @@ export function ContentSubmissionForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
+  const [showYoutubeInstructionsDialog, setShowYoutubeInstructionsDialog] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -119,26 +128,16 @@ export function ContentSubmissionForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (values.submissionType === "youtubeLink") {
-        // Zod validation should have already ensured values.youtubeUrl is valid.
-        // This is an additional safeguard before opening the link.
         if (!values.youtubeUrl || !YOUTUBE_URL_REGEX.test(values.youtubeUrl)) {
             toast({
                 title: "Invalid YouTube URL",
-                description: "Please provide a valid YouTube URL to proceed to the external transcription site.",
+                description: "Please provide a valid YouTube URL to see instructions.",
                 variant: "destructive",
             });
             return;
         }
-        window.open("https://youtubetotranscript.com/", "_blank", "noopener,noreferrer");
-        toast({
-            title: "Redirected for Transcription",
-            description: "Please obtain the transcript from the opened site, then paste it into the 'Text Input' section above and submit for analysis.",
-            duration: 10000, // Increased duration for better visibility
-        });
-        // Optionally, guide user back to text input and clear YouTube URL
-        // form.setValue('submissionType', 'text');
-        // setSubmissionTypeState('text');
-        // form.setValue('youtubeUrl', '');
+        // Open the instructions dialog instead of redirecting
+        setShowYoutubeInstructionsDialog(true);
         return; // Stop further processing for YouTube links here
     }
 
@@ -181,8 +180,6 @@ export function ContentSubmissionForm() {
           else analysisTypeString = "file_document";
 
         } else {
-          // This case should ideally not be reached if submissionType is not 'youtubeLink'
-          // due to Zod validation for text/file content.
           toast({ title: "Error", description: "No content provided for text or file submission.", variant: "destructive" });
           return;
         }
@@ -244,165 +241,181 @@ export function ContentSubmissionForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="analysisTitle"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Analysis Title</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Sermon on Romans 8 Analysis" {...field} />
-              </FormControl>
-              <FormDescription>
-                A descriptive title for this analysis.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="submissionType"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Submission Type</FormLabel>
-              <FormControl>
-                 <div className="flex flex-wrap gap-4">
-                    <Button
-                        type="button"
-                        variant={submissionTypeState === 'text' ? 'default' : 'outline'}
-                        onClick={() => {
-                            setSubmissionTypeState('text');
-                            field.onChange('text');
-                            form.setValue('file', undefined);
-                            form.setValue('youtubeUrl', '');
-                        }}
-                    >
-                        Text Input
-                    </Button>
-                    <Button
-                        type="button"
-                        variant={submissionTypeState === 'file' ? 'default' : 'outline'}
-                        onClick={() => {
-                            setSubmissionTypeState('file');
-                            field.onChange('file');
-                            form.setValue('textContent', '');
-                            form.setValue('youtubeUrl', '');
-                        }}
-                    >
-                        File Upload
-                    </Button>
-                    <Button
-                        type="button"
-                        variant={submissionTypeState === 'youtubeLink' ? 'default' : 'outline'}
-                        onClick={() => {
-                            setSubmissionTypeState('youtubeLink');
-                            field.onChange('youtubeLink');
-                            form.setValue('textContent', '');
-                            form.setValue('file', undefined);
-                        }}
-                    >
-                        YouTube Link
-                    </Button>
-                 </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        {submissionTypeState === "text" && (
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
-            key="text-input-field"
             control={form.control}
-            name="textContent"
+            name="analysisTitle"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Text Content</FormLabel>
+                <FormLabel>Analysis Title</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Paste or type your religious content here for analysis..."
-                    className="resize-y min-h-[200px]"
-                    {...field}
-                  />
+                  <Input placeholder="e.g., Sermon on Romans 8 Analysis" {...field} />
                 </FormControl>
                 <FormDescription>
-                  Directly input the text you want to analyze. If transcribing from YouTube, paste the transcript here.
+                  A descriptive title for this analysis.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
 
-        {submissionTypeState === "file" && (
           <FormField
-            key="file-input-field"
             control={form.control}
-            name="file"
-            render={({ field: { onChange, onBlur, name, ref, disabled } }) => (
-              <FormItem>
-                <FormLabel>Upload File</FormLabel>
-                <FormControl>
-                  <input
-                    type="file"
-                    id={name}
-                    accept={SUPPORTED_FILE_TYPES.join(",")}
-                    name={name}
-                    ref={ref}
-                    onBlur={onBlur}
-                    onChange={(e) => onChange(e.target.files)}
-                    disabled={disabled || isPending}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 p-2 border-red-500"
-                  />
-                </FormControl>
-                <FormDescription>
-                  Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {submissionTypeState === "youtubeLink" && (
-          <FormField
-            key="youtube-input-field"
-            control={form.control}
-            name="youtubeUrl"
+            name="submissionType"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>YouTube Video URL</FormLabel>
+              <FormItem className="space-y-3">
+                <FormLabel>Submission Type</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
-                    {...field}
-                    disabled={isPending}
-                  />
+                  <div className="flex flex-wrap gap-4">
+                      <Button
+                          type="button"
+                          variant={submissionTypeState === 'text' ? 'default' : 'outline'}
+                          onClick={() => {
+                              setSubmissionTypeState('text');
+                              field.onChange('text');
+                              form.setValue('file', undefined);
+                              form.setValue('youtubeUrl', '');
+                          }}
+                      >
+                          Text Input
+                      </Button>
+                      <Button
+                          type="button"
+                          variant={submissionTypeState === 'file' ? 'default' : 'outline'}
+                          onClick={() => {
+                              setSubmissionTypeState('file');
+                              field.onChange('file');
+                              form.setValue('textContent', '');
+                              form.setValue('youtubeUrl', '');
+                          }}
+                      >
+                          File Upload
+                      </Button>
+                      <Button
+                          type="button"
+                          variant={submissionTypeState === 'youtubeLink' ? 'default' : 'outline'}
+                          onClick={() => {
+                              setSubmissionTypeState('youtubeLink');
+                              field.onChange('youtubeLink');
+                              form.setValue('textContent', '');
+                              form.setValue('file', undefined);
+                          }}
+                      >
+                          YouTube Link
+                      </Button>
+                  </div>
                 </FormControl>
-                <FormDescription>
-                  Enter the YouTube URL. Clicking 'Submit' will open an external site for transcription.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
-        
-        <Button type="submit" disabled={isPending} className="w-full">
-          {isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            "Submit for Analysis"
+          
+          {submissionTypeState === "text" && (
+            <FormField
+              key="text-input-field"
+              control={form.control}
+              name="textContent"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Text Content</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Paste or type your religious content here for analysis..."
+                      className="resize-y min-h-[200px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Directly input the text you want to analyze. If transcribing from YouTube, paste the transcript here.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-        </Button>
-      </form>
-    </Form>
+
+          {submissionTypeState === "file" && (
+            <FormField
+              key="file-input-field"
+              control={form.control}
+              name="file"
+              render={({ field: { ref, name, onBlur, onChange, disabled } }) => (
+                <FormItem>
+                  <FormLabel>Upload File</FormLabel>
+                  <FormControl>
+                    <input
+                      type="file"
+                      id={name}
+                      name={name}
+                      ref={ref}
+                      onBlur={onBlur}
+                      onChange={(e) => onChange(e.target.files)}
+                      disabled={disabled || isPending}
+                      accept={SUPPORTED_FILE_TYPES.join(",")}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 p-2"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {submissionTypeState === "youtubeLink" && (
+            <FormField
+              key="youtube-input-field"
+              control={form.control}
+              name="youtubeUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>YouTube Video URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
+                      {...field}
+                      disabled={isPending}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter the YouTube URL. Clicking 'Submit' will show instructions for manual transcription.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          
+          <Button type="submit" disabled={isPending} className="w-full">
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit for Analysis"
+            )}
+          </Button>
+        </form>
+      </Form>
+
+      <AlertDialog open={showYoutubeInstructionsDialog} onOpenChange={setShowYoutubeInstructionsDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>YouTube Link Instructions</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-wrap">
+              Youtube link must be pasted to the transcript web page field, and when complete the transcribed text will be in the Clipboard. Place the text into the 'Text Input' box and submit for analysis. Thank you.
+              {"\n\n"}
+              You can use sites like <a href="https://youtubetotranscript.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">youtubetotranscript.com</a> or similar services to get the transcript.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction onClick={() => setShowYoutubeInstructionsDialog(false)}>Got it!</AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
