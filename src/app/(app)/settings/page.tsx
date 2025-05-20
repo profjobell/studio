@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, ShieldCheck, UserPlus } from "lucide-react";
+import { Loader2, AlertTriangle, ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,36 +22,40 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent as DeleteAlertDialogContent, // Alias to avoid name clash
+  AlertDialogDescription as DeleteAlertDialogDescription,
+  AlertDialogFooter as DeleteAlertDialogFooter,
+  AlertDialogHeader as DeleteAlertDialogHeader,
+  AlertDialogTitle as DeleteAlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   fetchAppSettings,
   saveGeneralSettings,
   saveAiSettings,
   saveFeatureFlags,
   manageGlossaryAction,
   editLearnMoreAction,
-  manageUsersAction,
   addUserProfileAction,
-  // initialAddUserState, // No longer imported
+  fetchConceptuallyAddedUserProfiles, // Added
+  deleteConceptualUserAction, // Added
   type AppSettings,
-  type AddUserFormState // Import the type
+  type AddUserFormState,
+  type ConceptuallyAddedUserProfile // Added
 } from "./actions";
 import { useRouter } from "next/navigation";
 import type { ZodIssue } from "zod";
 
-// Mock admin email for UI simulation
 const ADMIN_EMAIL = "admin@kjvsentinel.com"; 
-
-// Simulate getting current user's email. In a real app, this would come from an auth context.
-// To test admin view, ensure this matches ADMIN_EMAIL.
-// To test non-admin view, change this to something else like "user@example.com"
 const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; 
 
-// Define initial state for the useActionState hook directly in the client component
 const initialAddUserState: AddUserFormState = {
     message: "",
     success: false,
     errors: undefined,
 };
-
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -62,46 +66,56 @@ export default function SettingsPage() {
   const [isSavingAi, startSavingAiTransition] = useTransition();
   const [isSavingFeatures, startSavingFeaturesTransition] = useTransition();
 
-  // State for Add User Profile Dialog
   const [addUserFormState, addUserFormAction, isAddingUserPending] = useReactActionState(addUserProfileAction, initialAddUserState);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
 
+  const [conceptuallyAddedUsers, setConceptuallyAddedUsers] = useState<ConceptuallyAddedUserProfile[]>([]);
+  const [isLoadingUsers, startLoadingUsersTransition] = useTransition();
+  const [isDeletingUser, startDeletingUserTransition] = useTransition();
+  const [userToDelete, setUserToDelete] = useState<ConceptuallyAddedUserProfile | null>(null);
 
-  // Simulated admin check
+
   const isUserAdmin = MOCK_CURRENT_USER_EMAIL === ADMIN_EMAIL;
 
-  useEffect(() => {
-    if (!isUserAdmin) {
-        setIsLoading(false); 
-        return;
-    }
-
-    async function loadSettings() {
-      setIsLoading(true); // Set loading true at the start of fetch
-      try {
-        const fetchedSettings = await fetchAppSettings();
-        setSettings(fetchedSettings);
-      } catch (error) {
-        console.error("Error loading settings:", error);
-        toast({
-          title: "Error Loading Settings",
-          description: "Could not fetch current application settings.",
-          variant: "destructive",
-        });
-        setSettings(null); // Ensure settings is null on error
-      } finally {
-        setIsLoading(false);
+  const loadInitialData = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedSettings = await fetchAppSettings();
+      setSettings(fetchedSettings);
+      if (isUserAdmin) { // Only load conceptual users if admin
+        const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
+        setConceptuallyAddedUsers(fetchedUsers);
       }
+    } catch (error) {
+      console.error("Error loading initial data:", error);
+      toast({
+        title: "Error Loading Data",
+        description: "Could not fetch initial application data.",
+        variant: "destructive",
+      });
+      setSettings(null);
+      setConceptuallyAddedUsers([]);
+    } finally {
+      setIsLoading(false);
     }
-    loadSettings();
-  }, [isUserAdmin, toast]);
+  };
 
-  // Effect to handle addUserFormState changes (e.g., show toast, close dialog)
+  useEffect(() => {
+    if (!isUserAdmin && !isLoading) return;
+    loadInitialData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isUserAdmin, toast]); // Removed isLoading from dependencies to avoid re-triggering loadSettings on its own change
+
   useEffect(() => {
     if (addUserFormState.message && (addUserFormState.success || addUserFormState.errors)) { 
         if (addUserFormState.success) {
             toast({ title: "User Action", description: addUserFormState.message });
-            setIsAddUserDialogOpen(false); // Close dialog on success
+            setIsAddUserDialogOpen(false); 
+            // Reload users list
+            startLoadingUsersTransition(async () => {
+                const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
+                setConceptuallyAddedUsers(fetchedUsers);
+            });
         } else {
             toast({
                 title: "Failed to Add User",
@@ -124,7 +138,6 @@ export default function SettingsPage() {
       const result = await saveAction(formData);
       if (result.success) {
         toast({ title: "Settings Saved", description: result.message });
-        // Re-fetch settings to reflect changes
         const fetchedSettings = await fetchAppSettings(); 
         setSettings(fetchedSettings);
       } else {
@@ -134,6 +147,20 @@ export default function SettingsPage() {
           variant: "destructive",
         });
       }
+    });
+  };
+
+  const handleDeleteConceptualUser = async () => {
+    if (!userToDelete) return;
+    startDeletingUserTransition(async () => {
+      const result = await deleteConceptualUserAction(userToDelete.id);
+      if (result.success) {
+        toast({ title: "User Deleted", description: result.message });
+        setConceptuallyAddedUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete.id));
+      } else {
+        toast({ title: "Delete Failed", description: result.message, variant: "destructive" });
+      }
+      setUserToDelete(null); // Close dialog
     });
   };
   
@@ -175,7 +202,7 @@ export default function SettingsPage() {
        <div className="flex items-center justify-center min-h-[60vh] flex-col gap-4">
             <AlertTriangle className="h-12 w-12 text-destructive" />
             <p className="text-center text-destructive">Failed to load settings.</p>
-            <Button onClick={() => window.location.reload()} variant="outline">Try Again</Button>
+            <Button onClick={loadInitialData} variant="outline">Try Again</Button>
         </div>
     );
   }
@@ -320,7 +347,41 @@ export default function SettingsPage() {
           <CardTitle>Content & User Management</CardTitle>
           <CardDescription>Manage application data and users.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Conceptual User Listing */}
+          <div>
+            <h3 className="text-lg font-medium mb-2">Conceptually Added Users</h3>
+            {isLoadingUsers && <p className="text-sm text-muted-foreground">Loading users...</p>}
+            {!isLoadingUsers && conceptuallyAddedUsers.length === 0 && (
+              <p className="text-sm text-muted-foreground">No conceptual users added yet in this session.</p>
+            )}
+            {!isLoadingUsers && conceptuallyAddedUsers.length > 0 && (
+              <ul className="space-y-3">
+                {conceptuallyAddedUsers.map(user => (
+                  <li key={user.id} className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                    <div>
+                      <p className="font-semibold">{user.newDisplayName}</p>
+                      <p className="text-sm text-muted-foreground">{user.newUserEmail}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       {user.isAdmin && <ShieldCheck className="h-5 w-5 text-primary" title="Admin Privileges"/>}
+                       <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setUserToDelete(user)}
+                        disabled={isDeletingUser}
+                        className="text-destructive hover:text-destructive/80"
+                       >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete user</span>
+                       </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4">
             <Button variant="outline" onClick={async () => {
                 const res = await manageGlossaryAction();
@@ -363,7 +424,7 @@ export default function SettingsPage() {
                     </Label>
                     <Input id="newPassword" name="newPassword" type="password" className="col-span-3" required />
                   </div>
-                  <div className="flex items-center space-x-2 mt-2 pl-4"> {/* Adjusted pl-4 for better alignment of label */}
+                  <div className="flex items-center space-x-2 mt-2 pl-4">
                     <Switch id="isAdmin" name="isAdmin" />
                     <Label htmlFor="isAdmin">Grant Admin Privileges?</Label>
                   </div>
@@ -382,14 +443,33 @@ export default function SettingsPage() {
                 </form>
               </DialogContent>
             </Dialog>
-
-            <Button variant="outline" onClick={async () => {
-                const res = await manageUsersAction();
-                toast({title: "User Management", description: res.message });
-            }}>Manage Existing Users</Button>
+            {/* Placeholder for Manage Existing Users - would be a link/button to a separate user management page */}
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete User Confirmation Dialog */}
+      {userToDelete && (
+        <DeleteAlertDialogContent>
+          <DeleteAlertDialogHeader>
+            <DeleteAlertDialogTitle>Are you sure?</DeleteAlertDialogTitle>
+            <DeleteAlertDialogDescription>
+              This will remove the conceptual user profile for &quot;{userToDelete.newDisplayName}&quot; ({userToDelete.newUserEmail}) from the current session. This action is only for this demo session and does not affect real user accounts.
+            </DeleteAlertDialogDescription>
+          </DeleteAlertDialogHeader>
+          <DeleteAlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToDelete(null)} disabled={isDeletingUser}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConceptualUser} 
+              disabled={isDeletingUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingUser && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete User
+            </AlertDialogAction>
+          </DeleteAlertDialogFooter>
+        </DeleteAlertDialogContent>
+      )}
     </div>
   );
 }

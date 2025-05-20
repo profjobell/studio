@@ -46,7 +46,7 @@ const initialSettings: AppSettings = {
     podcastGeneration: true,
     personalizedFallacyQuiz: true,
     scriptureMemoryTool: true,
-    ismAwarenessQuiz: false, // Set to false if under development
+    ismAwarenessQuiz: false,
   },
 };
 
@@ -206,11 +206,6 @@ export async function editLearnMoreAction() {
   return { success: true, message: "Navigating to guide editor (placeholder)." };
 }
 
-export async function manageUsersAction() {
-  console.log("Server Action: Manage Users (placeholder)");
-  return { success: true, message: "User management interface would open here (placeholder)." };
-}
-
 // New Action for Adding User Profile
 const addUserProfileSchema = z.object({
   newUserEmail: z.string().email("Invalid email address."),
@@ -227,7 +222,6 @@ export type AddUserFormState = {
     errors?: z.ZodIssue[];
 };
 
-// initialAddUserState is now defined in settings/page.tsx
 
 export async function addUserProfileAction(
   prevState: AddUserFormState,
@@ -248,19 +242,35 @@ export async function addUserProfileAction(
 
   console.log("Server Action: Adding New User Profile (Simulated):", validation.data);
   
-  const userProfilesStore = ensureUserProfilesStore(); // Ensure initialized
+  const userProfilesStore = ensureUserProfilesStore(); 
   const newUser: ConceptuallyAddedUserProfile = {
     id: `user-${Date.now()}`,
     ...validation.data
   };
   userProfilesStore.push(newUser);
   
-  revalidatePath("/profile"); // Revalidate profile page to show the new user
+  revalidatePath("/settings");
+  revalidatePath("/profile"); 
   return { success: true, message: `User profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added conceptually.`, errors: undefined };
 }
 
 export async function fetchConceptuallyAddedUserProfiles(): Promise<ConceptuallyAddedUserProfile[]> {
   console.log("Server Action: Fetching conceptually added user profiles (simulated)");
-  const store = ensureUserProfilesStore(); // Ensure initialized
-  return JSON.parse(JSON.stringify(store)); // Return a deep copy
+  const store = ensureUserProfilesStore(); 
+  return JSON.parse(JSON.stringify(store)); 
+}
+
+export async function deleteConceptualUserAction(userId: string): Promise<{ success: boolean; message: string }> {
+  console.log(`Server Action: Deleting conceptual user ID: ${userId}`);
+  const userProfilesStore = ensureUserProfilesStore();
+  const initialLength = userProfilesStore.length;
+  global.tempUserProfilesStoreGlobal = userProfilesStore.filter(user => user.id !== userId);
+
+  if (global.tempUserProfilesStoreGlobal.length < initialLength) {
+    revalidatePath("/settings");
+    revalidatePath("/profile");
+    return { success: true, message: `Conceptual user ${userId} deleted successfully.` };
+  } else {
+    return { success: false, message: `Conceptual user ${userId} not found.` };
+  }
 }
