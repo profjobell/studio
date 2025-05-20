@@ -167,8 +167,13 @@ export const siteConfig: SiteConfig = {
           icon: UserCircle,
           description: "Manage your user profile.",
         },
+        {
+          title: "Settings",
+          href: "/settings",
+          icon: Settings,
+          description: "Manage application settings.",
+        },
       ],
     },
   ],
 };
-
