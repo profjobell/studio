@@ -38,7 +38,7 @@ export type AnalysisReport = AnalyzeContentOutput & {
   title: string;
   fileName?: string;
   fileURL?: string;
-  analysisType: "text" | "file_audio" | "file_video" | "file_document";
+  analysisType: "text" | "file_audio" | "file_video" | "file_document" | "youtube_video";
   status: "pending" | "processing" | "completed" | "failed";
   createdAt: Date; // Or string if you store as ISO string
   updatedAt: Date; // Or string
@@ -114,4 +114,3 @@ export type TeachingAnalysisReport = {
   podcast?: PodcastData | null; // Added for podcast feature
   recording?: AudioRecordingData | null; // Added for audio recording feature
 };
-

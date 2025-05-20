@@ -14,8 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-// Input component is removed if not used elsewhere, or kept if used by other fields.
-// For this change, assuming it might still be used by analysisTitle or similar.
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -37,15 +35,19 @@ const SUPPORTED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
 ];
 
+// Basic YouTube URL regex (not exhaustive, but good for a start)
+const YOUTUBE_URL_REGEX = /^(https|http):\/\/(?:www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+
 const formSchema = z.object({
   analysisTitle: z.string().min(5, {
     message: "Analysis title must be at least 5 characters.",
   }).max(100, {
     message: "Analysis title must be at most 100 characters.",
   }),
-  submissionType: z.enum(["text", "file"]),
+  submissionType: z.enum(["text", "file", "youtubeLink"]),
   textContent: z.string().optional(),
   file: z.any().optional(), 
+  youtubeUrl: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.submissionType === "text") {
     if (!data.textContent || data.textContent.trim().length < 20) {
@@ -63,7 +65,7 @@ const formSchema = z.object({
         path: ["file"],
       });
     } else {
-      const fileList = data.file as FileList; // Ensure we're treating it as FileList
+      const fileList = data.file as FileList; 
       if (fileList[0]) {
         const file = fileList[0];
         if (file.size > MAX_FILE_SIZE) {
@@ -80,13 +82,21 @@ const formSchema = z.object({
             path: ["file"],
           });
         }
-      } else { // Should not happen if data.file.length > 0, but good to be safe
+      } else { 
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Invalid file data.",
             path: ["file"],
           });
       }
+    }
+  } else if (data.submissionType === "youtubeLink") {
+    if (!data.youtubeUrl || !YOUTUBE_URL_REGEX.test(data.youtubeUrl)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please enter a valid YouTube video URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID or https://youtu.be/VIDEO_ID).",
+            path: ["youtubeUrl"],
+        });
     }
   }
 });
@@ -95,7 +105,7 @@ export function ContentSubmissionForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file">("text");
+  const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -104,6 +114,7 @@ export function ContentSubmissionForm() {
       submissionType: "text",
       textContent: "",
       file: undefined,
+      youtubeUrl: "",
     },
   });
 
@@ -132,7 +143,7 @@ export function ContentSubmissionForm() {
                     variant: "default",
                  });
              }
-          } else {
+          } else { // Audio or Video file
             analysisInput = `File submitted: ${file.name} (type: ${file.type}). Audio/Video transcription not yet implemented. Using file name as content for now.`;
             toast({
               title: "File Submitted (Transcription Simulation)",
@@ -145,9 +156,20 @@ export function ContentSubmissionForm() {
           else if (file.type.startsWith("video/")) analysisTypeString = "file_video";
           else analysisTypeString = "file_document";
 
+        } else if (values.submissionType === "youtubeLink" && values.youtubeUrl) {
+            analysisInput = `Content from YouTube video URL: ${values.youtubeUrl}. (Transcription is simulated for this demonstration. Full video processing and transcription would occur on the backend.)`;
+            analysisTypeString = "youtube_video";
+            submittedFileName = `YouTube: ${values.youtubeUrl.split('v=')[1]?.split('&')[0] || values.youtubeUrl.split('/').pop()}`;
+            toast({
+              title: "YouTube Link Submitted (Transcription Simulation)",
+              description: "Using placeholder content based on the URL for AI analysis.",
+              variant: "default",
+            });
         } else {
           if (values.submissionType === "file") {
              toast({ title: "Error", description: "No file selected or file is empty.", variant: "destructive" });
+          } else if (values.submissionType === "youtubeLink") {
+             toast({ title: "Error", description: "No YouTube URL provided.", variant: "destructive" });
           } else {
              toast({ title: "Error", description: "No content provided.", variant: "destructive" });
           }
@@ -237,7 +259,7 @@ export function ContentSubmissionForm() {
             <FormItem className="space-y-3">
               <FormLabel>Submission Type</FormLabel>
               <FormControl>
-                 <div className="flex gap-4">
+                 <div className="flex flex-wrap gap-4">
                     <Button 
                         type="button"
                         variant={submissionTypeState === 'text' ? 'default' : 'outline'}
@@ -245,6 +267,7 @@ export function ContentSubmissionForm() {
                             setSubmissionTypeState('text');
                             field.onChange('text');
                             form.setValue('file', undefined); 
+                            form.setValue('youtubeUrl', ''); 
                         }}
                     >
                         Text Input
@@ -256,9 +279,22 @@ export function ContentSubmissionForm() {
                             setSubmissionTypeState('file');
                             field.onChange('file');
                             form.setValue('textContent', ''); 
+                            form.setValue('youtubeUrl', ''); 
                         }}
                     >
                         File Upload
+                    </Button>
+                    <Button 
+                        type="button"
+                        variant={submissionTypeState === 'youtubeLink' ? 'default' : 'outline'}
+                        onClick={() => {
+                            setSubmissionTypeState('youtubeLink');
+                            field.onChange('youtubeLink');
+                            form.setValue('textContent', ''); 
+                            form.setValue('file', undefined);
+                        }}
+                    >
+                        YouTube Link
                     </Button>
                  </div>
               </FormControl>
@@ -294,23 +330,45 @@ export function ContentSubmissionForm() {
           <FormField
             control={form.control}
             name="file"
-            render={({ field: { onChange, onBlur, name, ref, disabled } }) => ( // Explicitly destructure field properties
+            render={({ field: { onChange, onBlur, name, ref, disabled } }) => ( 
               <FormItem>
                 <FormLabel>Upload File</FormLabel>
                 <FormControl>
-                  <input // Using native input element
+                  <input 
                     type="file"
                     accept={SUPPORTED_FILE_TYPES.join(",")}
                     name={name}
-                    ref={ref} // Pass ref from RHF
-                    onBlur={onBlur} // Pass onBlur from RHF
-                    onChange={(e) => onChange(e.target.files)} // Pass FileList to RHF's onChange
-                    disabled={disabled} // Pass disabled state from RHF
+                    ref={ref} 
+                    onBlur={onBlur} 
+                    onChange={(e) => onChange(e.target.files)} 
+                    disabled={disabled} 
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </FormControl>
                 <FormDescription>
                   Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {submissionTypeState === "youtubeLink" && (
+          <FormField
+            control={form.control}
+            name="youtubeUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>YouTube Video URL</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter the full URL of the YouTube video you want to analyze.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
