@@ -40,7 +40,9 @@ import type { ZodIssue } from "zod";
 const ADMIN_EMAIL = "admin@kjvsentinel.com"; 
 
 // Simulate getting current user's email. In a real app, this would come from an auth context.
-const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; // Change this to test non-admin view
+// To test admin view, ensure this matches ADMIN_EMAIL.
+// To test non-admin view, change this to something else like "user@example.com"
+const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; 
 
 
 export default function SettingsPage() {
@@ -67,16 +69,18 @@ export default function SettingsPage() {
     }
 
     async function loadSettings() {
-      setIsLoading(true);
+      setIsLoading(true); // Set loading true at the start of fetch
       try {
         const fetchedSettings = await fetchAppSettings();
         setSettings(fetchedSettings);
       } catch (error) {
+        console.error("Error loading settings:", error);
         toast({
           title: "Error Loading Settings",
           description: "Could not fetch current application settings.",
           variant: "destructive",
         });
+        setSettings(null); // Ensure settings is null on error
       } finally {
         setIsLoading(false);
       }
@@ -86,7 +90,7 @@ export default function SettingsPage() {
 
   // Effect to handle addUserFormState changes (e.g., show toast, close dialog)
   useEffect(() => {
-    if (addUserFormState.message && (addUserFormState.success || addUserFormState.errors)) { // Check if there's a message and an actionable state
+    if (addUserFormState.message && (addUserFormState.success || addUserFormState.errors)) { 
         if (addUserFormState.success) {
             toast({ title: "User Action", description: addUserFormState.message });
             setIsAddUserDialogOpen(false); // Close dialog on success
@@ -112,7 +116,8 @@ export default function SettingsPage() {
       const result = await saveAction(formData);
       if (result.success) {
         toast({ title: "Settings Saved", description: result.message });
-        const fetchedSettings = await fetchAppSettings(); // Re-fetch to update UI
+        // Re-fetch settings to reflect changes
+        const fetchedSettings = await fetchAppSettings(); 
         setSettings(fetchedSettings);
       } else {
         toast({
@@ -158,7 +163,13 @@ export default function SettingsPage() {
   }
 
   if (!settings) {
-    return <p className="text-center text-destructive">Failed to load settings. Please try again.</p>;
+    return (
+       <div className="flex items-center justify-center min-h-[60vh] flex-col gap-4">
+            <AlertTriangle className="h-12 w-12 text-destructive" />
+            <p className="text-center text-destructive">Failed to load settings.</p>
+            <Button onClick={() => window.location.reload()} variant="outline">Try Again</Button>
+        </div>
+    );
   }
 
   return (
@@ -344,7 +355,7 @@ export default function SettingsPage() {
                     </Label>
                     <Input id="newPassword" name="newPassword" type="password" className="col-span-3" required />
                   </div>
-                  <div className="flex items-center space-x-2 mt-2 pl-4">
+                  <div className="flex items-center space-x-2 mt-2 pl-4"> {/* Adjusted pl-4 for better alignment of label */}
                     <Switch id="isAdmin" name="isAdmin" />
                     <Label htmlFor="isAdmin">Grant Admin Privileges?</Label>
                   </div>

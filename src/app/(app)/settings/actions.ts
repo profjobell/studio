@@ -27,12 +27,7 @@ export interface AppSettings {
   };
 }
 
-// In-memory store for app settings (simulating Firestore)
-declare global {
-  // eslint-disable-next-line no-var
-  var tempAppSettingsStoreGlobal: AppSettings | undefined;
-}
-
+// Initial default settings
 const initialSettings: AppSettings = {
   general: {
     appName: "KJV Sentinel",
@@ -51,27 +46,35 @@ const initialSettings: AppSettings = {
     podcastGeneration: true,
     personalizedFallacyQuiz: true,
     scriptureMemoryTool: true,
-    ismAwarenessQuiz: false, // Example: initially disabled
+    ismAwarenessQuiz: false,
   },
 };
 
-if (process.env.NODE_ENV === 'production') {
-  if (!global.tempAppSettingsStoreGlobal) {
-    global.tempAppSettingsStoreGlobal = JSON.parse(JSON.stringify(initialSettings));
-  }
-} else {
-  if (!global.tempAppSettingsStoreGlobal) {
-    global.tempAppSettingsStoreGlobal = JSON.parse(JSON.stringify(initialSettings));
-  }
+// In-memory store for app settings (simulating Firestore)
+declare global {
+  // eslint-disable-next-line no-var
+  var tempAppSettingsStoreGlobal: AppSettings | undefined;
 }
-const tempAppSettingsStore = global.tempAppSettingsStoreGlobal;
+
+// Function to ensure the global store is initialized
+function ensureSettingsStore(): AppSettings {
+  if (!global.tempAppSettingsStoreGlobal) {
+    console.log("Initializing global.tempAppSettingsStoreGlobal with initialSettings.");
+    global.tempAppSettingsStoreGlobal = JSON.parse(JSON.stringify(initialSettings));
+  }
+  return global.tempAppSettingsStoreGlobal;
+}
+
+// Initialize on module load
+ensureSettingsStore();
 
 
 // --- Server Actions ---
 
 export async function fetchAppSettings(): Promise<AppSettings> {
   console.log("Server Action: Fetching app settings (simulated)");
-  return JSON.parse(JSON.stringify(tempAppSettingsStore)); // Return a deep copy
+  const store = ensureSettingsStore();
+  return JSON.parse(JSON.stringify(store)); // Return a deep copy
 }
 
 const generalSettingsSchema = z.object({
@@ -98,9 +101,9 @@ export async function saveGeneralSettings(
   }
 
   console.log("Server Action: Saving General App Settings (simulated):", validation.data);
-  if (tempAppSettingsStore) {
-    tempAppSettingsStore.general = validation.data;
-  }
+  const store = ensureSettingsStore();
+  store.general = validation.data;
+  
   revalidatePath("/settings");
   return { success: true, message: "General settings saved successfully." };
 }
@@ -135,17 +138,16 @@ export async function saveAiSettings(
     }
     
   console.log("Server Action: Saving AI Configuration (simulated):", validation.data);
-  if (tempAppSettingsStore) {
-    tempAppSettingsStore.ai = {
-        defaultModel: validation.data.defaultModel,
-        safetyFilters: {
-            hateSpeech: validation.data.safetyHateSpeech,
-            dangerousContent: validation.data.safetyDangerousContent,
-            harassment: validation.data.safetyHarassment,
-            sexuallyExplicit: validation.data.safetySexuallyExplicit,
-        }
-    };
-  }
+  const store = ensureSettingsStore();
+  store.ai = {
+      defaultModel: validation.data.defaultModel,
+      safetyFilters: {
+          hateSpeech: validation.data.safetyHateSpeech,
+          dangerousContent: validation.data.safetyDangerousContent,
+          harassment: validation.data.safetyHarassment,
+          sexuallyExplicit: validation.data.safetySexuallyExplicit,
+      }
+  };
   revalidatePath("/settings");
   return { success: true, message: "AI settings saved successfully." };
 }
@@ -175,9 +177,8 @@ export async function saveFeatureFlags(
   }
 
   console.log("Server Action: Saving Feature Flags (simulated):", validation.data);
-  if (tempAppSettingsStore) {
-    tempAppSettingsStore.featureFlags = validation.data;
-  }
+  const store = ensureSettingsStore();
+  store.featureFlags = validation.data;
   revalidatePath("/settings");
   return { success: true, message: "Feature flags saved successfully." };
 }
