@@ -1,4 +1,9 @@
+
+"use client"; // Needs to be client component to read searchParams for error messages
+
 import Link from "next/link"
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -9,25 +14,38 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { handleSignUp, handleGoogleSignUp } from "./actions"; // Import from new actions file
 
 export default function SignUpPage() {
-  // Placeholder action, replace with actual Firebase sign-up logic
-  const handleSignUp = async (formData: FormData) => {
-    "use server";
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const confirmPassword = formData.get("confirmPassword") as string;
-    console.log("Sign Up attempt:", { email, password, confirmPassword });
-    // Here you would call Firebase auth functions
-    // Validate password === confirmPassword
-    // redirect("/dashboard"); // Example redirect
-  };
+  const searchParams = useSearchParams();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    const success = searchParams.get('success');
+
+    if (error) {
+      if (error === 'google_signup_not_implemented') {
+        setErrorMessage("Google Sign-Up is not yet implemented for this demo.");
+      } else if (error === 'password_mismatch') {
+        setErrorMessage("Passwords do not match. Please try again.");
+      } else if (error === 'missing_fields') {
+        setErrorMessage("Please fill in all required fields.");
+      } else {
+        setErrorMessage("An unknown error occurred during sign up.");
+      }
+    } else {
+      setErrorMessage(null);
+    }
+
+    if (success === 'true') {
+      setSuccessMessage("Sign-up successful (simulated)! You can now try signing in.");
+    } else {
+      setSuccessMessage(null);
+    }
+  }, [searchParams]);
   
-  const handleGoogleSignUp = async () => {
-    "use server";
-    console.log("Google Sign Up attempt");
-    // Firebase Google Sign-In logic (can be same as sign-in, Firebase handles new/existing users)
-  }
 
   return (
     <Card>
@@ -38,9 +56,18 @@ export default function SignUpPage() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
+        {errorMessage && (
+          <div className="mb-4 rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive" role="alert">
+            {errorMessage}
+          </div>
+        )}
+        {successMessage && (
+          <div className="mb-4 rounded-md border border-green-500 bg-green-500/10 p-3 text-center text-sm text-green-700 dark:text-green-400" role="alert">
+            {successMessage}
+          </div>
+        )}
          <form action={handleGoogleSignUp} className="grid gap-2">
           <Button variant="outline" type="submit">
-            {/* Replace with Google Icon component if available */}
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor" data-ai-hint="google logo">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
