@@ -46,7 +46,7 @@ const initialSettings: AppSettings = {
     podcastGeneration: true,
     personalizedFallacyQuiz: true,
     scriptureMemoryTool: true,
-    ismAwarenessQuiz: false,
+    ismAwarenessQuiz: false, // Set to false if under development
   },
 };
 
@@ -54,9 +54,11 @@ const initialSettings: AppSettings = {
 declare global {
   // eslint-disable-next-line no-var
   var tempAppSettingsStoreGlobal: AppSettings | undefined;
+  // eslint-disable-next-line no-var
+  var tempUserProfilesStoreGlobal: ConceptuallyAddedUserProfile[] | undefined;
 }
 
-// Function to ensure the global store is initialized
+// Function to ensure the global settings store is initialized
 function ensureSettingsStore(): AppSettings {
   if (!global.tempAppSettingsStoreGlobal) {
     console.log("Initializing global.tempAppSettingsStoreGlobal with initialSettings.");
@@ -65,15 +67,26 @@ function ensureSettingsStore(): AppSettings {
   return global.tempAppSettingsStoreGlobal;
 }
 
-// Initialize on module load
+// Function to ensure the global user profiles store is initialized
+function ensureUserProfilesStore(): ConceptuallyAddedUserProfile[] {
+  if (!global.tempUserProfilesStoreGlobal) {
+    console.log("Initializing global.tempUserProfilesStoreGlobal as empty array.");
+    global.tempUserProfilesStoreGlobal = [];
+  }
+  return global.tempUserProfilesStoreGlobal;
+}
+
+
+// Initialize stores on module load
 ensureSettingsStore();
+ensureUserProfilesStore();
 
 
 // --- Server Actions ---
 
 export async function fetchAppSettings(): Promise<AppSettings> {
   console.log("Server Action: Fetching app settings (simulated)");
-  const store = ensureSettingsStore();
+  const store = ensureSettingsStore(); // Ensure initialized
   return JSON.parse(JSON.stringify(store)); // Return a deep copy
 }
 
@@ -101,7 +114,7 @@ export async function saveGeneralSettings(
   }
 
   console.log("Server Action: Saving General App Settings (simulated):", validation.data);
-  const store = ensureSettingsStore();
+  const store = ensureSettingsStore(); // Ensure initialized
   store.general = validation.data;
   
   revalidatePath("/settings");
@@ -138,7 +151,7 @@ export async function saveAiSettings(
     }
     
   console.log("Server Action: Saving AI Configuration (simulated):", validation.data);
-  const store = ensureSettingsStore();
+  const store = ensureSettingsStore(); // Ensure initialized
   store.ai = {
       defaultModel: validation.data.defaultModel,
       safetyFilters: {
@@ -177,7 +190,7 @@ export async function saveFeatureFlags(
   }
 
   console.log("Server Action: Saving Feature Flags (simulated):", validation.data);
-  const store = ensureSettingsStore();
+  const store = ensureSettingsStore(); // Ensure initialized
   store.featureFlags = validation.data;
   revalidatePath("/settings");
   return { success: true, message: "Feature flags saved successfully." };
@@ -206,18 +219,15 @@ const addUserProfileSchema = z.object({
   isAdmin: z.boolean().optional(),
 });
 
-// Define type for the initial state, but don't export the state itself.
+export type ConceptuallyAddedUserProfile = z.infer<typeof addUserProfileSchema> & { id: string };
+
 export type AddUserFormState = {
     success: boolean;
     message: string;
     errors?: z.ZodIssue[];
 };
 
-const initialAddUserStateInternal: AddUserFormState = {
-    message: "",
-    success: false,
-    errors: undefined,
-};
+// initialAddUserState is now defined in settings/page.tsx
 
 export async function addUserProfileAction(
   prevState: AddUserFormState,
@@ -237,11 +247,20 @@ export async function addUserProfileAction(
   }
 
   console.log("Server Action: Adding New User Profile (Simulated):", validation.data);
-  // In a real app, you would:
-  // 1. Call Firebase Auth to create the user: admin.auth().createUser({...})
-  // 2. If successful, potentially set custom claims for admin role.
-  // 3. Store additional profile info in Firestore if needed.
   
-  // For this demo, we just log it.
+  const userProfilesStore = ensureUserProfilesStore(); // Ensure initialized
+  const newUser: ConceptuallyAddedUserProfile = {
+    id: `user-${Date.now()}`,
+    ...validation.data
+  };
+  userProfilesStore.push(newUser);
+  
+  revalidatePath("/profile"); // Revalidate profile page to show the new user
   return { success: true, message: `User profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added conceptually.`, errors: undefined };
+}
+
+export async function fetchConceptuallyAddedUserProfiles(): Promise<ConceptuallyAddedUserProfile[]> {
+  console.log("Server Action: Fetching conceptually added user profiles (simulated)");
+  const store = ensureUserProfilesStore(); // Ensure initialized
+  return JSON.parse(JSON.stringify(store)); // Return a deep copy
 }
