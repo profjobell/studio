@@ -140,7 +140,7 @@ export default async function DashboardPage() {
               width={300}
               height={225}
               className="rounded-lg shadow-md object-contain"
-              data-ai-hint="bible books"
+              data-ai-hint="KJV bible"
             />
             <div>
               <p className="mb-4 text-muted-foreground">
@@ -177,7 +177,7 @@ export default async function DashboardPage() {
                 width={300}
                 height={150}
                 className="rounded-md shadow-md object-contain hover:opacity-80 transition-opacity"
-                data-ai-hint="tv logo" 
+                data-ai-hint="tv channel" 
               />
             </Link>
             <p className="text-sm text-muted-foreground text-center">
@@ -194,4 +194,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-
