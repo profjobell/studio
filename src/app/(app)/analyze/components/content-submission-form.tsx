@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition } from "react";
-import { analyzeSubmittedContent, saveReportToDatabase } from "../actions";
+import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions"; // Added transcribeYouTubeVideoAction
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
@@ -35,7 +35,6 @@ const SUPPORTED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
 ];
 
-// Basic YouTube URL regex (not exhaustive, but good for a start)
 const YOUTUBE_URL_REGEX = /^(https|http):\/\/(?:www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
 const formSchema = z.object({
@@ -106,6 +105,8 @@ export function ContentSubmissionForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -120,6 +121,7 @@ export function ContentSubmissionForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
+      setIsTranscribing(false);
       try {
         let analysisInput = "";
         let analysisTypeString: AnalysisReport['analysisType'] = "text";
@@ -143,7 +145,7 @@ export function ContentSubmissionForm() {
                     variant: "default",
                  });
              }
-          } else { // Audio or Video file
+          } else { 
             analysisInput = `File submitted: ${file.name} (type: ${file.type}). Audio/Video transcription not yet implemented. Using file name as content for now.`;
             toast({
               title: "File Submitted (Transcription Simulation)",
@@ -157,14 +159,27 @@ export function ContentSubmissionForm() {
           else analysisTypeString = "file_document";
 
         } else if (values.submissionType === "youtubeLink" && values.youtubeUrl) {
-            analysisInput = `Content from YouTube video URL: ${values.youtubeUrl}. (Transcription is simulated for this demonstration. Full video processing and transcription would occur on the backend.)`;
-            analysisTypeString = "youtube_video";
-            submittedFileName = `YouTube: ${values.youtubeUrl.split('v=')[1]?.split('&')[0] || values.youtubeUrl.split('/').pop()}`;
+            setIsTranscribing(true);
             toast({
-              title: "YouTube Link Submitted (Transcription Simulation)",
-              description: "Using placeholder content based on the URL for AI analysis.",
-              variant: "default",
+              title: "Processing YouTube Link...",
+              description: "Attempting to fetch and simulate transcription. This may take a moment.",
             });
+            const transcriptionResult = await transcribeYouTubeVideoAction(values.youtubeUrl);
+            setIsTranscribing(false);
+
+            if (transcriptionResult.status === 'success' && transcriptionResult.transcript) {
+              analysisInput = transcriptionResult.transcript;
+              analysisTypeString = "youtube_video";
+              submittedFileName = `YouTube: ${values.youtubeUrl.match(YOUTUBE_URL_REGEX)?.[3] || 'video'}`;
+              toast({
+                title: "YouTube Processed (Simulated Transcription)",
+                description: "Using simulated transcript for AI analysis.",
+                variant: "default",
+              });
+            } else {
+              toast({ title: "YouTube Processing Failed", description: transcriptionResult.errorMessage || "Could not process YouTube link.", variant: "destructive" });
+              return;
+            }
         } else {
           if (values.submissionType === "file") {
              toast({ title: "Error", description: "No file selected or file is empty.", variant: "destructive" });
@@ -223,6 +238,7 @@ export function ContentSubmissionForm() {
 
       } catch (error) {
         console.error("Submission error:", error);
+        setIsTranscribing(false);
         toast({
           title: "Submission Failed",
           description: error instanceof Error ? error.message : "An unexpected error occurred.",
@@ -330,7 +346,7 @@ export function ContentSubmissionForm() {
           <FormField
             control={form.control}
             name="file"
-            render={({ field: { onChange, onBlur, name, ref, disabled } }) => ( 
+            render={({ field: { onChange, onBlur, name, ref, disabled, value, ...fieldProps } }) => ( 
               <FormItem>
                 <FormLabel>Upload File</FormLabel>
                 <FormControl>
@@ -343,6 +359,7 @@ export function ContentSubmissionForm() {
                     onChange={(e) => onChange(e.target.files)} 
                     disabled={disabled} 
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    {...fieldProps}
                   />
                 </FormControl>
                 <FormDescription>
@@ -376,11 +393,11 @@ export function ContentSubmissionForm() {
           />
         )}
         
-        <Button type="submit" disabled={isPending} className="w-full">
-          {isPending ? (
+        <Button type="submit" disabled={isPending || isTranscribing} className="w-full">
+          {isPending || isTranscribing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting...
+              {isTranscribing ? "Processing Link..." : "Submitting..."}
             </>
           ) : (
             "Submit for Analysis"

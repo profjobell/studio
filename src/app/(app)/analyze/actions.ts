@@ -3,7 +3,8 @@
 
 import { analyzeContent, type AnalyzeContentInput, type AnalyzeContentOutput } from "@/ai/flows/analyze-content";
 import { calvinismDeepDive, type CalvinismDeepDiveInput, type CalvinismDeepDiveOutput } from "@/ai/flows/calvinism-deep-dive";
-import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory } from "@/ai/flows/chat-with-report-flow";
+import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory as GenkitChatMessageHistory } from "@/ai/flows/chat-with-report-flow"; // Renamed import to avoid conflict
+import { transcribeYouTubeVideoFlow, type TranscribeYouTubeInput, type TranscribeYouTubeOutput } from "@/ai/flows/transcribe-youtube-flow"; // Import new flow
 import type { AnalysisReport } from "@/types";
 import { z } from "zod";
 
@@ -21,8 +22,8 @@ interface StoredReportData extends AnalyzeContentOutput {
   originalContent: string;
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
-  fileName?: string; 
-  calvinismDeepDiveAnalysis?: string; // Added field
+  fileName?: string;
+  calvinismDeepDiveAnalysis?: string;
 }
 
 interface TempReportStore {
@@ -71,11 +72,27 @@ if (process.env.NODE_ENV === 'production') {
         { element: "Unconditional Election (Hinted)", description: "Suggests God chose specific individuals for salvation irrespective of their actions.", evidence: "Interpretation of Ephesians 1:4-5.", infiltrationTactic: "Subtle rephrasing of 'foreknowledge' as 'predetermination'."},
         { element: "Sovereignty (Emphasized)", description: "Strong focus on God's absolute control over all events, including salvation.", evidence: "Repeated phrases like 'God's sovereign decree'."},
       ],
-      calvinismDeepDiveAnalysis: undefined, // Initialize sample data
+      calvinismDeepDiveAnalysis: undefined,
     };
     global.tempReportDatabaseGlobal[sampleReportId] = sampleReportData;
   }
   tempReportDatabase = global.tempReportDatabaseGlobal;
+}
+
+// New Server Action for YouTube Transcription
+export async function transcribeYouTubeVideoAction(
+  url: string
+): Promise<TranscribeYouTubeOutput> {
+  if (!url) {
+    return { transcript: '', status: 'error', errorMessage: 'YouTube URL cannot be empty.' };
+  }
+  try {
+    const result = await transcribeYouTubeVideoFlow({ youtubeUrl: url });
+    return result;
+  } catch (error) {
+    console.error("Error in transcribeYouTubeVideoAction:", error);
+    return { transcript: '', status: 'error', errorMessage: error instanceof Error ? error.message : "An unexpected error occurred during YouTube transcription." };
+  }
 }
 
 
@@ -97,7 +114,7 @@ export async function analyzeSubmittedContent(
 }
 
 export async function initiateCalvinismDeepDive(
-  input: CalvinismDeepDiveInput & { reportId: string } // Added reportId
+  input: CalvinismDeepDiveInput & { reportId: string }
 ): Promise<CalvinismDeepDiveOutput | { error: string }> {
   const validatedInput = calvinismDeepDiveSchema.safeParse({ content: input.content });
   if (!validatedInput.success) {
@@ -105,14 +122,14 @@ export async function initiateCalvinismDeepDive(
   }
   
   try {
-    const result = await calvinismDeepDive({content: validatedInput.data.content}); // Pass only content to the flow
+    const result = await calvinismDeepDive({content: validatedInput.data.content});
 
     if ('analysis' in result && tempReportDatabase[input.reportId]) {
       tempReportDatabase[input.reportId].calvinismDeepDiveAnalysis = result.analysis;
       console.log(`Updated report ${input.reportId} with Calvinism deep dive analysis.`);
     } else if ('error' in result) {
       console.error("Error in initiateCalvinismDeepDive flow call:", result.error);
-      return result; // Propagate error
+      return result;
     } else if (!tempReportDatabase[input.reportId]){
       console.warn(`Report ID ${input.reportId} not found in temp database after deep dive.`);
     }
@@ -141,7 +158,7 @@ export async function saveReportToDatabase(
       originalContent,
       analysisType,
       createdAt: new Date(),
-      calvinismDeepDiveAnalysis: undefined, // Initialize as undefined
+      calvinismDeepDiveAnalysis: undefined,
     };
 
     if (analysisType !== 'text' && fileName) {
@@ -186,7 +203,7 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       biblicalRemonstrance: data.biblicalRemonstrance,
       identifiedIsms: data.identifiedIsms,
       calvinismAnalysis: data.calvinismAnalysis,
-      calvinismDeepDiveAnalysis: data.calvinismDeepDiveAnalysis, // Include the field
+      calvinismDeepDiveAnalysis: data.calvinismDeepDiveAnalysis,
     };
   }
   
@@ -194,12 +211,10 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
   return null;
 }
 
-// Action to be called by AiChatDialog for report-specific chats
 export async function chatWithReportAction(
-  input: ChatWithReportInput, // Includes userQuestion, reportContext, and now chatHistory
+  input: ChatWithReportInput,
 ): Promise<ChatWithReportOutput | { error: string }> {
   try {
-    // Input validation is implicitly handled by the Genkit flow's inputSchema
     const result = await chatWithReport(input); 
     return result;
   } catch (error) {
