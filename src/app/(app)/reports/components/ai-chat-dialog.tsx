@@ -18,12 +18,12 @@ import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Loader2, Send, User, Bot, MessageCircleMore, Save } from "lucide-react";
 import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-internet-kjv-flow";
 import { saveChatToReportAction } from "../actions";
-import type { ClientChatMessage } from "@/types";
-import { useRouter } from "next/navigation"; // Import useRouter
+import type { ClientChatMessage } from "@/types"; // Updated import
+import { useRouter } from "next/navigation"; 
 
 
 interface AiChatDialogProps {
-  reportIdOrContextKey: string;
+  reportIdOrContextKey: string; // For reports, this is the report ID
   dialogTitle: string;
   initialContextOrPrompt: string;
   triggerButtonText?: string;
@@ -32,7 +32,7 @@ interface AiChatDialogProps {
     context: string,
     chatHistory?: GenkitChatMessage[]
   ) => Promise<{ aiResponse: string; sourcesCited?: string[] } | { error: string }>;
-  isReportContext?: boolean;
+  isReportContext?: boolean; // Explicit prop to determine if it's a report chat
 }
 
 
@@ -47,11 +47,11 @@ export function AiChatDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [chatMessages, setChatMessages] = useState<ClientChatMessage[]>([]);
-  const [isLoading, startTransition] = useTransition();
+  const [isLoading, startLoadingTransition] = useTransition();
   const [isSavingChat, startSavingChatTransition] = useTransition();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const router = useRouter(); // Initialize router
+  const router = useRouter(); 
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -74,7 +74,7 @@ export function AiChatDialog({
         parts: [{ text: msg.text }],
       }));
 
-    startTransition(async () => {
+    startLoadingTransition(async () => {
       try {
         const result = await onSendMessageAction(messageText, initialContextOrPrompt, historyForGenkit);
 
@@ -144,11 +144,10 @@ export function AiChatDialog({
 
   const handleSaveChat = async () => {
     if (!isReportContext || !reportIdOrContextKey || chatMessages.length <= 1) {
-      toast({ title: "Cannot Save Chat", description: "Not enough messages or context is not a report.", variant: "destructive" });
+      toast({ title: "Cannot Save Chat", description: "Not enough messages or context is not a report.", variant: "default" });
       return;
     }
     startSavingChatTransition(async () => {
-      // Filter out initial greeting if present
       const messagesToSave = chatMessages.filter(m => m.id !== 'initial-greeting');
       if (messagesToSave.length === 0) {
         toast({ title: "No Messages to Save", description: "There are no actual chat messages to save.", variant: "default" });
@@ -156,9 +155,10 @@ export function AiChatDialog({
       }
 
       const result = await saveChatToReportAction(reportIdOrContextKey, messagesToSave);
-      if (result.success) {
-        toast({ title: "Chat Saved", description: "The chat transcript has been added to the report. Refreshing report..." });
-        router.refresh(); // Refresh the current route to update the report display
+      if (result.success && result.newReportId) {
+        toast({ title: "Chat Saved to New Report", description: result.message + " Navigating to new report...", duration: 5000 });
+        setIsOpen(false); // Close current dialog
+        router.push(`/reports/${result.newReportId}`); // Navigate to the new report
       } else {
         toast({ title: "Failed to Save Chat", description: result.message, variant: "destructive" });
       }
@@ -168,7 +168,6 @@ export function AiChatDialog({
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open) {
-        // Only set initial greeting if chatMessages is truly empty or only contains the placeholder
         if (chatMessages.length === 0 || (chatMessages.length === 1 && chatMessages[0].id === 'initial-greeting')) {
             setChatMessages([{
                 id: 'initial-greeting',
@@ -295,7 +294,7 @@ export function AiChatDialog({
               className="w-full sm:w-auto mt-2 sm:mt-0"
             >
               {isSavingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Save Chat to Report
+              Save Chat to New Report
             </Button>
           )}
         </DialogFooter>

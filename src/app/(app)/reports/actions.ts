@@ -3,7 +3,7 @@
 
 import type { AnalysisReport, ClientChatMessage } from "@/types";
 import { revalidatePath } from "next/cache";
-import { fetchReportFromDatabase as fetchReportData } from "../analyze/actions";
+import { fetchReportFromDatabase as fetchReportData } from "../analyze/actions"; // Assuming this fetches full report data
 import { calvinismDeepDive } from "@/ai/flows/calvinism-deep-dive";
 import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput } from "@/ai/flows/chat-with-report-flow";
 
@@ -37,13 +37,13 @@ export async function fetchReportsList(): Promise<AnalysisReport[]> {
     if (reportData) {
       reportsList.push({
         id: reportId,
-        userId: "user-123",
+        userId: "user-123", // Placeholder
         title: reportData.title,
         fileName: reportData.fileName,
         analysisType: reportData.analysisType,
-        status: "completed",
+        status: "completed", // Assuming all stored reports are completed
         createdAt: reportData.createdAt,
-        updatedAt: reportData.createdAt,
+        updatedAt: reportData.createdAt, // Simplification for demo
         originalContent: reportData.originalContent,
         summary: reportData.summary,
         scripturalAnalysis: reportData.scripturalAnalysis,
@@ -60,6 +60,7 @@ export async function fetchReportsList(): Promise<AnalysisReport[]> {
       });
     }
   }
+  // Sort by creation date, newest first
   reportsList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return Promise.resolve(reportsList);
 }
@@ -87,12 +88,13 @@ export async function deleteAllReportsAction(): Promise<{ success: boolean; mess
     if (reportCount === 0) {
       return { success: true, message: "Report history is already empty." };
     }
-    global.tempReportDatabaseGlobal = {};
+    global.tempReportDatabaseGlobal = {}; // Clear the object
     revalidatePath("/reports");
     revalidatePath("/dashboard");
     revalidatePath("/learning/report-fallacy-quiz");
     return { success: true, message: `Successfully cleared ${reportCount} report(s) from history.` };
   } else {
+    // Ensure it's an object even if it was undefined
     global.tempReportDatabaseGlobal = {};
     revalidatePath("/reports");
     revalidatePath("/dashboard");
@@ -116,11 +118,12 @@ export async function generateInDepthCalvinismReportAction(reportId: string): Pr
         return { success: false, message: `Deep dive failed: ${deepDiveResult.error}` };
     }
     if (deepDiveResult && deepDiveResult.analysis) {
+        // Update the existing report with the deep dive analysis
         if (global.tempReportDatabaseGlobal && global.tempReportDatabaseGlobal[reportId]) {
           global.tempReportDatabaseGlobal[reportId].calvinismDeepDiveAnalysis = deepDiveResult.analysis;
-          revalidatePath(`/reports/${reportId}`);
+          revalidatePath(`/reports/${reportId}`); // Revalidate the specific report page
         }
-        return { success: true, message: "In-depth Calvinism report generated.", analysis: deepDiveResult.analysis };
+        return { success: true, message: "In-depth Calvinism report generated and added to the current report.", analysis: deepDiveResult.analysis };
     }
     return { success: false, message: "Deep dive completed but no analysis returned." };
   } catch (error) {
@@ -129,17 +132,18 @@ export async function generateInDepthCalvinismReportAction(reportId: string): Pr
   }
 }
 
-export async function chatWithReportAction(
-  input: ChatWithReportInput
-): Promise<ChatWithReportOutput | { error: string }> {
-  try {
-    const result = await chatWithReport(input);
-    return result;
-  } catch (error) {
-    console.error("Error in chatWithReportAction:", error);
-    return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat." };
-  }
-}
+// chatWithReportAction is now expected to be in analyze/actions.ts or imported there
+// export async function chatWithReportAction(
+//   input: ChatWithReportInput
+// ): Promise<ChatWithReportOutput | { error: string }> {
+//   try {
+//     const result = await chatWithReport(input);
+//     return result;
+//   } catch (error) {
+//     console.error("Error in chatWithReportAction:", error);
+//     return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat." };
+//   }
+// }
 
 export async function generateContentReportTxtOutput(reportId: string): Promise<string> {
   const report = await fetchReportData(reportId);
@@ -229,33 +233,42 @@ export async function generateContentReportTxtOutput(reportId: string): Promise<
 }
 
 export async function saveChatToReportAction(
-  reportId: string,
+  originalReportId: string,
   chatMessages: ClientChatMessage[]
-): Promise<{ success: boolean; message: string }> {
-  console.log(`Server Action: Saving chat to report ID: ${reportId}`);
+): Promise<{ success: boolean; message: string; newReportId?: string }> {
+  console.log(`Server Action: Creating new report with chat from original report ID: ${originalReportId}`);
 
   if (!global.tempReportDatabaseGlobal) {
     global.tempReportDatabaseGlobal = {}; // Initialize if undefined
     console.warn("tempReportDatabaseGlobal was not initialized. Initializing now.");
+    return { success: false, message: "Internal server error: Database not initialized." };
   }
 
-  const report = global.tempReportDatabaseGlobal[reportId];
+  const originalReportData = global.tempReportDatabaseGlobal[originalReportId];
 
-  if (report) {
-    // Ensure aiChatTranscript is an array before pushing
-    if (!Array.isArray(report.aiChatTranscript)) {
-      report.aiChatTranscript = [];
-    }
-    // Replace the transcript with the current session's chat.
-    report.aiChatTranscript = chatMessages;
-    
-    // Persist the change back to the global store (if it's not directly mutating)
-    global.tempReportDatabaseGlobal[reportId] = report;
-
-    revalidatePath(`/reports/${reportId}`);
-    return { success: true, message: "Chat transcript saved to report successfully." };
-  } else {
-    console.error(`Report ID ${reportId} not found in tempReportDatabaseGlobal.`);
-    return { success: false, message: `Report ${reportId} not found. Could not save chat.` };
+  if (!originalReportData) {
+    console.error(`Original report ID ${originalReportId} not found in tempReportDatabaseGlobal.`);
+    return { success: false, message: `Original report ${originalReportId} not found. Could not save chat.` };
   }
+
+  // Deep clone the original report data
+  const newReportData = JSON.parse(JSON.stringify(originalReportData));
+  
+  const newReportId = `${originalReportId}-chat-${Date.now()}`;
+  newReportData.id = newReportId; // Assign new ID (though not directly used by key in this flat structure)
+  newReportData.title = `${originalReportData.title} (with AI Queries)`;
+  newReportData.aiChatTranscript = chatMessages;
+  newReportData.createdAt = new Date(); // Update creation/update time for the new version
+  newReportData.updatedAt = new Date();
+
+  global.tempReportDatabaseGlobal[newReportId] = newReportData;
+
+  revalidatePath(`/reports`); // To update the list of reports
+  revalidatePath(`/reports/${newReportId}`); // To allow direct navigation if needed
+  
+  return { 
+    success: true, 
+    message: `New report version "${newReportData.title}" created with chat transcript.`,
+    newReportId: newReportId
+  };
 }
