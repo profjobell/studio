@@ -24,149 +24,154 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
   <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
-    <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Church Sermon Extractor</h1>
+    <h1 class="text-2xl font-bold mb-4 text-center text-gray-800">Church Sermon Extractor</h1>
     
-    <div class="mb-4">
-      <label for="youtube-url" class="block text-sm font-medium text-gray-700 mb-1">YouTube Video URL</label>
-      <input
-        type="text"
-        id="youtube-url"
-        placeholder="e.g., https://www.youtube.com/watch?v=VIDEO_ID"
-        class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      />
+    <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+      <h2 class="text-lg font-semibold text-blue-700 mb-2">Instructions:</h2>
+      <ol class="list-decimal list-inside text-sm text-gray-700 space-y-1">
+        <li>
+          Click the button below to go to the Kome.ai YouTube Transcript Generator.
+          <a href="https://kome.ai/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="my-2 w-full block bg-sky-500 text-white p-2 rounded-md hover:bg-sky-600 text-center transition-colors">
+            Go to Kome.ai Transcript Generator
+          </a>
+        </li>
+        <li>On Kome.ai, paste your YouTube video URL and generate the transcript.</li>
+        <li>Once Kome.ai provides the transcript, copy it.</li>
+        <li>Paste the entire transcript into the text area below.</li>
+        <li>Click "Isolate Sermon from Pasted Text".</li>
+      </ol>
     </div>
 
-    <button
-      id="process-button"
-      onclick="processSermon()"
-      class="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
-    >
-      <span id="process-button-text">Process Sermon</span>
-      <span id="process-button-loader" class="loader hidden"></span>
-    </button>
-    
-    <div class="mt-6">
-      <label for="sermon-output" class="block text-sm font-medium text-gray-700 mb-1">Sermon Text</label>
+    <div class="mb-4">
+      <label for="transcript-input" class="block text-sm font-medium text-gray-700">
+        Paste Full Transcript Here:
+      </label>
       <textarea
-        id="sermon-output"
-        readonly
-        class="mt-1 block w-full p-3 border border-gray-300 rounded-md h-64 shadow-sm bg-gray-50"
-        placeholder="Extracted sermon text will appear here..."
+        id="transcript-input"
+        placeholder="Paste the transcript obtained from Kome.ai here..."
+        class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-48 resize-y"
       ></textarea>
     </div>
 
     <button
+      id="process-button"
+      onclick="processPastedTranscript()"
+      class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center justify-center"
+    >
+      <span id="button-spinner" class="loader hidden"></span>
+      <span id="button-text">Isolate Sermon from Pasted Text</span>
+    </button>
+
+    <div class="mt-4">
+      <label for="sermon-output" class="block text-sm font-medium text-gray-700">Isolated Sermon Text:</label>
+      <textarea
+        id="sermon-output"
+        readonly
+        class="mt-1 block w-full p-2 border border-gray-300 rounded-md h-64 bg-gray-50 resize-y"
+      ></textarea>
+    </div>
+    <button
       id="copy-button"
       onclick="copySermonText()"
-      class="mt-3 w-full bg-green-500 text-white p-3 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors hidden"
+      class="mt-2 w-full bg-green-500 text-white p-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors hidden"
     >
       Copy Sermon Text to Clipboard
     </button>
-    
-    <p id="status-message" class="mt-3 text-sm text-center"></p>
+    <p id="status-message" class="mt-2 text-sm text-center"></p>
 
     <div class="mt-6 text-center">
-      <button
-        onclick="history.back()"
-        class="w-auto bg-gray-500 text-white p-3 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-      >
-        &larr; Back to KJV Sentinel
-      </button>
+        <button 
+            onclick="javascript:history.back()" 
+            class="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+            &larr; Back to KJV Sentinel
+        </button>
     </div>
-     <p class="text-xs text-gray-400 mt-4 text-center">
-        This tool uses Kome.ai (external service) for transcription. Please ensure you comply with Kome.ai's terms of service.
+    <p class="mt-4 text-xs text-gray-500 text-center">
+      Please ensure your use of external transcription services like Kome.ai complies with their terms of service.
     </p>
   </div>
 
   <script>
-    const urlInput = document.getElementById('youtube-url');
-    const outputTextarea = document.getElementById('sermon-output');
-    const statusMessage = document.getElementById('status-message');
+    const transcriptInputEl = document.getElementById('transcript-input');
+    const outputEl = document.getElementById('sermon-output');
+    const statusEl = document.getElementById('status-message');
     const processButton = document.getElementById('process-button');
-    const processButtonText = document.getElementById('process-button-text');
-    const processButtonLoader = document.getElementById('process-button-loader');
+    const buttonText = document.getElementById('button-text');
+    const buttonSpinner = document.getElementById('button-spinner');
     const copyButton = document.getElementById('copy-button');
 
-    // More comprehensive regex
-    const YOUTUBE_URL_REGEX = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/;
+    async function processPastedTranscript() {
+      const transcript = transcriptInputEl.value;
 
-    async function processSermon() {
-      const url = urlInput.value;
-
-      if (!url || !YOUTUBE_URL_REGEX.test(url)) {
-        statusMessage.textContent = 'Please provide a valid YouTube video URL.';
-        statusMessage.className = 'mt-3 text-sm text-center text-red-600';
-        copyButton.classList.add('hidden');
+      if (!transcript.trim()) {
+        statusEl.textContent = 'Please paste the transcript text into the text area.';
+        statusEl.className = 'mt-2 text-sm text-center text-red-600';
         return;
       }
 
-      statusMessage.textContent = 'Processing...';
-      statusMessage.className = 'mt-3 text-sm text-center text-blue-600';
-      outputTextarea.value = '';
-      processButton.disabled = true;
-      processButtonText.classList.add('hidden');
-      processButtonLoader.classList.remove('hidden');
+      statusEl.textContent = 'Processing...';
+      statusEl.className = 'mt-2 text-sm text-center text-blue-600';
+      outputEl.value = '';
       copyButton.classList.add('hidden');
+      processButton.disabled = true;
+      buttonText.textContent = 'Processing...';
+      buttonSpinner.classList.remove('hidden');
 
       try {
-        // This will call your Firebase Cloud Function
-        const response = await fetch('/processSermon', {
+        const response = await fetch('/processSermon', { // Firebase Cloud Function endpoint
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ url })
+          body: JSON.stringify({ transcript: transcript }) // Send the pasted transcript
         });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Server responded with an error: ' + response.statusText }));
-            throw new Error(errorData.error || 'Failed to process sermon. Status: ' + response.status);
-        }
-
         const data = await response.json();
 
         if (data.error) {
-          statusMessage.textContent = data.error;
-          statusMessage.className = 'mt-3 text-sm text-center text-red-600';
-          copyButton.classList.add('hidden');
-        } else {
-          outputTextarea.value = data.sermon || "";
-          statusMessage.textContent = data.warning ? data.warning : 'Processing complete.';
-          statusMessage.className = data.warning ? 'mt-3 text-sm text-center text-yellow-600' : 'mt-3 text-sm text-center text-green-600';
-          if (data.sermon && data.sermon !== "No sermon content could be identified in the transcript.") {
-            copyButton.classList.remove('hidden');
-            // Automatic copy can be intrusive, so let user click the button.
-            // await navigator.clipboard.writeText(data.sermon);
-            // statusMessage.textContent += ' Sermon text copied to clipboard.';
-          } else {
-            copyButton.classList.add('hidden');
-          }
+          statusEl.textContent = data.error;
+          statusEl.className = 'mt-2 text-sm text-center text-red-600';
+          return;
         }
+
+        outputEl.value = data.sermon || "";
+        
+        if (data.sermon && data.sermon !== "No sermon content could be identified in the transcript.") {
+            copyButton.classList.remove('hidden');
+        } else {
+            copyButton.classList.add('hidden');
+        }
+
+        let message = "Sermon isolation complete.";
+        if (data.warning) {
+            message += " Warning: " + data.warning;
+        }
+        statusEl.textContent = message;
+        statusEl.className = 'mt-2 text-sm text-center text-green-600';
+
       } catch (error) {
-        console.error('Error processing sermon:', error);
-        statusMessage.textContent = 'Error: ' + error.message;
-        statusMessage.className = 'mt-3 text-sm text-center text-red-600';
-        copyButton.classList.add('hidden');
+        console.error("Processing error:", error);
+        statusEl.textContent = 'Error processing sermon text: ' + error.message;
+        statusEl.className = 'mt-2 text-sm text-center text-red-600';
       } finally {
         processButton.disabled = false;
-        processButtonText.classList.remove('hidden');
-        processButtonLoader.classList.add('hidden');
+        buttonText.textContent = 'Isolate Sermon from Pasted Text';
+        buttonSpinner.classList.add('hidden');
       }
     }
 
     async function copySermonText() {
-        const textToCopy = outputTextarea.value;
-        if (!textToCopy) {
-            statusMessage.textContent = 'No sermon text to copy.';
-            statusMessage.className = 'mt-3 text-sm text-center text-yellow-600';
+        const sermonText = outputEl.value;
+        if (!sermonText) {
+            statusEl.textContent = 'No sermon text to copy.';
+            statusEl.className = 'mt-2 text-sm text-center text-yellow-600';
             return;
         }
         try {
-            await navigator.clipboard.writeText(textToCopy);
-            statusMessage.textContent = 'Sermon text copied to clipboard!';
-            statusMessage.className = 'mt-3 text-sm text-center text-green-600';
+            await navigator.clipboard.writeText(sermonText);
+            statusEl.textContent = 'Sermon text copied to clipboard!';
+            statusEl.className = 'mt-2 text-sm text-center text-green-600';
         } catch (err) {
-            statusMessage.textContent = 'Failed to copy text. Please copy manually.';
-            statusMessage.className = 'mt-3 text-sm text-center text-red-600';
             console.error('Failed to copy text: ', err);
+            statusEl.textContent = 'Failed to copy text. Please copy manually.';
+            statusEl.className = 'mt-2 text-sm text-center text-red-600';
         }
     }
   </script>

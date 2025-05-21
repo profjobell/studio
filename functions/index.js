@@ -8,17 +8,12 @@ if (admin.apps.length === 0) {
 }
 
 // --- Placeholder for Kome.ai Transcript Fetching ---
-// In a real implementation, this function would interact with Kome.ai
-// (via API if available, or a robust scraping method).
-// For this example, it returns a hardcoded sample transcript or an error.
-async function fetchKomeTranscript(url) {
+// This function remains as a placeholder if the Cloud Function needs to fetch by URL for other purposes.
+// For the sermon-extractor.html page, the transcript will be sent directly.
+async function fetchKomeTranscriptByUrl(url) {
   console.log(`[Placeholder] Fetching transcript for URL: ${url}`);
+  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
 
-  // Simulate a delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-
-  // Simulate success with a sample transcript for a specific known URL for testing
-  // Replace this with actual Kome.ai interaction logic
   if (url.includes("youtube.com/watch?v=example_sermon_video")) {
     return `
 [00:00:00] Welcome everyone! Today's announcements are...
@@ -41,7 +36,6 @@ async function fetchKomeTranscript(url) {
 [00:01:30] Thank you for joining us. Coffee fellowship in the hall. Heat Heat.
 `;
   } else if (url.includes("youtube.com/watch?v=incomplete_video")) {
-    // Simulate incomplete transcript
     return `
 [00:00:00] The sermon today focuses on...
 [00:00:05] ...and this leads us to understand grace more deeply.
@@ -55,10 +49,8 @@ async function fetchKomeTranscript(url) {
 `;
   } else if (!url || !url.match(/https?:\/\/(www\.)?youtube\.com\/(watch\?v=[\w-]+|embed\/[\w-]+|v\/[\w-]+|shorts\/[\w-]+)|https?:\/\/youtu\.be\/[\w-]+/)) {
     console.error('Invalid YouTube URL format for placeholder fetch:', url);
-    // This error case should ideally be caught by client-side validation first
-    throw new Error("Invalid input. Please provide a valid YouTube video URL");
+    throw new Error("Invalid input. Please provide a valid YouTube video URL for fetching.");
   } else {
-    // Simulate Kome.ai failing for other URLs
     console.warn(`[Placeholder] Kome.ai failed to generate transcript for: ${url}`);
     throw new Error("Unable to generate transcript for the provided YouTube video (simulated Kome.ai failure).");
   }
@@ -67,12 +59,8 @@ async function fetchKomeTranscript(url) {
 // --- Timestamp Removal Function ---
 function removeTimestamps(text) {
   if (!text) return "";
-  // Regex to match various timestamp formats
-  // [HH:MM:SS], MM:SS, [MM:SS.mmm], [Time: HH:MM], HH:MM, etc.
-  // Also handles timestamps at the beginning of a line
   const timestampRegex = /(\[\s*\d{1,2}:\d{2}(:\d{2})?(\.\d{3})?\s*\]|^\s*\d{1,2}:\d{2}(:\d{2})?(\.\d{3})?\s*)/gm;
   let cleanedText = text.replace(timestampRegex, '');
-  // Remove any leading/trailing whitespace from lines that only contained timestamps
   cleanedText = cleanedText.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
   return cleanedText;
 }
@@ -86,44 +74,35 @@ function isolateSermonContent(transcript) {
   let inSermon = false;
   let potentialSermonStart = false;
 
-  // Keywords that might indicate the start of a sermon
   const sermonStartCues = [
     "sermon", "message", "scripture", "let us turn to", "today we explore",
     "the word of God", "our text today", "pastor", "preaching", "teaching"
   ];
-  // Keywords that might indicate non-sermon content or the end of a sermon
   const nonSermonCues = [
     "[music]", "[singing]", "[congregation sings]", "hymn:", "announcement", "pray", "prayer",
     "heavenly father", "good morning", "welcome", "coffee fellowship", "closing song",
     "benediction", "offering", "tithes"
   ];
-  // Generic speaker/action tags to exclude if not part of sermon flow
   const actionTagRegex = /\[[^\]]*?(pastor|speaker|audience|congregation|applause|laughs|coughs|clears throat|sips water|walks|stands|sits)[^\]]*?\]/i;
-
 
   for (const line of lines) {
     const lowerLine = line.toLowerCase();
     let originalLine = line.trim();
 
-    // Exclude lines that are just action tags
     if (actionTagRegex.test(lowerLine) && originalLine.replace(actionTagRegex, "").trim() === "") {
         continue;
     }
-    // Remove action tags from lines that might also contain speech
     originalLine = originalLine.replace(actionTagRegex, "").trim();
     if (!originalLine) continue;
-
 
     let isNonSermonIndicator = nonSermonCues.some(cue => lowerLine.includes(cue));
     let isSermonIndicator = sermonStartCues.some(cue => lowerLine.includes(cue));
 
     if (isNonSermonIndicator) {
-      // If we hit a strong non-sermon cue, stop considering it sermon content for now
-      // unless a sermon cue immediately follows or is part of the same line.
-      if (!(isSermonIndicator && lowerLine.length > originalLine.indexOf(sermonStartCues.find(c => lowerLine.includes(c)) || "") + 20) ) { // Heuristic: sermon cue not just a passing mention
+      if (!(isSermonIndicator && lowerLine.length > originalLine.indexOf(sermonStartCues.find(c => lowerLine.includes(c)) || "") + 20) ) {
         inSermon = false;
         potentialSermonStart = false;
-        continue; // Skip this line as it's likely non-sermon
+        continue; 
       }
     }
 
@@ -132,40 +111,30 @@ function isolateSermonContent(transcript) {
       potentialSermonStart = true;
     }
 
-    // Heuristic: Extended monologue, often after an intro.
-    // A line is considered part of a sermon if `inSermon` is true,
-    // or if it's a longer line following a potential start cue.
-    // Avoid very short, isolated lines unless `inSermon` is firmly established.
-    const isLikelySermonText = originalLine.length > 20 && (originalLine.split(' ').length > 4); // At least ~5 words, >20 chars
+    const isLikelySermonText = originalLine.length > 20 && (originalLine.split(' ').length > 4);
 
     if (inSermon || (potentialSermonStart && isLikelySermonText)) {
-      // More refined exclusion for lines that look like lyrics or very short interjections
-      // if (!lowerLine.startsWith("la la la") && !lowerLine.startsWith("ooh") && !lowerLine.startsWith("aah")) {
-      // Basic check for repetitive text common in lyrics (e.g. "Heat Heat")
       const words = originalLine.split(/\s+/);
       if (words.length > 1 && words[0].toLowerCase() === words[1].toLowerCase() && words.length < 5) {
-          // Likely a song lyric or chant, not sermon content
-      } else if (originalLine.length > 5) { // Avoid adding very short, potentially non-sermon lines
+          // Likely a song lyric or chant
+      } else if (originalLine.length > 5) {
           sermonParts.push(originalLine);
-          potentialSermonStart = true; // Keep this true as long as we are adding sermon-like content
+          potentialSermonStart = true;
       }
     } else {
-        potentialSermonStart = false; // Reset if the line doesn't look like sermon content
+        potentialSermonStart = false;
     }
   }
-
   return sermonParts.join(' ').trim();
 }
 
 // --- Main Cloud Function ---
 exports.processSermon = functions.https.onRequest(async (req, res) => {
-  // Set CORS headers for preflight and actual requests
-  res.set('Access-Control-Allow-Origin', '*'); // Adjust in production
+  res.set('Access-Control-Allow-Origin', '*'); 
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    // Send response to OPTIONS requests
     return res.status(204).send('');
   }
 
@@ -173,32 +142,33 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { url: youtubeUrl } = req.body; // Expecting { "url": "youtube_url_here" }
-
-  if (!youtubeUrl) {
-    return res.status(400).json({ error: 'Invalid input. Please provide a "url" field in the JSON body.' });
-  }
-  
-  // Basic client-side validation should catch this, but good to have server-side.
-  if (!youtubeUrl.match(/https?:\/\/(www\.)?youtube\.com\/(watch\?v=[\w-]+|embed\/[\w-]+|v\/[\w-]+|shorts\/[\w-]+)|https?:\/\/youtu\.be\/[\w-]+/)) {
-      return res.status(400).json({ error: "Invalid input. Please provide a valid YouTube video URL" });
-  }
-
-
+  const { url: youtubeUrl, transcript: pastedTranscript } = req.body;
   let rawTranscript = "";
   let warningMessage = "";
 
-  try {
-    rawTranscript = await fetchKomeTranscript(youtubeUrl);
-    if (!rawTranscript || rawTranscript.trim() === "") {
-        return res.status(500).json({error: "Transcript generated by Kome.ai was empty."});
+  if (pastedTranscript && typeof pastedTranscript === 'string' && pastedTranscript.trim() !== "") {
+    console.log("Processing directly provided transcript.");
+    rawTranscript = pastedTranscript;
+  } else if (youtubeUrl && typeof youtubeUrl === 'string') {
+    console.log("Attempting to fetch transcript by URL (placeholder).");
+    if (!youtubeUrl.match(/https?:\/\/(www\.)?youtube\.com\/(watch\?v=[\w-]+|embed\/[\w-]+|v\/[\w-]+|shorts\/[\w-]+)|https?:\/\/youtu\.be\/[\w-]+/)) {
+        return res.status(400).json({ error: "Invalid input. Please provide a valid YouTube video URL for fetching." });
     }
-    if (rawTranscript.includes("[Transcript ends abruptly]")) { // Example check for incompleteness
-        warningMessage = "Transcript may be incomplete";
+    try {
+      rawTranscript = await fetchKomeTranscriptByUrl(youtubeUrl);
+    } catch (error) {
+      console.error("Error fetching transcript by URL:", error);
+      return res.status(500).json({ error: error.message || "Unable to generate transcript for the provided YouTube video." });
     }
-  } catch (error) {
-    console.error("Error fetching/processing transcript:", error);
-    return res.status(500).json({ error: error.message || "Unable to generate transcript for the provided YouTube video." });
+  } else {
+    return res.status(400).json({ error: 'Invalid input. Please provide either a "transcript" or a "url" field in the JSON body.' });
+  }
+  
+  if (!rawTranscript || rawTranscript.trim() === "") {
+      return res.status(500).json({error: "Transcript (provided or fetched) was empty."});
+  }
+  if (rawTranscript.includes("[Transcript ends abruptly]")) { 
+      warningMessage = "Transcript may be incomplete";
   }
 
   const transcriptWithoutTimestamps = removeTimestamps(rawTranscript);
@@ -215,5 +185,3 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
 
   return res.status(200).json(responseJson);
 });
-
-    
