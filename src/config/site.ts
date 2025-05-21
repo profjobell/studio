@@ -1,6 +1,6 @@
 
 import type { NavItem, SidebarNavItem } from "@/types";
-import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info, ShieldAlert } from 'lucide-react'; // Added ShieldAlert
+import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info, ShieldAlert, Youtube } from 'lucide-react'; // Added ShieldAlert, Youtube
 
 export type SiteConfig = {
   name: string;
@@ -95,36 +95,36 @@ export const siteConfig: SiteConfig = {
         {
           title: "Analyze Content",
           href: "/analyze",
-          icon: Search, 
+          icon: Search,
           description: "Submit sermons, articles for theological analysis.",
         },
         {
           title: "Content Reports",
           href: "/reports",
-          icon: FileText, 
+          icon: FileText,
           description: "View your content analysis reports.",
         },
         {
           title: "Analyze Teaching",
           href: "/analyze-teaching",
-          icon: FileSignature, 
+          icon: FileSignature,
           description: "Analyze specific teachings or philosophies.",
         },
         {
           title: "Teaching Reports",
           href: "/teaching-reports",
-          icon: History, 
+          icon: History,
           description: "View your teaching analysis reports.",
         },
       ],
     },
     {
-      title: "Knowledge Base", 
+      title: "Knowledge Base",
       items: [
         {
           title: "Isms Explained",
           href: "/isms-explained",
-          icon: Info, 
+          icon: Info,
           description: "Examine 'isms', heresies, and philosophies.",
         },
         {
@@ -155,6 +155,18 @@ export const siteConfig: SiteConfig = {
           href: "/learning",
           icon: GraduationCap,
           description: "Interactive quizzes and study aids.",
+        },
+      ],
+    },
+    {
+      title: "External Tools", // New Category
+      items: [
+        {
+          title: "Sermon Extractor",
+          href: "/sermon-extractor.html", // Link to the static HTML page
+          icon: Youtube, // Using Youtube icon as an example
+          description: "Extract sermon text from YouTube videos via Kome.ai.",
+          external: true, // Good practice to mark external or differently-served links
         },
       ],
     },
