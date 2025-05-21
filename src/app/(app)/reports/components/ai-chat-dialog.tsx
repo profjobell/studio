@@ -17,8 +17,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { BrainCircuit, Loader2, Send, User, Bot, MessageCircleMore, Save } from "lucide-react";
 import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-internet-kjv-flow";
-import { saveChatToReportAction } from "../actions"; 
+import { saveChatToReportAction } from "../actions";
 import type { ClientChatMessage } from "@/types";
+import { useRouter } from "next/navigation"; // Import useRouter
 
 
 interface AiChatDialogProps {
@@ -50,6 +51,7 @@ export function AiChatDialog({
   const [isSavingChat, startSavingChatTransition] = useTransition();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const router = useRouter(); // Initialize router
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -146,9 +148,17 @@ export function AiChatDialog({
       return;
     }
     startSavingChatTransition(async () => {
-      const result = await saveChatToReportAction(reportIdOrContextKey, chatMessages.filter(m => m.id !== 'initial-greeting'));
+      // Filter out initial greeting if present
+      const messagesToSave = chatMessages.filter(m => m.id !== 'initial-greeting');
+      if (messagesToSave.length === 0) {
+        toast({ title: "No Messages to Save", description: "There are no actual chat messages to save.", variant: "default" });
+        return;
+      }
+
+      const result = await saveChatToReportAction(reportIdOrContextKey, messagesToSave);
       if (result.success) {
-        toast({ title: "Chat Saved", description: "The chat transcript has been added to the report. Refresh the main report page to see updates." });
+        toast({ title: "Chat Saved", description: "The chat transcript has been added to the report. Refreshing report..." });
+        router.refresh(); // Refresh the current route to update the report display
       } else {
         toast({ title: "Failed to Save Chat", description: result.message, variant: "destructive" });
       }
@@ -158,6 +168,7 @@ export function AiChatDialog({
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open) {
+        // Only set initial greeting if chatMessages is truly empty or only contains the placeholder
         if (chatMessages.length === 0 || (chatMessages.length === 1 && chatMessages[0].id === 'initial-greeting')) {
             setChatMessages([{
                 id: 'initial-greeting',
