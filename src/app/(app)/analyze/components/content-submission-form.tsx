@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition } from "react";
-import { analyzeSubmittedContent, saveReportToDatabase } from "../actions";
+import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
@@ -112,6 +112,7 @@ export function ContentSubmissionForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
   const [showYoutubeInstructionsDialog, setShowYoutubeInstructionsDialog] = useState(false);
 
@@ -127,27 +128,25 @@ export function ContentSubmissionForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    let analysisInput = "";
+    let analysisTypeString: AnalysisReport['analysisType'] = "text";
+    let submittedFileName: string | undefined = undefined;
+
     if (values.submissionType === "youtubeLink") {
         if (!values.youtubeUrl || !YOUTUBE_URL_REGEX.test(values.youtubeUrl)) {
             toast({
                 title: "Invalid YouTube URL",
-                description: "Please provide a valid YouTube URL to see instructions.",
+                description: "Please provide a valid YouTube URL.",
                 variant: "destructive",
             });
             return;
         }
-        // Open the instructions dialog instead of redirecting
         setShowYoutubeInstructionsDialog(true);
-        return; // Stop further processing for YouTube links here
+        return; 
     }
 
-    // For "text" and "file" submissions
     startTransition(async () => {
       try {
-        let analysisInput = "";
-        let analysisTypeString: AnalysisReport['analysisType'] = "text";
-        let submittedFileName: string | undefined = undefined;
-
         if (values.submissionType === "text" && values.textContent) {
           analysisInput = values.textContent;
           analysisTypeString = "text";
@@ -155,32 +154,45 @@ export function ContentSubmissionForm() {
           const file = (values.file as FileList)[0];
           submittedFileName = file.name;
 
-          if (file.type === "text/plain" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/pdf") {
-             if (file.type === "text/plain") {
-                analysisInput = await file.text();
-             } else {
-                analysisInput = `File submitted for text extraction: ${file.name} (type: ${file.type}). True extraction requires server-side processing. This demo uses filename as placeholder content.`;
-                 toast({
-                    title: "File Submitted (Text Extraction Simulation)",
-                    description: `File "${file.name}" requires server-side text extraction. Using placeholder for AI analysis.`,
-                    variant: "default",
-                 });
-             }
-          } else {
-            analysisInput = `File submitted: ${file.name} (type: ${file.type}). Audio/Video transcription not yet implemented. Using file name as content for now.`;
+          if (file.type === "text/plain") {
+             analysisInput = await file.text();
+             toast({
+                title: "Text File Processing",
+                description: `The text content of "${file.name}" is being read and will be used for analysis.`,
+                variant: "default",
+             });
+          } else if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+             analysisInput = `Simulated text extraction for: ${file.name} (type: ${file.type}). The actual content of this file type is not processed by this demo. Analysis will be based on this placeholder text describing the file.`;
+             toast({
+                title: "File Submitted (Text Extraction Simulation)",
+                description: `File "${file.name}" (${file.type}) was submitted. Full text extraction for PDF/DOCX requires server-side processing, which is not implemented in this demo. A placeholder description of the file will be analyzed.`,
+                variant: "default",
+                duration: 7000,
+             });
+          } else if (file.type.startsWith("audio/") || file.type.startsWith("video/")) {
+            analysisInput = `Simulated transcription for file: ${file.name} (type: ${file.type}). Actual audio/video transcription is not implemented in this demo. Analysis will be based on this placeholder text describing the file.`;
             toast({
               title: "File Submitted (Transcription Simulation)",
-              description: `File "${file.name}" was submitted. Transcription for audio/video files requires backend implementation. Using file name as content.`,
+              description: `File "${file.name}" (${file.type}) submitted. Audio/Video transcription requires backend implementation. A placeholder description of the file will be analyzed.`,
               variant: "default",
+              duration: 7000,
+            });
+          } else {
+            analysisInput = `Unsupported file type: ${file.name} (type: ${file.type}). Analysis will be based on this placeholder text.`;
+             toast({
+              title: "Unsupported File Type",
+              description: `File "${file.name}" has an unsupported type (${file.type}). A placeholder description will be analyzed.`,
+              variant: "destructive",
             });
           }
           
           if (file.type.startsWith("audio/")) analysisTypeString = "file_audio";
           else if (file.type.startsWith("video/")) analysisTypeString = "file_video";
-          else analysisTypeString = "file_document";
+          else if (file.type === "text/plain" || file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") analysisTypeString = "file_document";
+          else analysisTypeString = "file_document"; // Fallback for other unknown types
 
         } else {
-          toast({ title: "Error", description: "No content provided for text or file submission.", variant: "destructive" });
+          toast({ title: "Error", description: "No content provided for analysis.", variant: "destructive" });
           return;
         }
         
@@ -207,7 +219,7 @@ export function ContentSubmissionForm() {
         const saveResult = await saveReportToDatabase(
           analysisResult,
           values.analysisTitle,
-          analysisInput,
+          analysisInput, // This is the content sent to the AI
           analysisTypeString,
           submittedFileName
         );
@@ -236,6 +248,8 @@ export function ContentSubmissionForm() {
           description: error instanceof Error ? error.message : "An unexpected error occurred.",
           variant: "destructive",
         });
+      } finally {
+        setIsTranscribing(false);
       }
     });
   }
@@ -341,24 +355,24 @@ export function ContentSubmissionForm() {
               key="file-input-field"
               control={form.control}
               name="file"
-              render={({ field: { ref, name, onBlur, onChange, disabled } }) => (
+              render={({ field: { ref, name, onBlur, onChange: RHFOnChange, disabled } }) => ( 
                 <FormItem>
                   <FormLabel>Upload File</FormLabel>
                   <FormControl>
                     <input
                       type="file"
-                      id={name}
+                      id={name} 
                       name={name}
                       ref={ref}
                       onBlur={onBlur}
-                      onChange={(e) => onChange(e.target.files)}
-                      disabled={disabled || isPending}
+                      onChange={(e) => RHFOnChange(e.target.files)} 
+                      disabled={disabled || isPending || isTranscribing}
                       accept={SUPPORTED_FILE_TYPES.join(",")}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 p-2"
+                      className="p-2 border border-input bg-background rounded-md file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground w-full h-10"
                     />
                   </FormControl>
                   <FormDescription>
-                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB.
+                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB. (.txt content is read; others use placeholder descriptions).
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -378,7 +392,7 @@ export function ContentSubmissionForm() {
                     <Input
                       placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
                       {...field}
-                      disabled={isPending}
+                      disabled={isPending || isTranscribing}
                     />
                   </FormControl>
                   <FormDescription>
@@ -390,11 +404,16 @@ export function ContentSubmissionForm() {
             />
           )}
           
-          <Button type="submit" disabled={isPending} className="w-full">
-            {isPending ? (
+          <Button type="submit" disabled={isPending || isTranscribing} className="w-full">
+            {(isPending && !isTranscribing) ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
+                Submitting for Analysis...
+              </>
+            ) : isTranscribing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing Link...
               </>
             ) : (
               "Submit for Analysis"
