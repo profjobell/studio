@@ -17,9 +17,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react"; // Added useRef
 import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
-import { Loader2, List } from "lucide-react"; // Added List icon
+import { Loader2, List, XCircle } from "lucide-react"; // Added List and XCircle icons
 import { useRouter } from "next/navigation";
 import type { AnalysisReport, TranscribeYouTubeOutput } from "@/types";
 import {
@@ -110,6 +110,7 @@ export function ContentSubmissionForm() {
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
   const [showYoutubeInstructionsDialog, setShowYoutubeInstructionsDialog] = useState(false);
   const [displayedFileNames, setDisplayedFileNames] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for the file input
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -121,6 +122,14 @@ export function ContentSubmissionForm() {
       youtubeUrl: "",
     },
   });
+
+  const handleClearFiles = () => {
+    form.setValue('file', undefined, { shouldValidate: true, shouldDirty: true });
+    setDisplayedFileNames([]);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // Attempt to clear native input display
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     let analysisInput = "";
@@ -254,6 +263,9 @@ export function ContentSubmissionForm() {
           form.reset();
           setSubmissionTypeState("text");
           setDisplayedFileNames([]); // Clear displayed file names on successful submission
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ""; // Clear native file input
+          }
         } else {
           toast({
             title: "Failed to Save Report",
@@ -397,7 +409,7 @@ export function ContentSubmissionForm() {
               key="file-input-field"
               control={form.control}
               name="file"
-              render={({ field: { ref, name, onBlur, onChange: RHFOnChange, disabled } }) => {
+              render={({ field: { name, onBlur, onChange: RHFOnChange, disabled } }) => {
                 const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                   const files = event.target.files;
                   RHFOnChange(files); // Update react-hook-form
@@ -415,7 +427,7 @@ export function ContentSubmissionForm() {
                       type="file"
                       id={name} 
                       name={name}
-                      ref={ref}
+                      ref={fileInputRef} // Assign ref here
                       onBlur={onBlur}
                       onChange={handleFileChange} 
                       disabled={disabled || isPending || isTranscribing}
@@ -430,9 +442,20 @@ export function ContentSubmissionForm() {
                   <FormMessage />
                   {displayedFileNames.length > 0 && (
                     <div className="mt-3 p-3 border rounded-md bg-muted/50">
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
-                        <List className="h-4 w-4" />
-                        Selected Files:
+                      <div className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground mb-2">
+                        <div className="flex items-center gap-1">
+                            <List className="h-4 w-4" />
+                            Selected Files:
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleClearFiles}
+                          className="text-destructive hover:text-destructive/80 p-1 h-auto"
+                        >
+                          <XCircle className="mr-1 h-4 w-4" /> Clear
+                        </Button>
                       </div>
                       <ul className="list-disc list-inside pl-5 text-sm text-muted-foreground space-y-1">
                         {displayedFileNames.map((fileName, index) => (
@@ -505,3 +528,4 @@ export function ContentSubmissionForm() {
     </>
   );
 }
+
