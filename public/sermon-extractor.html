@@ -1,159 +1,143 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sermon Extractor</title>
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
   <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
-    <header class="mb-6 text-center">
-      <h1 class="text-3xl font-bold text-blue-700">KJV Sentinel</h1>
-      <h2 class="text-xl font-semibold text-gray-800 mt-1">Church Sermon Extractor</h2>
-      <p class="text-sm text-gray-600 mt-2">
-        Extract sermon content from YouTube video transcripts. 
-        This tool uses <a href="https://kome.ai/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Kome.ai</a> (via a backend function) to fetch transcripts.
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold text-center text-gray-800">Church Sermon Extractor</h1>
+      <p class="text-sm text-gray-600 text-center mt-1">
+        Enter a YouTube video URL to extract the sermon content using 
+        <a href="https://kome.ai/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Kome.ai</a> 
+        (via a backend function).
       </p>
     </header>
     
     <div class="mb-4">
-      <label for="youtube-url" class="block text-sm font-medium text-gray-700 mb-1">YouTube Video URL:</label>
+      <label for="youtube-url" class="block text-sm font-medium text-gray-700 mb-1">
+        YouTube Video URL:
+      </label>
       <input
-        type="text"
+        type="url"
         id="youtube-url"
         placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       />
     </div>
-    
+
     <button
-      id="process-sermon-button"
+      id="process-button"
       onclick="processSermon()"
-      class="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 flex items-center justify-center"
+      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
     >
-      <svg id="button-icon-default" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
-      <svg id="button-icon-loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      <span id="button-text">Process Sermon</span>
+      Process Sermon
     </button>
-    
+
     <div class="mt-6">
-      <label for="sermon-output" class="block text-sm font-medium text-gray-700 mb-1">Extracted Sermon Text:</label>
+      <label for="sermon-output" class="block text-sm font-medium text-gray-700 mb-1">
+        Extracted Sermon Text:
+      </label>
       <textarea
         id="sermon-output"
         readonly
-        placeholder="Processed sermon text will appear here..."
-        class="mt-1 block w-full p-3 border border-gray-300 rounded-md h-64 bg-gray-50 text-sm shadow-sm"
+        placeholder="The extracted sermon will appear here..."
+        class="mt-1 block w-full p-3 border border-gray-300 rounded-md h-64 bg-gray-50 text-sm text-gray-700"
       ></textarea>
     </div>
-    
+
     <p id="status-message" class="mt-3 text-sm text-center font-medium"></p>
   </div>
 
   <script>
-    // Client-side JavaScript for the Sermon Extractor page
+    // Client-side JavaScript to interact with the Firebase Cloud Function
     async function processSermon() {
       const urlInput = document.getElementById('youtube-url');
       const outputTextarea = document.getElementById('sermon-output');
       const statusMessageElement = document.getElementById('status-message');
-      const processButton = document.getElementById('process-sermon-button');
-      const buttonText = document.getElementById('button-text');
-      const buttonIconDefault = document.getElementById('button-icon-default');
-      const buttonIconLoading = document.getElementById('button-icon-loading');
+      const processButton = document.getElementById('process-button');
 
-      const url = urlInput.value;
+      const url = urlInput.value.trim();
 
-      // Basic YouTube URL validation (can be more comprehensive)
+      // Basic client-side validation for YouTube URL format
       const youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/;
       if (!url || !youtubeRegex.test(url)) {
-        statusMessageElement.textContent = 'Error: Please provide a valid YouTube video URL.';
+        statusMessageElement.textContent = 'Please provide a valid YouTube video URL.';
         statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-red-600';
-        urlInput.classList.add('border-red-500');
-        urlInput.classList.remove('border-green-500');
+        urlInput.focus();
         return;
       }
-      urlInput.classList.remove('border-red-500');
-      urlInput.classList.add('border-green-500'); // Indicate valid format before sending
 
-      statusMessageElement.textContent = 'Processing... Please wait.';
+      statusMessageElement.textContent = 'Processing... This may take a moment.';
       statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-blue-600';
       outputTextarea.value = '';
       processButton.disabled = true;
-      buttonText.textContent = 'Processing...';
-      buttonIconDefault.classList.add('hidden');
-      buttonIconLoading.classList.remove('hidden');
+      processButton.classList.add('opacity-50', 'cursor-not-allowed');
 
       try {
-        // In a Firebase project, '/processSermon' would be routed to your Cloud Function.
-        // Ensure your firebase.json rewrites "/processSermon" to the actual function.
-        const response = await fetch('/processSermon', { // This path assumes a rewrite in firebase.json
+        // IMPORTANT: The path '/processSermon' assumes you have a rewrite rule
+        // in your firebase.json that directs this path to your Cloud Function.
+        const response = await fetch('/processSermon', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ url: url }) // Send the URL in the request body
         });
-        
-        // Check if the response is OK (status in the range 200-299)
+
+        // Check if the response is okay (status in the range 200-299)
         if (!response.ok) {
-          // Try to parse error from backend if available
-          let errorMessage = `Error: ${response.status} ${response.statusText}`;
+          // Try to parse error from JSON response, or use status text
+          let errorMsg = `Error: ${response.status} ${response.statusText}`;
           try {
             const errorData = await response.json();
             if (errorData && errorData.error) {
-              errorMessage = errorData.error;
+              errorMsg = errorData.error;
             }
-          } catch (parseError) {
-            // If parsing JSON fails, use the original error message
+          } catch (e) {
+            // Ignore if error response is not JSON
           }
-          throw new Error(errorMessage);
+          throw new Error(errorMsg);
         }
-
+        
         const data = await response.json();
 
         if (data.error) {
-          statusMessageElement.textContent = `Error: ${data.error}`;
-          statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-red-600';
-          urlInput.classList.add('border-red-500');
-          urlInput.classList.remove('border-green-500');
-        } else if (data.sermon) {
+          throw new Error(data.error);
+        }
+
+        if (data.sermon) {
           outputTextarea.value = data.sermon;
+          // Attempt to copy to clipboard
           if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(data.sermon);
             statusMessageElement.textContent = 'Sermon text extracted and copied to clipboard!';
             statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-green-600';
           } else {
-            statusMessageElement.textContent = 'Sermon text extracted. Please copy manually (clipboard unavailable).';
+            statusMessageElement.textContent = 'Sermon text extracted. Please copy manually. (Clipboard API not available/permitted)';
             statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-yellow-600';
           }
-           if (data.warning) {
-             statusMessageElement.textContent += ` Warning: ${data.warning}`;
-             statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-yellow-600';
-           }
         } else {
-           statusMessageElement.textContent = 'No sermon content found or an unexpected response was received.';
+          statusMessageElement.textContent = 'No sermon content could be identified, or an unexpected response was received.';
            statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-yellow-600';
+        }
+        
+        if (data.warning) {
+            statusMessageElement.textContent += ` Warning: ${data.warning}`;
+            statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-yellow-600';
         }
 
       } catch (error) {
         console.error('Error processing sermon:', error);
-        statusMessageElement.textContent = 'Failed to process sermon. ' + (error.message || 'Please check console for details.');
+        statusMessageElement.textContent = 'Error: ' + error.message;
         statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-red-600';
-        urlInput.classList.add('border-red-500');
-        urlInput.classList.remove('border-green-500');
       } finally {
         processButton.disabled = false;
-        buttonText.textContent = 'Process Sermon';
-        buttonIconDefault.classList.remove('hidden');
-        buttonIconLoading.classList.add('hidden');
+        processButton.classList.remove('opacity-50', 'cursor-not-allowed');
       }
     }
   </script>
 </body>
 </html>
-
-    
