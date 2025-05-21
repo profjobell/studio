@@ -43,7 +43,9 @@ const SUPPORTED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
 ];
 
-const YOUTUBE_URL_REGEX = /^(https|http):\/\/(?:www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+// Comprehensive YouTube URL regex to validate and extract video ID (group 1)
+const YOUTUBE_URL_REGEX_COMPREHENSIVE = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/;
+
 
 const formSchema = z.object({
   analysisTitle: z.string().min(5, {
@@ -98,10 +100,10 @@ const formSchema = z.object({
       }
     }
   } else if (data.submissionType === "youtubeLink") {
-    if (!data.youtubeUrl || !YOUTUBE_URL_REGEX.test(data.youtubeUrl)) {
+    if (!data.youtubeUrl || !YOUTUBE_URL_REGEX_COMPREHENSIVE.test(data.youtubeUrl)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Please enter a valid YouTube video URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID or https://youtu.be/VIDEO_ID).",
+            message: "Please enter a valid YouTube video URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID, https://youtu.be/VIDEO_ID, or https://www.youtube.com/embed/VIDEO_ID).",
             path: ["youtubeUrl"],
         });
     }
@@ -112,7 +114,7 @@ export function ContentSubmissionForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false); // Retained for potential other async steps if re-introduced
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
   const [showYoutubeInstructionsDialog, setShowYoutubeInstructionsDialog] = useState(false);
 
@@ -133,7 +135,7 @@ export function ContentSubmissionForm() {
     let submittedFileName: string | undefined = undefined;
 
     if (values.submissionType === "youtubeLink") {
-        if (!values.youtubeUrl || !YOUTUBE_URL_REGEX.test(values.youtubeUrl)) {
+        if (!values.youtubeUrl || !YOUTUBE_URL_REGEX_COMPREHENSIVE.test(values.youtubeUrl)) {
             toast({
                 title: "Invalid YouTube URL",
                 description: "Please provide a valid YouTube URL.",
@@ -141,10 +143,13 @@ export function ContentSubmissionForm() {
             });
             return;
         }
+        // Instead of processing, show instructions dialog.
+        // The dialog's action button will handle opening the external site.
         setShowYoutubeInstructionsDialog(true);
         return; 
     }
 
+    // This part handles "text" and "file" submissions directly
     startTransition(async () => {
       try {
         if (values.submissionType === "text" && values.textContent) {
@@ -162,23 +167,23 @@ export function ContentSubmissionForm() {
                 variant: "default",
              });
           } else if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-             analysisInput = `Simulated text extraction for: ${file.name} (type: ${file.type}). The actual content of this file type is not processed by this demo. Analysis will be based on this placeholder text describing the file.`;
-             toast({
-                title: "File Submitted (Text Extraction Simulation)",
-                description: `File "${file.name}" (${file.type}) was submitted. Full text extraction for PDF/DOCX requires server-side processing, which is not implemented in this demo. A placeholder description of the file will be analyzed.`,
+            analysisInput = `File submitted: ${file.name}, Type: ${file.type}. Content extraction is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`;
+            toast({
+                title: "File Submitted (Processing Note)",
+                description: `File "${file.name}" (${file.type}) submitted. For PDF/DOCX, content extraction is not live. A description of the file will be analyzed.`,
                 variant: "default",
                 duration: 7000,
-             });
+            });
           } else if (file.type.startsWith("audio/") || file.type.startsWith("video/")) {
-            analysisInput = `Simulated transcription for file: ${file.name} (type: ${file.type}). Actual audio/video transcription is not implemented in this demo. Analysis will be based on this placeholder text describing the file.`;
+            analysisInput = `File submitted: ${file.name}, Type: ${file.type}. Transcription is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`;
             toast({
-              title: "File Submitted (Transcription Simulation)",
-              description: `File "${file.name}" (${file.type}) submitted. Audio/Video transcription requires backend implementation. A placeholder description of the file will be analyzed.`,
+              title: "File Submitted (Processing Note)",
+              description: `File "${file.name}" (${file.type}) submitted. Audio/Video transcription is not live. A description of the file will be analyzed.`,
               variant: "default",
               duration: 7000,
             });
           } else {
-            analysisInput = `Unsupported file type: ${file.name} (type: ${file.type}). Analysis will be based on this placeholder text.`;
+            analysisInput = `Unsupported file type: ${file.name} (type: ${file.type}). A description of the file submission will be used for analysis.`;
              toast({
               title: "Unsupported File Type",
               description: `File "${file.name}" has an unsupported type (${file.type}). A placeholder description will be analyzed.`,
@@ -189,7 +194,7 @@ export function ContentSubmissionForm() {
           if (file.type.startsWith("audio/")) analysisTypeString = "file_audio";
           else if (file.type.startsWith("video/")) analysisTypeString = "file_video";
           else if (file.type === "text/plain" || file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") analysisTypeString = "file_document";
-          else analysisTypeString = "file_document"; // Fallback for other unknown types
+          else analysisTypeString = "file_document"; // Fallback
 
         } else {
           toast({ title: "Error", description: "No content provided for analysis.", variant: "destructive" });
@@ -219,7 +224,7 @@ export function ContentSubmissionForm() {
         const saveResult = await saveReportToDatabase(
           analysisResult,
           values.analysisTitle,
-          analysisInput, // This is the content sent to the AI
+          analysisInput, 
           analysisTypeString,
           submittedFileName
         );
@@ -249,10 +254,30 @@ export function ContentSubmissionForm() {
           variant: "destructive",
         });
       } finally {
-        setIsTranscribing(false);
+        setIsTranscribing(false); // Ensure this is reset if used elsewhere
       }
     });
   }
+
+  const handleYoutubeDialogAction = () => {
+    setShowYoutubeInstructionsDialog(false);
+    const currentYoutubeUrl = form.getValues("youtubeUrl");
+    if (currentYoutubeUrl) {
+        const match = currentYoutubeUrl.match(YOUTUBE_URL_REGEX_COMPREHENSIVE);
+        if (match && match[1]) { // Group 1 is the video ID
+            window.open(`https://youtubetotranscript.com/?v=${match[1]}`, '_blank');
+        } else {
+            // Fallback, though form validation should prevent invalid URLs here
+            window.open('https://youtubetotranscript.com/', '_blank');
+            toast({
+                title: "Opening Transcription Site",
+                description: "Could not automatically pre-fill video ID. Please paste your YouTube URL on the site.",
+                variant: "default",
+            });
+        }
+    }
+  };
+
 
   return (
     <>
@@ -336,13 +361,13 @@ export function ContentSubmissionForm() {
                   <FormLabel>Text Content</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Paste or type your religious content here for analysis..."
+                      placeholder="Paste or type your religious content here for analysis... If transcribing from YouTube, paste the transcript here."
                       className="resize-y min-h-[200px]"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    Directly input the text you want to analyze. If transcribing from YouTube, paste the transcript here.
+                    Directly input the text you want to analyze. If using a YouTube video, paste the transcript here after obtaining it from an external site.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -396,7 +421,7 @@ export function ContentSubmissionForm() {
                     />
                   </FormControl>
                   <FormDescription>
-                    Enter the YouTube URL. Clicking 'Submit' will show instructions for manual transcription.
+                    Enter the YouTube URL. Clicking 'Submit' will show instructions for manual transcription via an external site.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -404,16 +429,16 @@ export function ContentSubmissionForm() {
             />
           )}
           
-          <Button type="submit" disabled={isPending || isTranscribing} className="w-full">
-            {(isPending && !isTranscribing) ? (
+          <Button type="submit" disabled={isPending || (submissionTypeState === 'youtubeLink' && isTranscribing)} className="w-full">
+            {(isPending && submissionTypeState !== 'youtubeLink') ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Submitting for Analysis...
               </>
-            ) : isTranscribing ? (
+            ) : (submissionTypeState === 'youtubeLink' && isTranscribing) ? ( // Example if you add back a direct processing step
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing Link...
+                Processing Link... 
               </>
             ) : (
               "Submit for Analysis"
@@ -429,12 +454,14 @@ export function ContentSubmissionForm() {
             <AlertDialogDescription className="whitespace-pre-wrap">
               Youtube link must be pasted to the transcript web page field, and when complete the transcribed text will be in the Clipboard. Place the text into the 'Text Input' box and submit for analysis. Thank you.
               {"\n\n"}
-              You can use sites like <a href="https://youtubetotranscript.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">youtubetotranscript.com</a> or similar services to get the transcript.
+              Clicking "Proceed to Transcribe" will open an external site (youtubetotranscript.com) pre-filled with your video ID.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogAction onClick={() => setShowYoutubeInstructionsDialog(false)}>Got it!</AlertDialogAction>
+          <AlertDialogAction onClick={handleYoutubeDialogAction}>Proceed to Transcribe</AlertDialogAction>
         </AlertDialogContent>
       </AlertDialog>
     </>
   );
 }
+
+    
