@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition } from "react";
-import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
+import { analyzeSubmittedContent, saveReportToDatabase } from "../actions";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
@@ -43,7 +43,6 @@ const SUPPORTED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
 ];
 
-// Comprehensive YouTube URL regex to validate and extract video ID (group 1)
 const YOUTUBE_URL_REGEX_COMPREHENSIVE = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/;
 
 
@@ -55,7 +54,7 @@ const formSchema = z.object({
   }),
   submissionType: z.enum(["text", "file", "youtubeLink"]),
   textContent: z.string().optional(),
-  file: z.any().optional(),
+  file: z.instanceof(FileList).optional(), // Expect a FileList now
   youtubeUrl: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.submissionType === "text") {
@@ -70,33 +69,26 @@ const formSchema = z.object({
     if (!data.file || data.file.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please select a file to upload.",
+        message: "Please select at least one file to upload.",
         path: ["file"],
       });
     } else {
-      const fileList = data.file as FileList;
-      if (fileList[0]) {
-        const file = fileList[0];
+      for (let i = 0; i < data.file.length; i++) {
+        const file = data.file[i];
         if (file.size > MAX_FILE_SIZE) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `File size must be less than ${MAX_FILE_SIZE / (1024*1024)}MB.`,
-            path: ["file"],
+            message: `File "${file.name}" size must be less than ${MAX_FILE_SIZE / (1024*1024)}MB.`,
+            path: ["file", i.toString(), "size"], // Path to specific file
           });
         }
         if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Unsupported file type. Please upload MP3, WAV, MP4, AVI, PDF, TXT, or DOCX.",
-            path: ["file"],
+            message: `File "${file.name}" has an unsupported type. Please upload MP3, WAV, MP4, AVI, PDF, TXT, or DOCX.`,
+            path: ["file", i.toString(), "type"], // Path to specific file
           });
         }
-      } else {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Invalid file data.",
-            path: ["file"],
-          });
       }
     }
   } else if (data.submissionType === "youtubeLink") {
@@ -114,7 +106,7 @@ export function ContentSubmissionForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [isTranscribing, setIsTranscribing] = useState(false); // Retained for potential other async steps if re-introduced
+  const [isTranscribing, setIsTranscribing] = useState(false); 
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
   const [showYoutubeInstructionsDialog, setShowYoutubeInstructionsDialog] = useState(false);
 
@@ -132,7 +124,7 @@ export function ContentSubmissionForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     let analysisInput = "";
     let analysisTypeString: AnalysisReport['analysisType'] = "text";
-    let submittedFileName: string | undefined = undefined;
+    let submittedFileNames: string[] = [];
 
     if (values.submissionType === "youtubeLink") {
         if (!values.youtubeUrl || !YOUTUBE_URL_REGEX_COMPREHENSIVE.test(values.youtubeUrl)) {
@@ -143,58 +135,76 @@ export function ContentSubmissionForm() {
             });
             return;
         }
-        // Instead of processing, show instructions dialog.
-        // The dialog's action button will handle opening the external site.
         setShowYoutubeInstructionsDialog(true);
         return; 
     }
 
-    // This part handles "text" and "file" submissions directly
     startTransition(async () => {
       try {
         if (values.submissionType === "text" && values.textContent) {
           analysisInput = values.textContent;
           analysisTypeString = "text";
-        } else if (values.submissionType === "file" && values.file && (values.file as FileList).length > 0) {
-          const file = (values.file as FileList)[0];
-          submittedFileName = file.name;
+        } else if (values.submissionType === "file" && values.file && values.file.length > 0) {
+          const fileContents: string[] = [];
+          let hasAudio = false;
+          let hasVideo = false;
+          let hasDocument = false;
 
-          if (file.type === "text/plain") {
-             analysisInput = await file.text();
-             toast({
-                title: "Text File Processing",
-                description: `The text content of "${file.name}" is being read and will be used for analysis.`,
-                variant: "default",
-             });
-          } else if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-            analysisInput = `File submitted: ${file.name}, Type: ${file.type}. Content extraction is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`;
-            toast({
-                title: "File Submitted (Processing Note)",
-                description: `File "${file.name}" (${file.type}) submitted. For PDF/DOCX, content extraction is not live. A description of the file will be analyzed.`,
+          for (let i = 0; i < values.file.length; i++) {
+            const file = values.file[i];
+            submittedFileNames.push(file.name);
+
+            if (file.type === "text/plain") {
+               const text = await file.text();
+               fileContents.push(`Content from ${file.name}:\n${text}`);
+               hasDocument = true;
+               toast({
+                  title: "Text File Processed",
+                  description: `The text content of "${file.name}" has been read.`,
+                  variant: "default",
+               });
+            } else if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+              fileContents.push(`File submitted: ${file.name}, Type: ${file.type}. Content extraction is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`);
+              hasDocument = true;
+              toast({
+                  title: `File Submitted: ${file.name}`,
+                  description: `For PDF/DOCX, content extraction is not live. A description of the file will be analyzed.`,
+                  variant: "default",
+                  duration: 7000,
+              });
+            } else if (file.type.startsWith("audio/")) {
+              fileContents.push(`File submitted: ${file.name}, Type: ${file.type}. Transcription is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`);
+              hasAudio = true;
+              toast({
+                title: `File Submitted: ${file.name}`,
+                description: `Audio transcription is not live. A description of the file will be analyzed.`,
                 variant: "default",
                 duration: 7000,
-            });
-          } else if (file.type.startsWith("audio/") || file.type.startsWith("video/")) {
-            analysisInput = `File submitted: ${file.name}, Type: ${file.type}. Transcription is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`;
-            toast({
-              title: "File Submitted (Processing Note)",
-              description: `File "${file.name}" (${file.type}) submitted. Audio/Video transcription is not live. A description of the file will be analyzed.`,
-              variant: "default",
-              duration: 7000,
-            });
-          } else {
-            analysisInput = `Unsupported file type: ${file.name} (type: ${file.type}). A description of the file submission will be used for analysis.`;
-             toast({
-              title: "Unsupported File Type",
-              description: `File "${file.name}" has an unsupported type (${file.type}). A placeholder description will be analyzed.`,
-              variant: "destructive",
-            });
+              });
+            } else if (file.type.startsWith("video/")) {
+              fileContents.push(`File submitted: ${file.name}, Type: ${file.type}. Transcription is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`);
+              hasVideo = true;
+              toast({
+                title: `File Submitted: ${file.name}`,
+                description: `Video transcription is not live. A description of the file will be analyzed.`,
+                variant: "default",
+                duration: 7000,
+              });
+            } else {
+              fileContents.push(`Unsupported file type: ${file.name} (type: ${file.type}). A description of the file submission will be used for analysis.`);
+               toast({
+                title: `Unsupported File Type: ${file.name}`,
+                description: `File "${file.name}" has an unsupported type (${file.type}). A placeholder description will be analyzed.`,
+                variant: "destructive",
+              });
+            }
           }
+          analysisInput = fileContents.join("\n\n---\n\n"); // Join contents with a separator
           
-          if (file.type.startsWith("audio/")) analysisTypeString = "file_audio";
-          else if (file.type.startsWith("video/")) analysisTypeString = "file_video";
-          else if (file.type === "text/plain" || file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") analysisTypeString = "file_document";
-          else analysisTypeString = "file_document"; // Fallback
+          if (hasAudio) analysisTypeString = "file_audio";
+          else if (hasVideo) analysisTypeString = "file_video";
+          else if (hasDocument) analysisTypeString = "file_document";
+          else analysisTypeString = "file_document"; // Fallback if only unsupported types somehow got through
 
         } else {
           toast({ title: "Error", description: "No content provided for analysis.", variant: "destructive" });
@@ -226,7 +236,7 @@ export function ContentSubmissionForm() {
           values.analysisTitle,
           analysisInput, 
           analysisTypeString,
-          submittedFileName
+          submittedFileNames.join(", ") // Join filenames for storage
         );
 
         if (typeof saveResult === 'string') {
@@ -254,7 +264,7 @@ export function ContentSubmissionForm() {
           variant: "destructive",
         });
       } finally {
-        setIsTranscribing(false); // Ensure this is reset if used elsewhere
+        setIsTranscribing(false);
       }
     });
   }
@@ -264,10 +274,9 @@ export function ContentSubmissionForm() {
     const currentYoutubeUrl = form.getValues("youtubeUrl");
     if (currentYoutubeUrl) {
         const match = currentYoutubeUrl.match(YOUTUBE_URL_REGEX_COMPREHENSIVE);
-        if (match && match[1]) { // Group 1 is the video ID
+        if (match && match[1]) {
             window.open(`https://youtubetotranscript.com/?v=${match[1]}`, '_blank');
         } else {
-            // Fallback, though form validation should prevent invalid URLs here
             window.open('https://youtubetotranscript.com/', '_blank');
             toast({
                 title: "Opening Transcription Site",
@@ -277,7 +286,6 @@ export function ContentSubmissionForm() {
         }
     }
   };
-
 
   return (
     <>
@@ -382,7 +390,7 @@ export function ContentSubmissionForm() {
               name="file"
               render={({ field: { ref, name, onBlur, onChange: RHFOnChange, disabled } }) => ( 
                 <FormItem>
-                  <FormLabel>Upload File</FormLabel>
+                  <FormLabel>Upload File(s)</FormLabel>
                   <FormControl>
                     <input
                       type="file"
@@ -394,10 +402,11 @@ export function ContentSubmissionForm() {
                       disabled={disabled || isPending || isTranscribing}
                       accept={SUPPORTED_FILE_TYPES.join(",")}
                       className="p-2 border border-input bg-background rounded-md file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground w-full h-10"
+                      multiple // Allow multiple file selection
                     />
                   </FormControl>
                   <FormDescription>
-                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB. (.txt content is read; others use placeholder descriptions).
+                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB per file. (.txt content is read; others use placeholder descriptions). You can select multiple files.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -435,7 +444,7 @@ export function ContentSubmissionForm() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Submitting for Analysis...
               </>
-            ) : (submissionTypeState === 'youtubeLink' && isTranscribing) ? ( // Example if you add back a direct processing step
+            ) : (submissionTypeState === 'youtubeLink' && isTranscribing) ? ( 
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing Link... 
@@ -463,5 +472,3 @@ export function ContentSubmissionForm() {
     </>
   );
 }
-
-    
