@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sermon Extractor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+    <header class="mb-6 text-center">
+      <h1 class="text-3xl font-bold text-blue-700">KJV Sentinel</h1>
+      <h2 class="text-xl font-semibold text-gray-800 mt-1">Church Sermon Extractor</h2>
+      <p class="text-sm text-gray-600 mt-2">
+        Extract sermon content from YouTube video transcripts. 
+        This tool uses <a href="https://kome.ai/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Kome.ai</a> (via a backend function) to fetch transcripts.
+      </p>
+    </header>
+    
+    <div class="mb-4">
+      <label for="youtube-url" class="block text-sm font-medium text-gray-700 mb-1">YouTube Video URL:</label>
+      <input
+        type="text"
+        id="youtube-url"
+        placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
+    
+    <button
+      id="process-sermon-button"
+      onclick="processSermon()"
+      class="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 flex items-center justify-center"
+    >
+      <svg id="button-icon-default" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+      <svg id="button-icon-loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span id="button-text">Process Sermon</span>
+    </button>
+    
+    <div class="mt-6">
+      <label for="sermon-output" class="block text-sm font-medium text-gray-700 mb-1">Extracted Sermon Text:</label>
+      <textarea
+        id="sermon-output"
+        readonly
+        placeholder="Processed sermon text will appear here..."
+        class="mt-1 block w-full p-3 border border-gray-300 rounded-md h-64 bg-gray-50 text-sm shadow-sm"
+      ></textarea>
+    </div>
+    
+    <p id="status-message" class="mt-3 text-sm text-center font-medium"></p>
+  </div>
+
+  <script>
+    // Client-side JavaScript for the Sermon Extractor page
+    async function processSermon() {
+      const urlInput = document.getElementById('youtube-url');
+      const outputTextarea = document.getElementById('sermon-output');
+      const statusMessageElement = document.getElementById('status-message');
+      const processButton = document.getElementById('process-sermon-button');
+      const buttonText = document.getElementById('button-text');
+      const buttonIconDefault = document.getElementById('button-icon-default');
+      const buttonIconLoading = document.getElementById('button-icon-loading');
+
+      const url = urlInput.value;
+
+      // Basic YouTube URL validation (can be more comprehensive)
+      const youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/;
+      if (!url || !youtubeRegex.test(url)) {
+        statusMessageElement.textContent = 'Error: Please provide a valid YouTube video URL.';
+        statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-red-600';
+        urlInput.classList.add('border-red-500');
+        urlInput.classList.remove('border-green-500');
+        return;
+      }
+      urlInput.classList.remove('border-red-500');
+      urlInput.classList.add('border-green-500'); // Indicate valid format before sending
+
+      statusMessageElement.textContent = 'Processing... Please wait.';
+      statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-blue-600';
+      outputTextarea.value = '';
+      processButton.disabled = true;
+      buttonText.textContent = 'Processing...';
+      buttonIconDefault.classList.add('hidden');
+      buttonIconLoading.classList.remove('hidden');
+
+      try {
+        // In a Firebase project, '/processSermon' would be routed to your Cloud Function.
+        // Ensure your firebase.json rewrites "/processSermon" to the actual function.
+        const response = await fetch('/processSermon', { // This path assumes a rewrite in firebase.json
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url: url }) // Send the URL in the request body
+        });
+        
+        // Check if the response is OK (status in the range 200-299)
+        if (!response.ok) {
+          // Try to parse error from backend if available
+          let errorMessage = `Error: ${response.status} ${response.statusText}`;
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (parseError) {
+            // If parsing JSON fails, use the original error message
+          }
+          throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+          statusMessageElement.textContent = `Error: ${data.error}`;
+          statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-red-600';
+          urlInput.classList.add('border-red-500');
+          urlInput.classList.remove('border-green-500');
+        } else if (data.sermon) {
+          outputTextarea.value = data.sermon;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(data.sermon);
+            statusMessageElement.textContent = 'Sermon text extracted and copied to clipboard!';
+            statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-green-600';
+          } else {
+            statusMessageElement.textContent = 'Sermon text extracted. Please copy manually (clipboard unavailable).';
+            statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-yellow-600';
+          }
+           if (data.warning) {
+             statusMessageElement.textContent += ` Warning: ${data.warning}`;
+             statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-yellow-600';
+           }
+        } else {
+           statusMessageElement.textContent = 'No sermon content found or an unexpected response was received.';
+           statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-yellow-600';
+        }
+
+      } catch (error) {
+        console.error('Error processing sermon:', error);
+        statusMessageElement.textContent = 'Failed to process sermon. ' + (error.message || 'Please check console for details.');
+        statusMessageElement.className = 'mt-3 text-sm text-center font-medium text-red-600';
+        urlInput.classList.add('border-red-500');
+        urlInput.classList.remove('border-green-500');
+      } finally {
+        processButton.disabled = false;
+        buttonText.textContent = 'Process Sermon';
+        buttonIconDefault.classList.remove('hidden');
+        buttonIconLoading.classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
+
+    
