@@ -8,17 +8,6 @@ if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
-// --- Timestamp Removal Function (can be kept if pre-processing before sending to AI is desired, or removed if AI handles it) ---
-function removeTimestamps(text) {
-  if (!text) return "";
-  // Simple regex for common timestamp patterns, AI will handle more complex cases.
-  const timestampRegex = /(\[\s*\d{1,2}:\d{2}(:\d{2})?(\.\d{3})?\s*\]|^\s*\d{1,2}:\d{2}(:\d{2})?(\.\d{3})?\s*(?=\s|\w|$))/gm;
-  let cleanedText = text.replace(timestampRegex, '');
-  cleanedText = cleanedText.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
-  return cleanedText;
-}
-
-// --- Main Cloud Function ---
 exports.processSermon = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*'); // Allow all origins for simplicity, restrict in production
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -43,58 +32,57 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
   // IMPORTANT: Replace YOUR_NEXTJS_APP_BASE_URL with the actual deployed URL of your Next.js app
   // For local development, this might be 'http://localhost:9002' or similar.
   // For Firebase Hosting with Next.js integration, this would be your Firebase Hosting URL.
-  const nextJsApiUrl = process.env.NEXTJS_APP_URL || 'YOUR_NEXTJS_APP_BASE_URL_NOT_CONFIGURED'; 
+  // It's best to set this as a Firebase Function environment variable (e.g., process.env.NEXTJS_APP_URL).
+  const nextJsApiUrl = process.env.NEXTJS_APP_URL || 'YOUR_NEXTJS_APP_BASE_URL_NOT_CONFIGURED';
   if (nextJsApiUrl === 'YOUR_NEXTJS_APP_BASE_URL_NOT_CONFIGURED') {
     console.error("NEXTJS_APP_URL environment variable is not set. Cannot call AI processing service.");
-    return res.status(500).json({ error: "AI processing service endpoint is not configured." });
+    // Return a 500 Internal Server Error, as this is a server configuration issue.
+    return res.status(500).json({ error: "AI processing service endpoint is not configured on the server. Please check function environment variables." });
   }
   const aiProcessingEndpoint = `${nextJsApiUrl}/api/isolate-sermon-by-ai`;
 
 
   try {
-    // Optional: Pre-clean timestamps before sending to AI if desired,
-    // or let the AI handle it based on its prompt.
-    // const transcriptForAI = removeTimestamps(pastedTranscript);
-    const transcriptForAI = pastedTranscript; // Send raw transcript to AI
+    const transcriptToProcess = pastedTranscript; // The AI flow will handle everything.
 
     const aiResponse = await axios.post(aiProcessingEndpoint, {
-      transcript: transcriptForAI,
+      transcript: transcriptToProcess,
     });
 
-    // The AI service is expected to return JSON like: { sermon: "isolated sermon text" }
-    // or { error: "some error message" }
-    if (aiResponse.data && aiResponse.data.sermon) {
-      let sermonText = aiResponse.data.sermon;
-      let warningMessage = ""; // AI flow can potentially set this too
-
-      // Check for incomplete transcript warning from AI or based on original
-      if (aiResponse.data.warning || pastedTranscript.includes("[Transcript ends abruptly]")) {
-        warningMessage = aiResponse.data.warning || "Transcript may be incomplete";
-      }
-      
-      const responseJson = {
-        sermon: sermonText,
+    // The AI service is expected to return JSON like: { sermon: "isolated sermon text", warning?: "..." }
+    // or { error: "some error message from AI" }
+    if (aiResponse.data && (aiResponse.data.sermon || aiResponse.data.error)) {
+      let responseJson = {
+        sermon: aiResponse.data.sermon || "No sermon content identified by AI.", // Default if sermon is null/undefined
         status: "ready for clipboard"
       };
-      if (warningMessage) {
-        responseJson.warning = warningMessage;
+      if (aiResponse.data.warning) {
+        responseJson.warning = aiResponse.data.warning;
+      }
+      
+      // If the AI service itself explicitly returns an error field
+      if (aiResponse.data.error) {
+        console.error("AI Service returned an error:", aiResponse.data.error);
+        // Return a 502 (Bad Gateway) if the AI service signals a problem.
+        return res.status(502).json({ error: `AI Processing Error: ${aiResponse.data.error}` });
       }
       return res.status(200).json(responseJson);
 
-    } else if (aiResponse.data && aiResponse.data.error) {
-      return res.status(500).json({ error: `AI Processing Error: ${aiResponse.data.error}` });
     } else {
-      return res.status(500).json({ error: "AI service returned an unexpected response format." });
+      console.error("AI service returned an unexpected response format:", aiResponse.data);
+      return res.status(502).json({ error: "AI service returned an unexpected response format." }); // 502 Bad Gateway
     }
 
   } catch (error) {
     console.error("Error calling AI processing service:", error.message);
     if (error.response) {
-        console.error("AI Service Response Error Data:", error.response.data);
-        console.error("AI Service Response Error Status:", error.response.status);
-        return res.status(error.response.status || 500).json({ error: `Failed to process sermon via AI: ${error.response.data.error || error.message}` });
+        // This block handles errors from the HTTP request to the Next.js API itself (e.g., Next.js app is down, or that API route 404s)
+        console.error("AI Service Call Failed - Response Data:", error.response.data);
+        console.error("AI Service Call Failed - Response Status:", error.response.status);
+        const errorMessage = error.response.data?.error || error.response.data?.message || error.message || "Unknown error from AI service call";
+        return res.status(error.response.status || 500).json({ error: `Failed to communicate with AI processing service: ${errorMessage}` });
     }
-    return res.status(500).json({ error: `Failed to process sermon via AI: ${error.message}` });
+    // Generic error if the request to AI service didn't even get a response object (e.g., network issue, DNS, nextJsApiUrl is totally invalid)
+    return res.status(500).json({ error: `Failed to call AI processing service: ${error.message}. Check if the API endpoint [${aiProcessingEndpoint}] is correct and reachable.` });
   }
 });
-
