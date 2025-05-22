@@ -99,7 +99,13 @@ function isolateSermonContent(transcript) {
     let isSermonIndicator = sermonStartCues.some(cue => lowerLine.includes(cue));
 
     if (isNonSermonIndicator) {
-      if (!(isSermonIndicator && lowerLine.length > originalLine.indexOf(sermonStartCues.find(c => lowerLine.includes(c)) || "") + 20) ) {
+      const sermonCueInLine = sermonStartCues.find(c => lowerLine.includes(c));
+      // Use originalLine.toLowerCase() for indexOf to match the case of sermonCueInLine if it's found in lowerLine
+      const indexOfSermonCue = sermonCueInLine ? originalLine.toLowerCase().indexOf(sermonCueInLine) : -1;
+
+      // If it's a non-sermon line, UNLESS it's ALSO a sermon line where the sermon cue appears significantly
+      // (i.e., indexOfSermonCue is valid AND the line is long enough past the sermon cue).
+      if (!(isSermonIndicator && indexOfSermonCue !== -1 && lowerLine.length > (indexOfSermonCue + 20))) {
         inSermon = false;
         potentialSermonStart = false;
         continue; 
