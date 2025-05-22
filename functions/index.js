@@ -202,12 +202,14 @@ function isolateSermonContent(transcript) {
 
 
 // --- Main Cloud Function ---
+// Export the function with the name 'processSermon'
 exports.processSermon = functions.https.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Origin', '*'); // Allow all origins for simplicity, restrict in production
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
+    // Handle preflight requests for CORS
     return res.status(204).send('');
   }
 
@@ -264,4 +266,4 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
   return res.status(200).json(responseJson);
 });
 
-    
+  
