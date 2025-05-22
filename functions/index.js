@@ -7,14 +7,13 @@ if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
-// --- Placeholder for Kome.ai Transcript Fetching ---
-// This function remains as a placeholder if the Cloud Function needs to fetch by URL for other purposes.
-// For the sermon-extractor.html page, the transcript will be sent directly.
+// --- Placeholder for Kome.ai Transcript Fetching (Not used in pasted text flow) ---
 async function fetchKomeTranscriptByUrl(url) {
-  console.log(`[Placeholder] Fetching transcript for URL: ${url}`);
-  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
-
-  if (url.includes("youtube.com/watch?v=example_sermon_video")) {
+  console.log(`[Placeholder] Simulating Kome.ai fetch for URL: ${url}`);
+  // This function is not called if a transcript is directly provided.
+  // For testing sermon isolation, this function's output is less relevant now.
+  // However, keeping a basic placeholder in case it's used elsewhere or for future ref.
+  if (url && url.includes("example_sermon_video")) {
     return `
 [00:00:00] Welcome everyone! Today's announcements are...
 [00:00:05] [Music: Opening Hymn - Amazing Grace]
@@ -22,7 +21,7 @@ async function fetchKomeTranscriptByUrl(url) {
 [00:00:15] [Congregation sings]
 [00:00:20] And now for a time of prayer. Heavenly Father, we thank you...
 [00:00:30] Our scripture reading today is from John chapter 3.
-[00:00:35] Today’s sermon is about the incredible love of God.
+[00:00:35] Pastor: Today’s sermon is about the incredible love of God, based on Romans 5.
 [00:00:40] Let us turn to the scripture, specifically Romans chapter 5.
 00:45 Paul tells us, "Therefore being justified by faith, we have peace with God through our Lord Jesus Christ:"
 00:50 This peace is a foundational element of our walk.
@@ -35,108 +34,176 @@ async function fetchKomeTranscriptByUrl(url) {
 [00:01:25] [Music: Closing Song]
 [00:01:30] Thank you for joining us. Coffee fellowship in the hall. Heat Heat.
 `;
-  } else if (url.includes("youtube.com/watch?v=incomplete_video")) {
-    return `
-[00:00:00] The sermon today focuses on...
-[00:00:05] ...and this leads us to understand grace more deeply.
-[00:00:10] [Transcript ends abruptly]
-`;
-  } else if (url.includes("youtube.com/watch?v=no_sermon_video")) {
-    return `
-[00:00:00] [Music only for 5 minutes]
-[00:05:00] Announcements for the week.
-[00:10:00] That's all folks!
-`;
-  } else if (!url || !url.match(/https?:\/\/(www\.)?youtube\.com\/(watch\?v=[\w-]+|embed\/[\w-]+|v\/[\w-]+|shorts\/[\w-]+)|https?:\/\/youtu\.be\/[\w-]+/)) {
+  } else if (url && !url.match(/https?:\/\/(www\.)?youtube\.com\/(watch\?v=[\w-]+|embed\/[\w-]+|v\/[\w-]+|shorts\/[\w-]+)|https?:\/\/youtu\.be\/[\w-]+/)) {
     console.error('Invalid YouTube URL format for placeholder fetch:', url);
     throw new Error("Invalid input. Please provide a valid YouTube video URL for fetching.");
-  } else {
-    console.warn(`[Placeholder] Kome.ai failed to generate transcript for: ${url}`);
-    throw new Error("Unable to generate transcript for the provided YouTube video (simulated Kome.ai failure).");
   }
+  console.warn(`[Placeholder] Kome.ai failed to generate transcript for: ${url}`);
+  throw new Error("Unable to generate transcript for the provided YouTube video (simulated Kome.ai failure).");
 }
+
 
 // --- Timestamp Removal Function ---
 function removeTimestamps(text) {
   if (!text) return "";
-  const timestampRegex = /(\[\s*\d{1,2}:\d{2}(:\d{2})?(\.\d{3})?\s*\]|^\s*\d{1,2}:\d{2}(:\d{2})?(\.\d{3})?\s*)/gm;
+  // Regex to match various timestamp formats, including those at the start of a line without brackets
+  // and those with milliseconds.
+  const timestampRegex = /(\[\s*\d{1,2}:\d{2}(:\d{2})?(\.\d{3})?\s*\]|^\s*\d{1,2}:\d{2}(:\d{2})?(\.\d{3})?\s*(?=\s|\w|$))/gm;
   let cleanedText = text.replace(timestampRegex, '');
+  // Remove lines that became empty after timestamp removal or were only whitespace
   cleanedText = cleanedText.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
   return cleanedText;
 }
 
 // --- Sermon Isolation Function ---
 function isolateSermonContent(transcript) {
-  if (!transcript) return "";
+  if (!transcript || transcript.trim() === "") {
+    return "No transcript provided or transcript is empty.";
+  }
 
   const lines = transcript.split('\n');
   const sermonParts = [];
   let inSermon = false;
-  let potentialSermonStart = false;
+  let inPrayerBlock = false; // To handle multi-line prayers
 
+  // Cues to identify start of sermon
   const sermonStartCues = [
-    "sermon", "message", "scripture", "let us turn to", "today we explore",
-    "the word of God", "our text today", "pastor", "preaching", "teaching"
+    "sermon is about", "message today", "let us turn to the scripture", "our theme is",
+    "we're going to be looking at", "pastor:", "preacher:", "speaker:",
+    "the word of god", "our text today", "teaching on", "exposition of",
+    "turn back to romans", "romans chapter 5", "looking at verses"
   ];
+
+  // Cues to identify non-sermon content (expanded)
   const nonSermonCues = [
-    "[music]", "[singing]", "[congregation sings]", "hymn:", "announcement", "pray", "prayer",
-    "heavenly father", "good morning", "welcome", "coffee fellowship", "closing song",
-    "benediction", "offering", "tithes"
+    "[music]", "[song]", "[sings]", "[congregation sings]", "[applause]", "hymn:",
+    "announcement", "news sheet", "notices", "welcome", "good morning", "happy sunday",
+    "coffee fellowship", "closing song", "benediction", "offering", "tithes",
+    "members meeting", "ladies meeting", "youth group", "sunday school children", "awards for",
+    "christian institute", "assisted suicide bill", "conversion therapy",
+    "let's come in prayer", "father we come to worship", "heavenly father", "lord grant to us",
+    "we ask these things in jesus name amen", "let us pray", "let's pray", "we pray for",
+    "our father who art in heaven", "closing prayer", "opening prayer",
+    "scripture reading", "psalm", "reading from", "the reading today is"
+    // Note: "Amen" at the end of a prayer needs careful handling if sermon follows immediately.
   ];
-  const actionTagRegex = /\[[^\]]*?(pastor|speaker|audience|congregation|applause|laughs|coughs|clears throat|sips water|walks|stands|sits)[^\]]*?\]/i;
 
-  for (const line of lines) {
+  // Regex for action tags like [Pastor sips water]
+  const actionTagRegex = /\[[^\]]*?(pastor|speaker|audience|congregation|applause|laughs|coughs|clears throat|sips water|walks|stands|sits|video plays|sound effect)[^\]]*?\]/gi;
+
+  // Simple check for song-like repetitive short lines
+  const isLikelySongLyric = (line) => {
+    const words = line.toLowerCase().split(/\s+/);
+    if (words.length <= 3 && words.length > 0) {
+        // e.g. "Heat Heat", "Hallelujah Hallelujah"
+        if (words.every(w => w === words[0])) return true;
+        if (words.length === 2 && words[0] === words[1]) return true;
+    }
+    return false;
+  };
+
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+
+    // Remove purely descriptive action tags or strip them if line has other content
+    const lineWithoutActionTags = line.replace(actionTagRegex, "").trim();
+    if (lineWithoutActionTags.length === 0 && actionTagRegex.test(line)) {
+        console.log(`Skipping action tag line: ${line}`);
+        continue; // Skip lines that are only action tags
+    }
+    line = lineWithoutActionTags; // Use line without action tags for further processing
+    if (!line) continue;
+
+
     const lowerLine = line.toLowerCase();
-    let originalLine = line.trim();
 
-    if (actionTagRegex.test(lowerLine) && originalLine.replace(actionTagRegex, "").trim() === "") {
+    // Handle prayer blocks
+    if (lowerLine.includes("let's come in prayer") || lowerLine.includes("father we come to worship") || lowerLine.startsWith("heavenly father")) {
+        console.log(`Entering prayer block at: ${line}`);
+        inPrayerBlock = true;
+        inSermon = false; // Ensure prayer is not sermon
         continue;
     }
-    originalLine = originalLine.replace(actionTagRegex, "").trim();
-    if (!originalLine) continue;
-
-    let isNonSermonIndicator = nonSermonCues.some(cue => lowerLine.includes(cue));
-    let isSermonIndicator = sermonStartCues.some(cue => lowerLine.includes(cue));
-
-    if (isNonSermonIndicator) {
-      const sermonCueInLine = sermonStartCues.find(c => lowerLine.includes(c));
-      // Use originalLine.toLowerCase() for indexOf to match the case of sermonCueInLine if it's found in lowerLine
-      const indexOfSermonCue = sermonCueInLine ? originalLine.toLowerCase().indexOf(sermonCueInLine) : -1;
-
-      // If it's a non-sermon line, UNLESS it's ALSO a sermon line where the sermon cue appears significantly
-      // (i.e., indexOfSermonCue is valid AND the line is long enough past the sermon cue).
-      if (!(isSermonIndicator && indexOfSermonCue !== -1 && lowerLine.length > (indexOfSermonCue + 20))) {
-        inSermon = false;
-        potentialSermonStart = false;
-        continue; 
-      }
+    if (inPrayerBlock) {
+        if (lowerLine.endsWith("amen") && (lowerLine.includes("in jesus name amen") || lines.length === i + 1 || lines[i+1].trim() === "")) {
+            console.log(`Exiting prayer block at: ${line}`);
+            inPrayerBlock = false;
+        }
+        console.log(`Skipping prayer line: ${line}`);
+        continue; // Skip all lines within a prayer block
     }
 
-    if (isSermonIndicator) {
+
+    let isNonSermonLine = nonSermonCues.some(cue => lowerLine.includes(cue.toLowerCase()));
+    let isSermonStartIndicator = sermonStartCues.some(cue => lowerLine.includes(cue.toLowerCase()));
+    
+    // Special handling for scripture readings if they are not part of sermon exposition
+    if (lowerLine.includes("psalm") && lowerLine.length < 150 && !inSermon) { // Heuristic: short lines with "psalm" are likely readings
+        console.log(`Identified potential scripture reading (Psalm): ${line}`);
+        isNonSermonLine = true;
+    }
+    if ((lowerLine.startsWith("romans chapter 5") || lowerLine.includes("verses 1-11")) && !inSermon && i+1 < lines.length && lines[i+1].toLowerCase().includes("therefore since we have been justified")) {
+        console.log(`Identified potential scripture reading (Romans 5:1-11): ${line}`);
+        // This is tricky, as the sermon is ON Romans 5. We need to distinguish the reading FROM the sermon.
+        // If the next lines start the exposition, this current line is probably part of the reading.
+        // This needs very careful context. For now, we'll assume direct reading if not already in sermon.
+        isNonSermonLine = true;
+    }
+
+
+    if (isNonSermonLine) {
+        // Check if this "non-sermon" line MIGHT actually be the start of a sermon
+        // e.g. "Our message today is from Romans chapter 5"
+        const potentialSermonCueInNonSermonLine = sermonStartCues.find(cue => lowerLine.includes(cue.toLowerCase()));
+        if (potentialSermonCueInNonSermonLine) {
+            const cueIndex = lowerLine.indexOf(potentialSermonCueInNonSermonLine.toLowerCase());
+             // If the sermon cue is prominent and there's substantial text after it, it might be a sermon start.
+            if (line.length > cueIndex + potentialSermonCueInNonSermonLine.length + 15) {
+                 console.log(`Potential sermon start within non-sermon line: ${line}. Cue: ${potentialSermonCueInNonSermonLine}`);
+                 inSermon = true; // Start sermon here
+                 // Take the part from the cue onwards
+                 sermonParts.push(line.substring(cueIndex));
+                 continue;
+            }
+        }
+        console.log(`Excluding non-sermon line: ${line}`);
+        inSermon = false; // Stop sermon if non-sermon content is encountered
+        continue;
+    }
+
+    if (isSermonStartIndicator && !inSermon) {
+      console.log(`Sermon start detected at: ${line}`);
       inSermon = true;
-      potentialSermonStart = true;
     }
 
-    const isLikelySermonText = originalLine.length > 20 && (originalLine.split(' ').length > 4);
-
-    if (inSermon || (potentialSermonStart && isLikelySermonText)) {
-      const words = originalLine.split(/\s+/);
-      if (words.length > 1 && words[0].toLowerCase() === words[1].toLowerCase() && words.length < 5) {
-          // Likely a song lyric or chant
-      } else if (originalLine.length > 5) {
-          sermonParts.push(originalLine);
-          potentialSermonStart = true;
-      }
-    } else {
-        potentialSermonStart = false;
+    // Additional filter for song-like lines or very short interjections
+    if (inSermon) {
+        if (isLikelySongLyric(line)) {
+            console.log(`Skipping likely song lyric: ${line}`);
+            continue;
+        }
+        if (line.length < 20 && line.split(' ').length < 4 && !(/[a-zA-Z]\.[a-zA-Z]/.test(line))) { // Allow for e.g. "vs. 1"
+            console.log(`Skipping very short line in sermon: ${line}`);
+            // Potentially an interjection, or end of a paragraph before a non-sermon part.
+            // Keep `inSermon` true for now, next line will determine if it continues.
+            continue;
+        }
+        sermonParts.push(line);
     }
   }
-  return sermonParts.join(' ').trim();
+
+  if (sermonParts.length === 0) {
+    return "No sermon content could be identified in the transcript.";
+  }
+
+  return sermonParts.join(' ').trim(); // Join with space for continuous text
 }
+
 
 // --- Main Cloud Function ---
 exports.processSermon = functions.https.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*'); 
+  res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -148,7 +215,8 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { url: youtubeUrl, transcript: pastedTranscript } = req.body;
+  // Prioritize pasted transcript
+  const { transcript: pastedTranscript, url: youtubeUrl } = req.body;
   let rawTranscript = "";
   let warningMessage = "";
 
@@ -156,9 +224,10 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
     console.log("Processing directly provided transcript.");
     rawTranscript = pastedTranscript;
   } else if (youtubeUrl && typeof youtubeUrl === 'string') {
-    console.log("Attempting to fetch transcript by URL (placeholder).");
-    if (!youtubeUrl.match(/https?:\/\/(www\.)?youtube\.com\/(watch\?v=[\w-]+|embed\/[\w-]+|v\/[\w-]+|shorts\/[\w-]+)|https?:\/\/youtu\.be\/[\w-]+/)) {
-        return res.status(400).json({ error: "Invalid input. Please provide a valid YouTube video URL for fetching." });
+    // Fallback to URL fetching if no transcript provided - using placeholder
+    console.log("Attempting to fetch transcript by URL (placeholder) as no transcript was pasted.");
+     if (!youtubeUrl.match(/https?:\/\/(www\.)?youtube\.com\/(watch\?v=[\w-]+|embed\/[\w-]+|v\/[\w-]+|shorts\/[\w-]+)|https?:\/\/youtu\.be\/[\w-]+/)) {
+        return res.status(400).json({ error: "Invalid YouTube URL provided for fetching." });
     }
     try {
       rawTranscript = await fetchKomeTranscriptByUrl(youtubeUrl);
@@ -167,13 +236,13 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
       return res.status(500).json({ error: error.message || "Unable to generate transcript for the provided YouTube video." });
     }
   } else {
-    return res.status(400).json({ error: 'Invalid input. Please provide either a "transcript" or a "url" field in the JSON body.' });
+    return res.status(400).json({ error: 'Please provide a church service transcript to process.' });
   }
-  
+
   if (!rawTranscript || rawTranscript.trim() === "") {
       return res.status(500).json({error: "Transcript (provided or fetched) was empty."});
   }
-  if (rawTranscript.includes("[Transcript ends abruptly]")) { 
+  if (rawTranscript.includes("[Transcript ends abruptly]")) {
       warningMessage = "Transcript may be incomplete";
   }
 
@@ -181,13 +250,18 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
   const sermonText = isolateSermonContent(transcriptWithoutTimestamps);
 
   const responseJson = {
-    sermon: sermonText || "No sermon content could be identified in the transcript.",
+    sermon: sermonText, // Will be "No sermon content..." if nothing found
     status: "ready for clipboard"
   };
 
-  if (warningMessage) {
+  if (sermonText === "No sermon content could be identified in the transcript." && !warningMessage) {
+    // If isolateSermonContent returns specific message, don't override with generic warning
+  } else if (warningMessage) {
     responseJson.warning = warningMessage;
   }
 
+
   return res.status(200).json(responseJson);
 });
+
+    
