@@ -7,8 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .loader {
-      border: 2px solid #f3f3f3; /* Light grey */
-      border-top: 2px solid #3498db; /* Blue */
+      border: 4px solid #f3f3f3; /* Light grey */
+      border-top: 4px solid #3498db; /* Blue */
       border-radius: 50%;
       width: 16px;
       height: 16px;
@@ -25,29 +25,36 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
   <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
     <h1 class="text-2xl font-bold mb-4 text-center text-gray-800">Church Sermon Extractor</h1>
-    <p class="text-sm text-gray-600 mb-4">
-      This tool helps isolate sermon content from full church service transcripts.
-      First, obtain your transcript from a service like 
-      <a href="https://kome.ai/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Kome.ai YouTube Transcript Generator</a>.
-      Then, paste the ENTIRE transcript below and click "Isolate Sermon".
+    <p class="text-sm text-gray-600 mb-1">
+      This tool helps isolate sermon content from a full church service transcript.
     </p>
+    <p class="text-sm text-gray-600 mb-4">
+      For best results, obtain a transcript from a service like 
+      <a href="https://kome.ai/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Kome.ai YouTube Transcript Generator</a>,
+      paste the full transcript below, then click "Isolate Sermon".
+    </p>
+
     <div class="mb-4">
-      <label for="transcript-input" class="block text-sm font-medium text-gray-700">Pasted Full Transcript:</label>
+      <label for="transcript-input" class="block text-sm font-medium text-gray-700">
+        Paste Full Transcript Here:
+      </label>
       <textarea
         id="transcript-input"
-        placeholder="Paste the full transcript here, including timestamps, music cues, announcements, etc."
-        class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-40"
+        placeholder="Paste the entire transcript from Kome.ai or another source..."
+        class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 h-40"
       ></textarea>
     </div>
+
     <button
       id="process-button"
       onclick="processPastedSermon()"
-      class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 flex items-center justify-center"
+      class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 flex items-center justify-center"
     >
-      <span id="process-button-text">Isolate Sermon from Pasted Text</span>
-      <span id="loader" class="loader hidden"></span>
+      <span id="button-text">Isolate Sermon from Pasted Text</span>
+      <span id="button-loader" class="loader hidden ml-2"></span>
     </button>
-    <div class="mt-4">
+
+    <div class="mt-6">
       <label for="sermon-output" class="block text-sm font-medium text-gray-700">Isolated Sermon Text:</label>
       <textarea
         id="sermon-output"
@@ -58,149 +65,119 @@
     <button
       id="copy-button"
       onclick="copySermonText()"
-      class="w-full mt-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600 hidden"
+      class="mt-2 w-full bg-green-500 text-white p-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 hidden"
     >
-      Copy Sermon Text
+      Copy Sermon Text to Clipboard
     </button>
-    <div id="status-message-container" class="mt-2 min-h-[20px]"> 
-      <p id="status-message" class="text-sm"></p>
-    </div>
+    <p id="status-message" class="mt-2 text-sm"></p>
+
     <div class="mt-6 text-center">
-        <button
-            onclick="javascript:history.back()"
-            class="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+        <button 
+            onclick="javascript:history.back()" 
+            class="text-sm text-blue-500 hover:underline focus:outline-none"
         >
-            &larr; Back to KJV Sentinel App
+            &larr; Back to KJV Sentinel
         </button>
     </div>
-    <p class="text-xs text-gray-500 mt-4 text-center">
-      Please ensure your use of transcription services like Kome.ai complies with their terms of service.
+    <p class="text-xs text-gray-400 mt-4 text-center">
+        Please ensure your use of any third-party transcription service like Kome.ai complies with their terms of service.
     </p>
   </div>
 
   <script>
-    const transcriptInput = document.getElementById('transcript-input');
-    const outputTextarea = document.getElementById('sermon-output');
-    const statusDiv = document.getElementById('status-message');
-    const copyButton = document.getElementById('copy-button');
     const processButton = document.getElementById('process-button');
-    const processButtonText = document.getElementById('process-button-text');
-    const loader = document.getElementById('loader');
-
-    function setStatus(message, type = 'info') {
-      statusDiv.textContent = message;
-      if (type === 'error') {
-        statusDiv.className = 'text-sm text-red-600';
-      } else if (type === 'success') {
-        statusDiv.className = 'text-sm text-green-600';
-      } else {
-        statusDiv.className = 'text-sm text-gray-600';
-      }
-    }
-
-    function setLoadingState(isLoading) {
-      if (isLoading) {
-        processButton.disabled = true;
-        processButtonText.textContent = 'Processing...';
-        loader.classList.remove('hidden');
-        copyButton.classList.add('hidden');
-        outputTextarea.value = '';
-      } else {
-        processButton.disabled = false;
-        processButtonText.textContent = 'Isolate Sermon from Pasted Text';
-        loader.classList.add('hidden');
-      }
-    }
+    const buttonText = document.getElementById('button-text');
+    const buttonLoader = document.getElementById('button-loader');
+    const outputTextarea = document.getElementById('sermon-output');
+    const statusMessage = document.getElementById('status-message');
+    const copyButton = document.getElementById('copy-button');
+    const transcriptInput = document.getElementById('transcript-input');
 
     async function processPastedSermon() {
-      const pastedText = transcriptInput.value;
+      const transcript = transcriptInput.value;
 
-      if (!pastedText.trim()) {
-        setStatus('Please paste a transcript into the input field.', 'error');
+      if (!transcript.trim()) {
+        statusMessage.textContent = 'Please paste a transcript into the input field.';
+        statusMessage.className = 'mt-2 text-sm text-red-600';
+        copyButton.classList.add('hidden');
         return;
       }
 
-      setLoadingState(true);
-      setStatus('Processing transcript...');
+      buttonText.textContent = 'Processing...';
+      buttonLoader.classList.remove('hidden');
+      processButton.disabled = true;
+      outputTextarea.value = '';
+      statusMessage.textContent = 'Processing transcript with AI... this may take a moment.';
+      statusMessage.className = 'mt-2 text-sm text-blue-600';
+      copyButton.classList.add('hidden');
 
       try {
-        const response = await fetch('/processSermon', {
+        const response = await fetch('/processSermon', { // This still calls your Firebase Cloud Function
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ transcript: pastedText })
+          body: JSON.stringify({ transcript: transcript }) // Send the pasted transcript
         });
-
-        if (!response.ok) {
-          let errorDetail = `Server responded with status: ${response.status}`;
-          try {
-            // Try to parse as JSON first, as the CF might send a JSON error
-            const errorData = await response.clone().json(); // Clone to read body multiple times if needed
-            if (errorData && errorData.error) {
-              errorDetail = errorData.error;
+        
+        // Check if the response is JSON
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            const data = await response.json();
+            if (response.ok) {
+                if (data.error) {
+                    statusMessage.textContent = data.error;
+                    statusMessage.className = 'mt-2 text-sm text-red-600';
+                } else {
+                    outputTextarea.value = data.sermon || "No sermon content could be extracted by AI.";
+                    if (data.sermon && data.sermon !== "No sermon content could be identified in the transcript." && data.sermon !== "No sermon content could be extracted by AI.") {
+                        statusMessage.textContent = 'Sermon isolated by AI! Ready to copy.';
+                        statusMessage.className = 'mt-2 text-sm text-green-600';
+                        copyButton.classList.remove('hidden');
+                    } else {
+                        statusMessage.textContent = data.sermon || "No sermon content identified by AI.";
+                        statusMessage.className = 'mt-2 text-sm text-yellow-600';
+                    }
+                    if (data.warning) {
+                        statusMessage.textContent += ` Warning: ${data.warning}`;
+                    }
+                }
             } else {
-              // If not JSON, read as text (likely HTML)
-              const rawErrorBody = await response.text();
-              console.error("Received non-JSON error response from server. Status:", response.status, "Body:", rawErrorBody);
-              if (rawErrorBody.toLowerCase().includes("<!doctype html>")) {
-                errorDetail = `Server returned an HTML error page (Status: ${response.status}). Please check Cloud Function logs.`;
-              } else {
-                errorDetail = `Server error (Status: ${response.status}). Response: ${rawErrorBody.substring(0, 100)}...`;
-              }
+                 statusMessage.textContent = `Error: ${response.status} ${response.statusText}. ${data.error || 'Failed to process sermon via AI.'}`;
+                 statusMessage.className = 'mt-2 text-sm text-red-600';
             }
-          } catch (e) {
-            // Fallback if parsing error response itself fails
-            const rawErrorBody = await response.text();
-            console.error("Error parsing error response body from server. Status:", response.status, "Raw Body:", rawErrorBody);
-            errorDetail = `Server returned an unparsable error (Status: ${response.status}). Check console.`;
-          }
-          setStatus(errorDetail, 'error');
-          setLoadingState(false);
-          return;
-        }
-
-        const data = await response.json();
-
-        if (data.error) {
-          setStatus(data.error, 'error');
-          copyButton.classList.add('hidden');
         } else {
-          outputTextarea.value = data.sermon || "";
-          if (data.sermon && data.sermon !== "No sermon content could be identified in the transcript.") {
-            setStatus('Sermon isolated successfully. You can now copy the text.', 'success');
-            copyButton.classList.remove('hidden');
-          } else if (data.sermon === "No sermon content could be identified in the transcript.") {
-            setStatus(data.sermon, 'info');
-            copyButton.classList.add('hidden');
-          } else {
-            setStatus('Processing complete, but no sermon text was returned.', 'info');
-             copyButton.classList.add('hidden');
-          }
-          if (data.warning) {
-             setStatus(statusDiv.textContent + ' Warning: ' + data.warning, 'info');
-          }
+            // Handle non-JSON responses (like HTML error pages)
+            const textResponse = await response.text();
+            console.error("Received non-JSON response:", textResponse);
+            statusMessage.textContent = `Error: Server returned an unexpected response (Status: ${response.status}). Check console for details.`;
+            statusMessage.className = 'mt-2 text-sm text-red-600';
         }
+
       } catch (error) {
-        console.error('Client-side error processing sermon:', error);
-        setStatus('Client-side error: ' + error.message, 'error');
-        copyButton.classList.add('hidden');
+        console.error('Error in processPastedSermon:', error);
+        statusMessage.textContent = 'Client-side error processing sermon: ' + error.message;
+        statusMessage.className = 'mt-2 text-sm text-red-600';
       } finally {
-        setLoadingState(false);
+        buttonText.textContent = 'Isolate Sermon from Pasted Text';
+        buttonLoader.classList.add('hidden');
+        processButton.disabled = false;
       }
     }
 
-    async function copySermonText() {
-      const sermonText = outputTextarea.value;
-      if (!sermonText) {
-        setStatus('No sermon text to copy.', 'error');
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(sermonText);
-        setStatus('Sermon text copied to clipboard!', 'success');
-      } catch (err) {
-        console.error('Failed to copy text: ', err);
-        setStatus('Failed to copy sermon text. Please copy it manually.', 'error');
-      }
+    function copySermonText() {
+        const sermonText = outputTextarea.value;
+        if (!sermonText) {
+            statusMessage.textContent = 'Nothing to copy.';
+            statusMessage.className = 'mt-2 text-sm text-yellow-600';
+            return;
+        }
+        navigator.clipboard.writeText(sermonText).then(() => {
+            statusMessage.textContent = 'Sermon text copied to clipboard!';
+            statusMessage.className = 'mt-2 text-sm text-green-600';
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            statusMessage.textContent = 'Failed to copy sermon text. Please copy manually.';
+            statusMessage.className = 'mt-2 text-sm text-red-600';
+        });
     }
   </script>
 </body>
