@@ -17,9 +17,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useTransition, useRef } from "react"; // Added useRef
+import { useState, useTransition, useRef, useEffect } from "react";
 import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
-import { Loader2, List, XCircle } from "lucide-react"; // Added List and XCircle icons
+import { Loader2, List, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport, TranscribeYouTubeOutput } from "@/types";
 import {
@@ -43,7 +43,7 @@ const SUPPORTED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
 ];
 
-const YOUTUBE_URL_REGEX_COMPREHENSIVE = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/;
+const YOUTUBE_URL_REGEX_COMPREHENSIVE = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})(?:\S+)?$/;
 
 
 const formSchema = z.object({
@@ -95,7 +95,7 @@ const formSchema = z.object({
     if (!data.youtubeUrl || !YOUTUBE_URL_REGEX_COMPREHENSIVE.test(data.youtubeUrl)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Please enter a valid YouTube video URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID, https://youtu.be/VIDEO_ID, or https://www.youtube.com/embed/VIDEO_ID).",
+            message: "Please enter a valid YouTube video URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID).",
             path: ["youtubeUrl"],
         });
     }
@@ -110,7 +110,10 @@ export function ContentSubmissionForm() {
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
   const [showYoutubeInstructionsDialog, setShowYoutubeInstructionsDialog] = useState(false);
   const [displayedFileNames, setDisplayedFileNames] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for the file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [youtubeSubmissionError, setYoutubeSubmissionError] = useState<string | null>(null);
+  const [showAlternateYoutubeButton, setShowAlternateYoutubeButton] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -121,36 +124,43 @@ export function ContentSubmissionForm() {
       file: undefined,
       youtubeUrl: "",
     },
+    mode: "onChange", // Validate on change to enable/disable submit button
   });
+
+  const analysisTitleValue = form.watch("analysisTitle");
+  const isTitleValid = analysisTitleValue && analysisTitleValue.length >= 5;
+
+  useEffect(() => {
+    if (youtubeSubmissionError) {
+      const timer = setTimeout(() => {
+        setYoutubeSubmissionError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [youtubeSubmissionError]);
 
   const handleClearFiles = () => {
     form.setValue('file', undefined, { shouldValidate: true, shouldDirty: true });
     setDisplayedFileNames([]);
     if (fileInputRef.current) {
-        fileInputRef.current.value = ""; // Attempt to clear native input display
+        fileInputRef.current.value = ""; 
     }
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     let analysisInput = "";
     let analysisTypeString: AnalysisReport['analysisType'] = "text";
-    let submittedFileNames: string[] = []; // Changed from single string to array for saveReportToDatabase
+    let submittedFileNames: string[] = []; 
 
     if (values.submissionType === "youtubeLink") {
-        if (!values.youtubeUrl || !YOUTUBE_URL_REGEX_COMPREHENSIVE.test(values.youtubeUrl)) {
-            toast({
-                title: "Invalid YouTube URL",
-                description: "Please provide a valid YouTube URL.",
-                variant: "destructive",
-            });
-            return;
-        }
+        // Form validation (Zod) would have caught invalid URL patterns.
+        // This submission now just triggers the dialog.
         setShowYoutubeInstructionsDialog(true);
         return; 
     }
 
     startTransition(async () => {
-      setIsTranscribing(false); // Reset transcription state if it was active
+      setIsTranscribing(false); 
       try {
         if (values.submissionType === "text" && values.textContent) {
           analysisInput = values.textContent;
@@ -262,10 +272,12 @@ export function ContentSubmissionForm() {
           router.push(`/reports/${reportId}`);
           form.reset();
           setSubmissionTypeState("text");
-          setDisplayedFileNames([]); // Clear displayed file names on successful submission
+          setDisplayedFileNames([]); 
           if (fileInputRef.current) {
-            fileInputRef.current.value = ""; // Clear native file input
+            fileInputRef.current.value = ""; 
           }
+          setShowAlternateYoutubeButton(false); // Reset alternate button state
+          setYoutubeSubmissionError(null);
         } else {
           toast({
             title: "Failed to Save Report",
@@ -282,27 +294,26 @@ export function ContentSubmissionForm() {
           variant: "destructive",
         });
       } finally {
-        setIsTranscribing(false); // Ensure this is reset in all paths
+        setIsTranscribing(false); 
       }
     });
   }
 
   const handleYoutubeDialogAction = () => {
-    setShowYoutubeInstructionsDialog(false);
     const currentYoutubeUrl = form.getValues("youtubeUrl");
     if (currentYoutubeUrl) {
         const match = YOUTUBE_URL_REGEX_COMPREHENSIVE.exec(currentYoutubeUrl);
-        if (match && match[1]) {
+        if (match && match[1]) { // Video ID extracted successfully
             window.open(`https://youtubetotranscript.com/?v=${match[1]}`, '_blank');
-        } else {
-            window.open('https://youtubetotranscript.com/', '_blank');
-            toast({
-                title: "Opening Transcription Site",
-                description: "Could not automatically pre-fill video ID. Please paste your YouTube URL on the site.",
-                variant: "default",
-            });
+            setShowAlternateYoutubeButton(false);
+            setYoutubeSubmissionError(null);
+        } else { // Valid URL pattern by Zod, but no video ID found (e.g. channel URL)
+            setYoutubeSubmissionError("Could not extract video ID from this YouTube URL. Try the alternate method or check the URL.");
+            setShowAlternateYoutubeButton(true);
+            // Timer to clear error message is handled by useEffect
         }
     }
+    setShowYoutubeInstructionsDialog(false);
   };
 
   return (
@@ -319,7 +330,7 @@ export function ContentSubmissionForm() {
                   <Input placeholder="e.g., Sermon on Romans 8 Analysis" {...field} />
                 </FormControl>
                 <FormDescription>
-                  A descriptive title for this analysis.
+                  A descriptive title for this analysis (min 5 characters).
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -343,6 +354,8 @@ export function ContentSubmissionForm() {
                               form.setValue('file', undefined);
                               form.setValue('youtubeUrl', '');
                               setDisplayedFileNames([]);
+                              setShowAlternateYoutubeButton(false);
+                              setYoutubeSubmissionError(null);
                           }}
                       >
                           Text Input
@@ -355,7 +368,8 @@ export function ContentSubmissionForm() {
                               field.onChange('file');
                               form.setValue('textContent', '');
                               form.setValue('youtubeUrl', '');
-                              // displayedFileNames will update via file input's onChange
+                              setShowAlternateYoutubeButton(false);
+                              setYoutubeSubmissionError(null);
                           }}
                       >
                           File Upload
@@ -369,6 +383,7 @@ export function ContentSubmissionForm() {
                               form.setValue('textContent', '');
                               form.setValue('file', undefined);
                               setDisplayedFileNames([]);
+                              // Do not reset alternate button here, it depends on dialog interaction
                           }}
                       >
                           YouTube Link
@@ -412,7 +427,7 @@ export function ContentSubmissionForm() {
               render={({ field: { name, onBlur, onChange: RHFOnChange, disabled } }) => {
                 const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
                   const files = event.target.files;
-                  RHFOnChange(files); // Update react-hook-form
+                  RHFOnChange(files); 
                   if (files && files.length > 0) {
                     setDisplayedFileNames(Array.from(files).map(f => f.name));
                   } else {
@@ -427,7 +442,7 @@ export function ContentSubmissionForm() {
                       type="file"
                       id={name} 
                       name={name}
-                      ref={fileInputRef} // Assign ref here
+                      ref={fileInputRef} 
                       onBlur={onBlur}
                       onChange={handleFileChange} 
                       disabled={disabled || isPending || isTranscribing}
@@ -482,11 +497,11 @@ export function ContentSubmissionForm() {
                     <Input
                       placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
                       {...field}
-                      disabled={isPending || isTranscribing}
+                      disabled={isPending || isTranscribing || showAlternateYoutubeButton}
                     />
                   </FormControl>
                   <FormDescription>
-                    Enter the YouTube URL. Clicking 'Submit' will show instructions for manual transcription via an external site.
+                    Enter the YouTube URL. Clicking 'Submit' will show instructions for manual transcription.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -494,21 +509,39 @@ export function ContentSubmissionForm() {
             />
           )}
           
-          <Button type="submit" disabled={isPending || (submissionTypeState === 'youtubeLink' && isTranscribing)} className="w-full">
-            {(isPending && submissionTypeState !== 'youtubeLink') ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting for Analysis...
-              </>
-            ) : (submissionTypeState === 'youtubeLink' && isTranscribing) ? ( 
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing Link... 
-              </>
-            ) : (
-              "Submit for Analysis"
-            )}
-          </Button>
+          {youtubeSubmissionError && submissionTypeState === 'youtubeLink' && (
+            <p className="text-sm text-destructive mt-2">{youtubeSubmissionError}</p>
+          )}
+
+          {submissionTypeState === 'youtubeLink' && showAlternateYoutubeButton ? (
+            <Button
+              type="button"
+              onClick={() => window.open('https://kome.ai/tools/youtube-transcript-generator', '_blank')}
+              className="w-full bg-green-600 text-black font-bold hover:bg-green-700 dark:bg-green-500 dark:text-black dark:hover:bg-green-600 py-2 px-4 h-auto"
+            >
+              Alternate method
+            </Button>
+          ) : (
+            <Button 
+              type="submit" 
+              disabled={!isTitleValid || isPending || (submissionTypeState === 'youtubeLink' && isTranscribing)} 
+              className="w-full"
+            >
+              {(isPending && submissionTypeState !== 'youtubeLink') ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting for Analysis...
+                </>
+              ) : (submissionTypeState === 'youtubeLink' && isTranscribing) ? ( 
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing Link... 
+                </>
+              ) : (
+                "Submit for Analysis"
+              )}
+            </Button>
+          )}
         </form>
       </Form>
 
@@ -519,7 +552,7 @@ export function ContentSubmissionForm() {
             <AlertDialogDescription className="whitespace-pre-wrap">
               Youtube link must be pasted to the transcript web page field, and when complete the transcribed text will be in the Clipboard. Place the text into the 'Text Input' box and submit for analysis. Thank you.
               {"\n\n"}
-              Clicking "Proceed to Transcribe" will open an external site (youtubetotranscript.com) pre-filled with your video ID.
+              Clicking "Proceed to Transcribe" will attempt to open an external site (youtubetotranscript.com) pre-filled with your video ID, if possible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogAction onClick={handleYoutubeDialogAction}>Proceed to Transcribe</AlertDialogAction>
