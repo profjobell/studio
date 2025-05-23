@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, FileText, Search, Trash2, ExternalLink } from "lucide-react";
-// import Image from "next/image"; // Removed Image import
 import { fetchReportsList } from "../reports/actions";
 import { fetchLibraryDocuments } from "../library/actions";
 import type { AnalysisReport, DocumentReference } from "@/types";
@@ -133,8 +132,7 @@ export default async function DashboardPage() {
             <CardTitle>Welcome to KJV Sentinel</CardTitle>
             <CardDescription>Your guide to understanding theological content through the lens of the KJV 1611 Bible.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col md:flex-row items-center gap-6">
-            {/* Image Removed from here */}
+          <CardContent className="flex flex-col items-center gap-6">
             <div>
               <p className="mb-4 text-muted-foreground">
                 KJV Sentinel helps you analyze religious texts, sermons, and discussions for theological accuracy, historical context, potential manipulative tactics, and influences from various theological systems like Calvinism. Our analysis is grounded in the King James Version (KJV) 1611 Bible.
@@ -160,12 +158,11 @@ export default async function DashboardPage() {
               <ExternalLink className="mr-2 h-5 w-5 text-primary" />
               RTN TV
             </CardTitle>
-            <CardDescription>Recommended reading material.</CardDescription>
+            <CardDescription>Recommended Christian Resources & Reading Material.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            {/* Image and its wrapping Link Removed from here */}
             <p className="text-sm text-muted-foreground text-center">
-              Explore additional insights and information at RTNTV.org. Click the button below.
+              Explore additional insights, articles, and media at RTNTV.org, a valuable resource for discerning Christians. The linked page provides an index of various topics discussed.
             </p>
             <Button asChild variant="outline">
               <Link href="https://rtntv.org/IndexA?id=3" target="_blank" rel="noopener noreferrer">
