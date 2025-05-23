@@ -53,14 +53,17 @@ export default function LandingPage() {
                   </FeaturesGuideModal>
                 </div>
               </div>
-              <Image
-                src="https://picsum.photos/seed/ancientbible/600/400"
-                width="600"
-                height="400"
-                alt="Ancient KJV Bible"
-                className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                data-ai-hint="KJV bible open"
-              />
+              <div className="mx-auto flex flex-col items-center justify-center rounded-xl bg-muted p-6 shadow-md sm:w-full lg:order-last lg:aspect-square">
+                <h2 className="text-xl font-semibold text-primary mb-4 text-center">
+                  Illuminating Truth Through Scriptural Analysis
+                </h2>
+                <p className="text-center text-foreground/80 text-sm md:text-base leading-relaxed">
+                  KJV Sentinel offers robust tools for in-depth theological examination. We meticulously compare submitted content against the authoritative King James Version (1611) Bible.
+                </p>
+                <p className="text-center text-foreground/80 text-sm md:text-base leading-relaxed mt-3">
+                  Our platform empowers you to discern doctrinal nuances, understand historical contexts, identify manipulative tactics, and recognize various influences within religious discourse, all grounded in the KJV.
+                </p>
+              </div>
             </div>
           </div>
         </section>
