@@ -2,10 +2,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, FileText, Search, Trash2, ExternalLink } from "lucide-react"; 
-import Image from "next/image";
-import { fetchReportsList } from "../reports/actions"; 
-import { fetchLibraryDocuments } from "../library/actions"; 
+import { Activity, FileText, Search, Trash2, ExternalLink } from "lucide-react";
+// import Image from "next/image"; // Removed Image import
+import { fetchReportsList } from "../reports/actions";
+import { fetchLibraryDocuments } from "../library/actions";
 import type { AnalysisReport, DocumentReference } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClearHistoryButton } from "./components/clear-history-button";
@@ -13,15 +13,15 @@ import { format } from 'date-fns';
 import { FeaturesGuideModal } from "@/components/features-guide";
 
 export default async function DashboardPage() {
-  const allReports: AnalysisReport[] = await fetchReportsList(); 
-  const libraryDocuments: DocumentReference[] = await fetchLibraryDocuments(); 
-  
+  const allReports: AnalysisReport[] = await fetchReportsList();
+  const libraryDocuments: DocumentReference[] = await fetchLibraryDocuments();
+
   const recentAnalyses = allReports
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const stats = [
     { title: "Total Analyses", value: recentAnalyses.length.toString(), icon: FileText, change: "", href:"/reports" },
-    { title: "Documents in Library", value: libraryDocuments.length.toString(), icon: Search, change: "+ View/Upload", href: "/library" }, 
+    { title: "Documents in Library", value: libraryDocuments.length.toString(), icon: Search, change: "+ View/Upload", href: "/library" },
   ];
 
   const hasReports = recentAnalyses.length > 0;
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
                           {analysis.title}
                         </Link>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(analysis.createdAt), 'PPP')} - 
+                          {format(new Date(analysis.createdAt), 'PPP')} -
                           <span className={`ml-1 capitalize ${
                             analysis.status === "completed" ? "text-green-600" :
                             analysis.status === "processing" ? "text-yellow-600" :
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -134,14 +134,7 @@ export default async function DashboardPage() {
             <CardDescription>Your guide to understanding theological content through the lens of the KJV 1611 Bible.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col md:flex-row items-center gap-6">
-            <Image 
-              src="https://placehold.co/300x225.png" 
-              alt="KJV Bible study"
-              width={300}
-              height={225}
-              className="rounded-lg shadow-md object-contain"
-              data-ai-hint="KJV bible"
-            />
+            {/* Image Removed from here */}
             <div>
               <p className="mb-4 text-muted-foreground">
                 KJV Sentinel helps you analyze religious texts, sermons, and discussions for theological accuracy, historical context, potential manipulative tactics, and influences from various theological systems like Calvinism. Our analysis is grounded in the King James Version (KJV) 1611 Bible.
@@ -170,18 +163,9 @@ export default async function DashboardPage() {
             <CardDescription>Recommended reading material.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <Link href="https://rtntv.org/IndexA?id=3" target="_blank" rel="noopener noreferrer" className="block">
-              <Image
-                src="https://placehold.co/300x150.png" 
-                alt="RTN TV Channel Index"
-                width={300}
-                height={150}
-                className="rounded-md shadow-md object-contain hover:opacity-80 transition-opacity"
-                data-ai-hint="tv channel" 
-              />
-            </Link>
+            {/* Image and its wrapping Link Removed from here */}
             <p className="text-sm text-muted-foreground text-center">
-              Explore additional insights and information at RTNTV.org. Click the image or button below.
+              Explore additional insights and information at RTNTV.org. Click the button below.
             </p>
             <Button asChild variant="outline">
               <Link href="https://rtntv.org/IndexA?id=3" target="_blank" rel="noopener noreferrer">
