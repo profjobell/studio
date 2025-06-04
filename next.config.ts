@@ -25,6 +25,25 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    config.module.rules.push({
+      test: /\.(hbs|handlebars)$/,
+      loader: 'handlebars-loader',
+    });
+
+    // Provide fallbacks for Node.js core modules that might be
+    // incorrectly pulled into client-side bundles by dependencies.
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback, 
+        fs: false,
+        path: false,
+        os: false,
+      };
+    }
+
+    return config;
+  },
 };
 
 export default nextConfig;

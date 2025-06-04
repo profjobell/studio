@@ -20,7 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useTransition } from 'react';
-import { submitTeachingAnalysisAction, TeachingAnalysisFormSchema } from '../actions';
+import { submitTeachingAnalysisAction } from '../actions';
+import { TeachingAnalysisFormSchema } from '@/lib/schemas'; // Updated import
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AudioRecorder } from './audio-recorder'; // Import AudioRecorder
