@@ -295,14 +295,17 @@ export async function transcribeAudioAction(
 }
 
 // Action for AI chat on teaching reports
-export async function chatWithTeachingReportAction(
-  input: ChatWithReportInput // This already includes userQuestion, reportContext, and optional chatHistory
+export async function chatWithReportAction( // Renamed from chatWithTeachingReportAction
+  input: ChatWithReportInput 
 ): Promise<ChatWithReportOutput | { error: string }> {
   try {
     const result = await chatWithReport(input); 
     return result;
   } catch (error) {
-    console.error("Error in chatWithTeachingReportAction:", error);
+    console.error("Error in chatWithReportAction (teaching context):", error);
     return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat with teaching report." };
   }
 }
+
+
+    
