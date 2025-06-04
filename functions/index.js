@@ -29,15 +29,16 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
   }
 
   // --- Call Next.js API route that uses the Genkit AI flow ---
-  // IMPORTANT: Replace YOUR_NEXTJS_APP_BASE_URL with the actual deployed URL of your Next.js app
-  // For local development, this might be 'http://localhost:9002' or similar.
-  // For Firebase Hosting with Next.js integration, this would be your Firebase Hosting URL.
-  // It's best to set this as a Firebase Function environment variable (e.g., process.env.NEXTJS_APP_URL).
-  const nextJsApiUrl = process.env.NEXTJS_APP_URL || 'YOUR_NEXTJS_APP_BASE_URL_NOT_CONFIGURED';
-  if (nextJsApiUrl === 'YOUR_NEXTJS_APP_BASE_URL_NOT_CONFIGURED') {
-    console.error("NEXTJS_APP_URL environment variable is not set. Cannot call AI processing service.");
+  const nextJsApiUrl =
+    process.env.NEXTJS_APP_URL ||                // 2nd-gen Cloud Functions, or local .env file
+    functions.config()?.nextjs?.app_url ||       // 1st-gen Cloud Functions runtime config
+    'YOUR_NEXTJS_APP_BASE_URL_NOT_CONFIGURED';   // Fallback if nothing is set
+
+  if (nextJsApiUrl.includes('NOT_CONFIGURED') || !nextJsApiUrl) {
+    console.error("FATAL: NEXTJS_APP_URL (or functions.config().nextjs.app_url for 1st gen) is not configured. The Cloud Function cannot call the Next.js API.");
     // Return a 500 Internal Server Error, as this is a server configuration issue.
-    return res.status(500).json({ error: "AI processing service endpoint is not configured on the server. Please check function environment variables." });
+    // It's critical that this URL is set correctly for the function to operate.
+    return res.status(500).json({ error: "AI processing service endpoint is not configured on the server. Please check function environment variables (NEXTJS_APP_URL or nextjs.app_url)." });
   }
   const aiProcessingEndpoint = `${nextJsApiUrl}/api/isolate-sermon-by-ai`;
 
@@ -51,9 +52,9 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
 
     // The AI service is expected to return JSON like: { sermon: "isolated sermon text", warning?: "..." }
     // or { error: "some error message from AI" }
-    if (aiResponse.data && (aiResponse.data.sermon || aiResponse.data.error)) {
+    if (aiResponse.data && (aiResponse.data.sermon || aiResponse.data.error || typeof aiResponse.data.sermon === 'string')) { // Check if sermon is an empty string too
       let responseJson = {
-        sermon: aiResponse.data.sermon || "No sermon content identified by AI.", // Default if sermon is null/undefined
+        sermon: aiResponse.data.sermon || "No sermon content could be identified by AI.", // Default if sermon is null/undefined
         status: "ready for clipboard"
       };
       if (aiResponse.data.warning) {
