@@ -22,20 +22,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useRef, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { Download, Image as ImageIcon, Palette, ScanLine } from "lucide-react";
+import { Download, Image as ImageIcon, Palette, ScanLine, UserPlus, LinkIcon } from "lucide-react";
 
 const hexColorRegex = /^#([0-9A-Fa-f]{3}){1,2}$/;
 
 const qrFormSchema = z.object({
-  value: z.string().min(1, "Content to encode cannot be empty.").max(500, "Content is too long for a standard QR code."),
-  size: z.number().min(50, "Size must be at least 50px.").max(1000, "Size cannot exceed 1000px.").default(256),
+  baseInviteUrl: z.string().url("Must be a valid base URL (e.g., https://yourapp.com/invite-signup).").default("https://kjvsentinel.example.com/invited-signup"),
+  invitedUserEmail: z.string().email("Invalid email address.").optional().or(z.literal('')),
+  assignedRole: z.enum(["User", "Editor (Conceptual)", "Admin (Conceptual)"]).default("User"),
+  definedPrivileges: z.string().optional().describe("Comma-separated conceptual privileges, e.g., view_reports,edit_settings"),
+  
+  // Standard QR options
+  size: z.number().min(50).max(1000).default(256),
   level: z.enum(["L", "M", "Q", "H"]).default("M"),
   bgColor: z.string().regex(hexColorRegex, "Invalid HEX color (e.g., #RRGGBB or #RGB).").default("#FFFFFF"),
   fgColor: z.string().regex(hexColorRegex, "Invalid HEX color (e.g., #RRGGBB or #RGB).").default("#000000"),
   includeMargin: z.boolean().default(true),
-  marginSize: z.number().min(0).max(50).optional(), // Corresponds to quietZone in qrcode.react if includeMargin is true
+  marginSize: z.number().min(0).max(50).optional(),
   
-  // Image Overlay Fields
   enableImageOverlay: z.boolean().default(false),
   imageSrc: z.string().url("Must be a valid URL for the image source.").optional().or(z.literal('')),
   imageWidth: z.number().min(10).max(200).optional(),
@@ -43,27 +47,9 @@ const qrFormSchema = z.object({
   imageExcavate: z.boolean().default(true),
 }).superRefine((data, ctx) => {
   if (data.enableImageOverlay) {
-    if (!data.imageSrc) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Image URL is required when overlay is enabled.",
-        path: ["imageSrc"],
-      });
-    }
-    if (!data.imageWidth) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Image width is required for overlay.",
-        path: ["imageWidth"],
-      });
-    }
-    if (!data.imageHeight) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Image height is required for overlay.",
-        path: ["imageHeight"],
-      });
-    }
+    if (!data.imageSrc) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image URL required.", path: ["imageSrc"] });
+    if (!data.imageWidth) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image width required.", path: ["imageWidth"] });
+    if (!data.imageHeight) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image height required.", path: ["imageHeight"] });
   }
 });
 
@@ -71,13 +57,16 @@ type QrFormValues = z.infer<typeof qrFormSchema>;
 
 export function QrGeneratorForm() {
   const { toast } = useToast();
-  const [qrConfig, setQrConfig] = useState<QrFormValues | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [generatedQrValue, setGeneratedQrValue] = useState<string>(""); // This will hold the constructed URL for the QR code
+  const [qrDisplayConfig, setQrDisplayConfig] = useState<Partial<QrFormValues> & { value: string } | null>(null);
 
   const form = useForm<QrFormValues>({
     resolver: zodResolver(qrFormSchema),
     defaultValues: {
-      value: "https://example.com",
+      baseInviteUrl: "https://kjvsentinel.example.com/invited-signup",
+      invitedUserEmail: "",
+      assignedRole: "User",
+      definedPrivileges: "view_content",
       size: 256,
       level: "M",
       bgColor: "#FFFFFF",
@@ -94,31 +83,57 @@ export function QrGeneratorForm() {
   });
 
   const watchEnableImageOverlay = form.watch("enableImageOverlay");
+  const watchAllFields = form.watch(); // Watch all fields to reconstruct QR value
+
+  useEffect(() => {
+    // Auto-generate QR on initial load and on field changes
+    const currentValues = form.getValues();
+    constructAndSetQrValue(currentValues);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchAllFields]); // Re-run when any form field changes
+
+  const constructAndSetQrValue = (data: QrFormValues) => {
+    let url = new URL(data.baseInviteUrl);
+    if (data.invitedUserEmail) url.searchParams.append("email", data.invitedUserEmail);
+    if (data.assignedRole) url.searchParams.append("role", data.assignedRole);
+    if (data.definedPrivileges) url.searchParams.append("privileges", data.definedPrivileges.split(',').map(p=>p.trim()).join(','));
+    
+    const finalQrValue = url.toString();
+    setGeneratedQrValue(finalQrValue);
+    setQrDisplayConfig({
+        value: finalQrValue, // The actual value to encode
+        size: data.size,
+        level: data.level,
+        bgColor: data.bgColor,
+        fgColor: data.fgColor,
+        includeMargin: data.includeMargin,
+        marginSize: data.marginSize,
+        enableImageOverlay: data.enableImageOverlay,
+        imageSrc: data.imageSrc,
+        imageWidth: data.imageWidth,
+        imageHeight: data.imageHeight,
+        imageExcavate: data.imageExcavate,
+    });
+  };
 
   const onSubmit = (data: QrFormValues) => {
-    setQrConfig(data);
+    constructAndSetQrValue(data); // Re-construct on explicit submit too, ensures latest data
     toast({
-      title: "QR Code Generated",
-      description: "Your QR code has been updated based on your inputs.",
+      title: "Invite QR Code Updated",
+      description: "Your invite QR code preview has been updated.",
     });
   };
   
-  useEffect(() => {
-    // Generate QR on initial load with default values
-    setQrConfig(form.getValues());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-
   const handleDownload = () => {
     const canvas = document.getElementById('qr-canvas-download') as HTMLCanvasElement;
-    if (canvas && qrConfig) {
+    if (canvas && qrDisplayConfig) {
       const pngUrl = canvas
         .toDataURL("image/png")
-        .replace("image/png", "image/octet-stream"); // Prompt download
+        .replace("image/png", "image/octet-stream");
       let downloadLink = document.createElement("a");
       downloadLink.href = pngUrl;
-      downloadLink.download = `${qrConfig.value.substring(0,20).replace(/[^a-z0-9]/gi, '_') || 'qrcode'}.png`;
+      const emailPart = form.getValues("invitedUserEmail")?.split('@')[0] || "invite";
+      downloadLink.download = `kjv_invite_${emailPart}.png`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
@@ -134,240 +149,155 @@ export function QrGeneratorForm() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left Column: Form Fields */}
           <div className="space-y-6">
-            <FormField
-              control={form.control}
-              name="value"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Content (Text or URL)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter text or URL to encode..." {...field} className="min-h-[100px]" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="size"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Size (px)</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="level"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Error Correction</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="L">Low (L)</SelectItem>
-                        <SelectItem value="M">Medium (M)</SelectItem>
-                        <SelectItem value="Q">Quartile (Q)</SelectItem>
-                        <SelectItem value="H">High (H)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="fgColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Foreground Color</FormLabel>
-                    <FormControl>
-                      <Input placeholder="#000000" {...field} />
-                    </FormControl>
-                    <FormDescription className="text-xs">HEX format (e.g. #000000)</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="bgColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Background Color</FormLabel>
-                    <FormControl>
-                      <Input placeholder="#FFFFFF" {...field} />
-                    </FormControl>
-                     <FormDescription className="text-xs">HEX format (e.g. #FFFFFF)</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <Card>
+                <CardHeader className="p-4">
+                    <CardTitle className="text-lg flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary"/>Invite Link Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 p-4">
+                    <FormField
+                    control={form.control}
+                    name="baseInviteUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Base Invite URL</FormLabel>
+                        <FormControl>
+                            <Input placeholder="https://yourapp.com/join" {...field} />
+                        </FormControl>
+                        <FormDescription className="text-xs">The URL where invited users will be directed.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="invitedUserEmail"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Invited User&apos;s Email (Optional)</FormLabel>
+                        <FormControl>
+                            <Input type="email" placeholder="user@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="assignedRole"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Assign Role (Conceptual)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="User">User</SelectItem>
+                            <SelectItem value="Editor (Conceptual)">Editor (Conceptual)</SelectItem>
+                            <SelectItem value="Admin (Conceptual)">Admin (Conceptual)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="definedPrivileges"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Define Privileges (Conceptual)</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="e.g., view_reports, edit_glossary (comma-separated)" {...field} />
+                        </FormControl>
+                        <FormDescription className="text-xs">Comma-separated list of conceptual privileges.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </CardContent>
+            </Card>
             
-            <FormField
-              control={form.control}
-              name="includeMargin"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Include Quiet Zone (Margin)</FormLabel>
-                    <FormDescription className="text-xs">
-                      Adds padding around the QR code. Recommended.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {form.watch('includeMargin') && (
-               <FormField
-                control={form.control}
-                name="marginSize"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Margin Size (px)</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} 
-                       onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                       placeholder="e.g., 10"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <Card>
+                <CardHeader className="p-4">
+                     <CardTitle className="text-lg flex items-center gap-2"><Palette className="h-5 w-5 text-primary"/>QR Code Styling</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="level" render={({ field }) => ( <FormItem> <FormLabel>Error Correction</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger> </FormControl> <SelectContent> <SelectItem value="L">Low (L)</SelectItem> <SelectItem value="M">Medium (M)</SelectItem> <SelectItem value="Q">Quartile (Q)</SelectItem> <SelectItem value="H">High (H)</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="fgColor" render={({ field }) => ( <FormItem> <FormLabel>Foreground Color</FormLabel> <FormControl> <Input placeholder="#000000" {...field} /> </FormControl> <FormDescription className="text-xs">HEX</FormDescription> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="bgColor" render={({ field }) => ( <FormItem> <FormLabel>Background Color</FormLabel> <FormControl> <Input placeholder="#FFFFFF" {...field} /> </FormControl> <FormDescription className="text-xs">HEX</FormDescription> <FormMessage /> </FormItem> )}/>
+                    </div>
+                    <FormField control={form.control} name="includeMargin" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"> <div className="space-y-0.5"> <FormLabel>Quiet Zone (Margin)</FormLabel> <FormDescription className="text-xs"> Recommended padding. </FormDescription> </div> <FormControl> <Checkbox checked={field.value} onCheckedChange={field.onChange} /> </FormControl> </FormItem> )}/>
+                    {form.watch('includeMargin') && ( <FormField control={form.control} name="marginSize" render={({ field }) => ( <FormItem> <FormLabel>Margin Size (px)</FormLabel> <FormControl> <Input type="number" {...field} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)} placeholder="e.g., 10" /> </FormControl> <FormMessage /> </FormItem> )}/> )}
+                </CardContent>
+            </Card>
 
             <Card>
               <CardHeader className="p-4">
-                <FormField
-                  control={form.control}
-                  name="enableImageOverlay"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between">
-                      <FormLabel className="flex items-center gap-2 text-base"><ImageIcon className="h-5 w-5 text-primary"/>Image Overlay</FormLabel>
-                      <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="enableImageOverlay" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between"> <FormLabel className="flex items-center gap-2 text-base"><ImageIcon className="h-5 w-5 text-primary"/>Image Overlay</FormLabel> <FormControl> <Checkbox checked={field.value} onCheckedChange={field.onChange} /> </FormControl> </FormItem> )}/>
               </CardHeader>
               {watchEnableImageOverlay && (
                 <CardContent className="space-y-4 p-4 pt-0">
-                  <FormField
-                    control={form.control}
-                    name="imageSrc"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://example.com/logo.png" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name="imageSrc" render={({ field }) => ( <FormItem> <FormLabel>Image URL</FormLabel> <FormControl> <Input placeholder="https://example.com/logo.png" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="imageWidth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Image Width (px)</FormLabel>
-                          <FormControl>
-                            <Input type="number" {...field}  onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="imageHeight"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Image Height (px)</FormLabel>
-                          <FormControl>
-                            <Input type="number" {...field}  onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <FormField control={form.control} name="imageWidth" render={({ field }) => ( <FormItem> <FormLabel>Image Width (px)</FormLabel> <FormControl> <Input type="number" {...field}  onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="imageHeight" render={({ field }) => ( <FormItem> <FormLabel>Image Height (px)</FormLabel> <FormControl> <Input type="number" {...field}  onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)} /> </FormControl> <FormMessage /> </FormItem> )}/>
                   </div>
-                   <FormField
-                      control={form.control}
-                      name="imageExcavate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Clear space behind image (Excavate)</FormLabel>
-                             <FormDescription className="text-xs">Recommended if image is not transparent.</FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
+                   <FormField control={form.control} name="imageExcavate" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0"> <FormControl> <Checkbox checked={field.value} onCheckedChange={field.onChange} /> </FormControl> <div className="space-y-1 leading-none"> <FormLabel>Clear space behind image</FormLabel> <FormDescription className="text-xs">Recommended if image is not transparent.</FormDescription> </div> </FormItem> )}/>
                 </CardContent>
               )}
             </Card>
-             <Button type="submit" className="w-full">
-                <ScanLine className="mr-2 h-4 w-4" /> Generate / Update QR Code
+             <Button type="submit" className="w-full" variant="secondary">
+                <ScanLine className="mr-2 h-4 w-4" /> Update QR Preview
              </Button>
           </div>
 
           {/* Right Column: QR Code Preview */}
           <div className="flex flex-col items-center space-y-4">
             <Card className="p-6 sticky top-24">
-              <CardTitle className="text-center mb-4">Preview</CardTitle>
+              <CardTitle className="text-center mb-4 flex items-center justify-center gap-2">
+                <UserPlus className="h-5 w-5 text-primary"/>Invite QR Preview
+              </CardTitle>
               <CardContent className="flex justify-center items-center min-h-[280px] min-w-[280px] bg-muted rounded-md p-4">
-                {qrConfig && qrConfig.value ? (
+                {qrDisplayConfig && qrDisplayConfig.value ? (
                   <QRCodeCanvas
-                    id="qr-canvas-download" // ID for download functionality
-                    value={qrConfig.value}
-                    size={qrConfig.size}
-                    bgColor={qrConfig.bgColor}
-                    fgColor={qrConfig.fgColor}
-                    level={qrConfig.level}
-                    includeMargin={qrConfig.includeMargin}
-                    marginSize={qrConfig.includeMargin ? qrConfig.marginSize : undefined}
+                    id="qr-canvas-download"
+                    value={qrDisplayConfig.value}
+                    size={qrDisplayConfig.size || 256}
+                    bgColor={qrDisplayConfig.bgColor}
+                    fgColor={qrDisplayConfig.fgColor}
+                    level={qrDisplayConfig.level as "L"|"M"|"Q"|"H"}
+                    includeMargin={qrDisplayConfig.includeMargin}
+                    marginSize={qrDisplayConfig.includeMargin ? qrDisplayConfig.marginSize : undefined}
                     imageSettings={
-                      qrConfig.enableImageOverlay && qrConfig.imageSrc && qrConfig.imageWidth && qrConfig.imageHeight
+                      qrDisplayConfig.enableImageOverlay && qrDisplayConfig.imageSrc && qrDisplayConfig.imageWidth && qrDisplayConfig.imageHeight
                         ? {
-                            src: qrConfig.imageSrc,
-                            width: qrConfig.imageWidth,
-                            height: qrConfig.imageHeight,
-                            excavate: qrConfig.imageExcavate,
-                            x: undefined, // Centered
-                            y: undefined, // Centered
+                            src: qrDisplayConfig.imageSrc,
+                            width: qrDisplayConfig.imageWidth,
+                            height: qrDisplayConfig.imageHeight,
+                            excavate: qrDisplayConfig.imageExcavate ?? true,
+                            x: undefined,
+                            y: undefined,
                           }
                         : undefined
                     }
                   />
                 ) : (
-                  <p className="text-muted-foreground">Enter content to generate QR code.</p>
+                  <p className="text-muted-foreground">Enter details to generate invite QR code.</p>
                 )}
               </CardContent>
+                 <FormDescription className="text-xs text-center mt-2">
+                    Encoded Value: <br/>
+                    <span className="break-all font-mono text-muted-foreground opacity-75">
+                        {generatedQrValue.length > 100 ? `${generatedQrValue.substring(0,97)}...` : generatedQrValue}
+                    </span>
+                </FormDescription>
             </Card>
-            {qrConfig && qrConfig.value && (
+            {qrDisplayConfig && qrDisplayConfig.value && (
               <Button onClick={handleDownload} variant="outline" className="w-full max-w-xs">
                 <Download className="mr-2 h-4 w-4" /> Download as PNG
               </Button>
