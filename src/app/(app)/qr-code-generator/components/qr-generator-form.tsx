@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +32,6 @@ const qrFormSchema = z.object({
   assignedRole: z.enum(["User", "Editor (Conceptual)", "Admin (Conceptual)"]).default("User"),
   definedPrivileges: z.string().optional().describe("Comma-separated conceptual privileges, e.g., view_reports,edit_settings"),
   
-  // Standard QR options
   size: z.number().min(50).max(1000).default(256),
   level: z.enum(["L", "M", "Q", "H"]).default("M"),
   bgColor: z.string().regex(hexColorRegex, "Invalid HEX color (e.g., #RRGGBB or #RGB).").default("#FFFFFF"),
@@ -57,7 +56,7 @@ type QrFormValues = z.infer<typeof qrFormSchema>;
 
 export function QrGeneratorForm() {
   const { toast } = useToast();
-  const [generatedQrValue, setGeneratedQrValue] = useState<string>(""); // This will hold the constructed URL for the QR code
+  const [generatedQrValue, setGeneratedQrValue] = useState<string>("");
   const [qrDisplayConfig, setQrDisplayConfig] = useState<Partial<QrFormValues> & { value: string } | null>(null);
 
   const form = useForm<QrFormValues>({
@@ -83,14 +82,13 @@ export function QrGeneratorForm() {
   });
 
   const watchEnableImageOverlay = form.watch("enableImageOverlay");
-  const watchAllFields = form.watch(); // Watch all fields to reconstruct QR value
+  const watchAllFields = form.watch();
 
   useEffect(() => {
-    // Auto-generate QR on initial load and on field changes
     const currentValues = form.getValues();
     constructAndSetQrValue(currentValues);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchAllFields]); // Re-run when any form field changes
+  }, [watchAllFields]);
 
   const constructAndSetQrValue = (data: QrFormValues) => {
     let url = new URL(data.baseInviteUrl);
@@ -101,7 +99,7 @@ export function QrGeneratorForm() {
     const finalQrValue = url.toString();
     setGeneratedQrValue(finalQrValue);
     setQrDisplayConfig({
-        value: finalQrValue, // The actual value to encode
+        value: finalQrValue,
         size: data.size,
         level: data.level,
         bgColor: data.bgColor,
@@ -117,7 +115,7 @@ export function QrGeneratorForm() {
   };
 
   const onSubmit = (data: QrFormValues) => {
-    constructAndSetQrValue(data); // Re-construct on explicit submit too, ensures latest data
+    constructAndSetQrValue(data);
     toast({
       title: "Invite QR Code Updated",
       description: "Your invite QR code preview has been updated.",
@@ -147,7 +145,6 @@ export function QrGeneratorForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Left Column: Form Fields */}
           <div className="space-y-6">
             <Card>
                 <CardHeader className="p-4">
@@ -189,7 +186,7 @@ export function QrGeneratorForm() {
                         <FormLabel>Assign Role (Conceptual)</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
                             <SelectItem value="User">User</SelectItem>
@@ -224,7 +221,7 @@ export function QrGeneratorForm() {
                 </CardHeader>
                 <CardContent className="space-y-4 p-4">
                     <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     <FormField control={form.control} name="level" render={({ field }) => ( <FormItem> <FormLabel>Error Correction</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger> </FormControl> <SelectContent> <SelectItem value="L">Low (L)</SelectItem> <SelectItem value="M">Medium (M)</SelectItem> <SelectItem value="Q">Quartile (Q)</SelectItem> <SelectItem value="H">High (H)</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -238,7 +235,20 @@ export function QrGeneratorForm() {
 
             <Card>
               <CardHeader className="p-4">
-                <FormField control={form.control} name="enableImageOverlay" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between"> <FormLabel className="flex items-center gap-2 text-base"><ImageIcon className="h-5 w-5 text-primary"/>Image Overlay</FormLabel> <FormControl> <Checkbox checked={field.value} onCheckedChange={field.onChange} /> </FormControl> </FormItem> )}/>
+                <div className="flex flex-row items-center justify-between">
+                  <FormLabel className="flex items-center gap-2 text-base font-medium">
+                    <ImageIcon className="h-5 w-5 text-primary"/>Image Overlay
+                  </FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="enableImageOverlay"
+                    render={({ field }) => (
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    )}
+                  />
+                </div>
               </CardHeader>
               {watchEnableImageOverlay && (
                 <CardContent className="space-y-4 p-4 pt-0">
@@ -256,7 +266,6 @@ export function QrGeneratorForm() {
              </Button>
           </div>
 
-          {/* Right Column: QR Code Preview */}
           <div className="flex flex-col items-center space-y-4">
             <Card className="p-6 sticky top-24">
               <CardTitle className="text-center mb-4 flex items-center justify-center gap-2">
