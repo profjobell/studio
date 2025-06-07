@@ -10,10 +10,14 @@ export async function handleSignIn(formData: FormData) {
   // Make email check case-insensitive for robustness
   if (email && email.toLowerCase() === "admin@kjvsentinel.com" && password === "N0tjuni0r") {
     console.log("Default admin login successful");
-    redirect("/dashboard");
+    // conceptualUserType, conceptualUserEmail, adminBypassActive are set client-side on redirect for this demo
+    redirect("/dashboard?user=admin"); // Pass conceptual user type
   } else if (email && email.toLowerCase() === "rich@home.com" && password === "John3:16") {
     console.log("Richard Wilkinson login successful");
-    redirect("/dashboard");
+    redirect("/dashboard?user=richard"); // Pass conceptual user type
+  } else if (email && email.toLowerCase() === "meta@kjvsentinel.com" && password === "N0tjuni0r") {
+    console.log("Meta admin login successful");
+    redirect("/dashboard?user=meta"); // Pass conceptual user type (new admin)
   }
    else {
     console.log("Invalid credentials or not a recognized account.");

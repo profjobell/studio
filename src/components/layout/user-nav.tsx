@@ -14,96 +14,134 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, User, Settings, LifeBuoy, Repeat } from "lucide-react" // Added Repeat for Switch
+import { LogOut, User, Settings, LifeBuoy, Repeat, ShieldCheck } from "lucide-react"
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { fetchConceptuallyAddedUserProfiles, type ConceptuallyAddedUserProfile } from "@/app/(app)/settings/actions";
 
-type ConceptualUserType = 'default' | 'admin' | 'richard';
-
-interface ConceptualUserProfile {
+interface CombinedUserProfile {
+  id: string;
   name: string;
   email: string;
   avatar: string;
-  type: ConceptualUserType;
+  isBaseUser: boolean; 
+  isAdmin?: boolean; 
+  type: string; 
 }
 
-const conceptualUsers: Record<ConceptualUserType, ConceptualUserProfile> = {
+const baseConceptualUsers: Record<string, Omit<CombinedUserProfile, 'id' | 'isBaseUser' | 'type'>> = {
   default: {
     name: "KJV User",
     email: "user@example.com",
     avatar: "https://placehold.co/100x100/eeeeee/333333?text=U",
-    type: 'default',
+    isAdmin: false,
   },
   admin: {
     name: "Admin Sentinel",
     email: "admin@kjvsentinel.com",
     avatar: "https://placehold.co/100x100/eb2525/ffffff?text=A",
-    type: 'admin',
+    isAdmin: true,
   },
   richard: {
     name: "Richard Wilkinson",
     email: "rich@home.com",
     avatar: "https://placehold.co/100x100/2563eb/ffffff?text=R",
-    type: 'richard',
+    isAdmin: false,
   },
+  meta: { 
+    name: "Meta Admin",
+    email: "meta@kjvsentinel.com",
+    avatar: "https://placehold.co/100x100/34d399/000000?text=M",
+    isAdmin: true,
+  }
 };
 
 export function UserNav() {
   const router = useRouter();
-  const [currentUserType, setCurrentUserType] = useState<ConceptualUserType>('default');
   const [isClient, setIsClient] = useState(false);
+  const [allUsers, setAllUsers] = useState<CombinedUserProfile[]>([]);
+  const [currentUser, setCurrentUser] = useState<CombinedUserProfile | null>(null);
+  const [isLoadingUsers, startLoadingUsersTransition] = useTransition();
 
   useEffect(() => {
     setIsClient(true);
-    const storedUserType = localStorage.getItem('conceptualUserType') as ConceptualUserType | null;
-    const bypassActive = localStorage.getItem('adminBypassActive') === 'true';
 
-    if (bypassActive) {
-      setCurrentUserType('admin');
-      // Ensure conceptualUserType in localStorage is also admin if bypass is active
-      // This is important if other parts of the app read 'conceptualUserType' directly
-      // and we want them to also reflect admin state due to bypass.
-      if (localStorage.getItem('conceptualUserType') !== 'admin') {
-        localStorage.setItem('conceptualUserType', 'admin');
-      }
-    } else if (storedUserType && conceptualUsers[storedUserType]) {
-      setCurrentUserType(storedUserType);
-    }
-    // If bypass is NOT active and 'conceptualUserType' was 'admin' due to a previous bypass,
-    // it will remain 'admin' until explicitly switched or localStorage is cleared.
-    // This behavior is acceptable for the demo.
-  }, []);
+    const loadUsers = async () => {
+      startLoadingUsersTransition(async () => {
+        const baseUsersArray: CombinedUserProfile[] = Object.entries(baseConceptualUsers).map(([key, val]) => ({
+          id: key,
+          type: key,
+          ...val,
+          isBaseUser: true,
+        }));
 
-  const handleSwitchUser = (userType: ConceptualUserType) => {
-    setCurrentUserType(userType);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('conceptualUserType', userType);
-      // If switching away from admin, disable the bypass flag
-      if (userType !== 'admin') {
-        localStorage.removeItem('adminBypassActive');
-      } else {
-        // If switching *to* admin manually, also set the bypass flag
+        let dynamicUsersArray: CombinedUserProfile[] = [];
+        try {
+          const fetchedDynamicUsers = await fetchConceptuallyAddedUserProfiles();
+          dynamicUsersArray = fetchedDynamicUsers.map(du => ({
+            id: du.id,
+            name: du.newDisplayName,
+            email: du.newUserEmail,
+            avatar: `https://placehold.co/100x100/78716c/ffffff?text=${du.newDisplayName.charAt(0).toUpperCase()}`,
+            isBaseUser: false,
+            isAdmin: du.isAdmin,
+            type: du.id, 
+          }));
+        } catch (e) {
+          console.error("Failed to fetch dynamic conceptual users:", e);
+        }
+        
+        const combinedUsers = [...baseUsersArray, ...dynamicUsersArray];
+        setAllUsers(combinedUsers);
+
+        // Determine current user from localStorage
+        const storedUserType = localStorage.getItem('conceptualUserType');
+        const adminBypassActive = localStorage.getItem('adminBypassActive') === 'true';
+        let activeUser: CombinedUserProfile | undefined;
+
+        if (adminBypassActive) {
+          activeUser = combinedUsers.find(u => u.type === 'admin' && u.isBaseUser);
+        } else if (storedUserType) {
+          activeUser = combinedUsers.find(u => u.type === storedUserType);
+        }
+        
+        setCurrentUser(activeUser || combinedUsers.find(u => u.type === 'default' && u.isBaseUser) || baseUsersArray[0]);
+      });
+    };
+    
+    loadUsers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
+
+  const handleSwitchUser = (userTypeOrId: string) => {
+    const selectedUser = allUsers.find(u => u.type === userTypeOrId);
+    if (selectedUser) {
+      setCurrentUser(selectedUser);
+      localStorage.setItem('conceptualUserType', selectedUser.type);
+      localStorage.setItem('conceptualUserEmail', selectedUser.email);
+      if (selectedUser.isAdmin) {
         localStorage.setItem('adminBypassActive', 'true');
+      } else {
+        localStorage.removeItem('adminBypassActive');
       }
+      
+      // Refresh the page to ensure all components re-evaluate access based on new conceptual user
+      // This is important for things like the Settings page access.
+      router.refresh();
+      // Consider a less disruptive update if possible, e.g. via global state/context if implemented
     }
-    // Optionally, refresh or navigate to dashboard to reflect changes broadly
-    // router.refresh(); 
-    // router.push('/dashboard'); // Could be too disruptive
   };
 
   const handleLogout = async () => {
     console.log("Logout action initiated");
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('conceptualUserType'); 
-      localStorage.removeItem('adminBypassActive'); // Clear bypass flag on logout
-    }
+    localStorage.removeItem('conceptualUserType'); 
+    localStorage.removeItem('adminBypassActive');
+    localStorage.removeItem('conceptualUserEmail');
+    setCurrentUser(allUsers.find(u => u.type === 'default' && u.isBaseUser) || null); // Reset to default conceptually
     router.push('/signin');
   };
 
-  const user = isClient ? conceptualUsers[currentUserType] : conceptualUsers.default;
-
-  if (!isClient) {
-    // Render a placeholder or null during SSR to avoid hydration mismatch
+  if (!isClient || !currentUser) {
     return (
       <Button variant="ghost" className="relative h-8 w-8 rounded-full">
         <Avatar className="h-8 w-8">
@@ -118,18 +156,23 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.avatar} alt={user.name || "User"} data-ai-hint="profile person placeholder" />
-            <AvatarFallback>{user.name ? user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
+            <AvatarImage src={currentUser.avatar} alt={currentUser.name} data-ai-hint="profile person placeholder" />
+            <AvatarFallback>{currentUser.name.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-60" align="end" forceMount> 
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-sm font-medium leading-none">{currentUser.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
+              {currentUser.email}
             </p>
+            {currentUser.isAdmin && (
+              <span className="text-xs text-primary flex items-center gap-1">
+                <ShieldCheck className="h-3 w-3" /> Admin Privileges
+              </span>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -141,14 +184,24 @@ export function UserNav() {
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </DropdownMenuItem>
           </Link>
+           {currentUser.isAdmin && (
+            <Link href="/settings" passHref>
+                <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Admin Settings</span>
+                </DropdownMenuItem>
+            </Link>
+           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Switch Conceptual User</DropdownMenuLabel>
-        {Object.values(conceptualUsers).map((profile) => (
-          currentUserType !== profile.type && (
+        {isLoadingUsers && <DropdownMenuItem disabled>Loading users...</DropdownMenuItem>}
+        {!isLoadingUsers && allUsers.map((profile) => (
+          currentUser.type !== profile.type && (
             <DropdownMenuItem key={profile.type} onClick={() => handleSwitchUser(profile.type)}>
               <Repeat className="mr-2 h-4 w-4" />
               <span>View as {profile.name}</span>
+              {profile.isAdmin && <ShieldCheck className="ml-auto h-3 w-3 text-primary" />}
             </DropdownMenuItem>
           )
         ))}

@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation"; // Added useRouter
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { handleSignIn, handleGoogleSignIn } from "../actions";
 
 export function SignInForm() {
   const searchParams = useSearchParams();
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,12 +23,30 @@ export function SignInForm() {
     } else {
       setErrorMessage(null);
     }
-  }, [searchParams]);
+
+    const conceptualUser = searchParams.get('user');
+    if (conceptualUser) {
+      localStorage.setItem('conceptualUserType', conceptualUser);
+      if (conceptualUser === 'admin' || conceptualUser === 'meta') {
+        localStorage.setItem('adminBypassActive', 'true');
+        localStorage.setItem('conceptualUserEmail', `${conceptualUser}@kjvsentinel.com`); // simplified for demo
+      } else if (conceptualUser === 'richard') {
+        localStorage.setItem('conceptualUserEmail', 'rich@home.com');
+        localStorage.removeItem('adminBypassActive');
+      }
+      // Remove user param from URL after processing and redirect to dashboard
+      const newPath = '/dashboard';
+      router.replace(newPath); // Use replace to avoid adding to history
+    }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Removed router from dependency array to avoid potential loops if router object changes identity
 
   const handleAdminBypass = () => {
     if (typeof window !== 'undefined') {
         localStorage.setItem('adminBypassActive', 'true');
-        localStorage.setItem('conceptualUserType', 'admin'); // Set conceptual user to admin
+        localStorage.setItem('conceptualUserType', 'admin');
+        localStorage.setItem('conceptualUserEmail', 'admin@kjvsentinel.com');
     }
     router.push('/dashboard');
   };
@@ -65,11 +83,11 @@ export function SignInForm() {
       <form action={handleSignIn} className="grid gap-2">
         <div className="grid gap-1">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" placeholder="admin@kjvsentinel.com or m@example.com" required />
+          <Input id="email" name="email" type="email" placeholder="admin@kjvsentinel.com or meta@kjvsentinel.com" required />
         </div>
         <div className="grid gap-1">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" required />
+          <Input id="password" name="password" type="password" defaultValue="N0tjuni0r" required />
         </div>
         <Button type="submit" className="w-full mt-2">Sign In</Button>
       </form>

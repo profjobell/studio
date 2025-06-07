@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useTransition, FormEvent, useActionState as useReactActionState } from "react";
+import { useEffect, useState, useTransition, FormEvent, useActionState as useReactActionState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +25,7 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
-  AlertDialogContent as DeleteAlertDialogContent, // Alias to avoid name clash
+  AlertDialogContent as DeleteAlertDialogContent, 
   AlertDialogDescription as DeleteAlertDialogDescription,
   AlertDialogFooter as DeleteAlertDialogFooter,
   AlertDialogHeader as DeleteAlertDialogHeader,
@@ -39,17 +39,16 @@ import {
   manageGlossaryAction,
   editLearnMoreAction,
   addUserProfileAction,
-  fetchConceptuallyAddedUserProfiles, // Added
-  deleteConceptualUserAction, // Added
+  fetchConceptuallyAddedUserProfiles, 
+  deleteConceptualUserAction, 
   type AppSettings,
   type AddUserFormState,
-  type ConceptuallyAddedUserProfile // Added
+  type ConceptuallyAddedUserProfile 
 } from "./actions";
 import { useRouter } from "next/navigation";
 import type { ZodIssue } from "zod";
 
-const ADMIN_EMAIL = "admin@kjvsentinel.com"; 
-const MOCK_CURRENT_USER_EMAIL = "admin@kjvsentinel.com"; 
+const ADMIN_EMAILS = ["admin@kjvsentinel.com", "meta@kjvsentinel.com"]; 
 
 const initialAddUserState: AddUserFormState = {
     message: "",
@@ -68,6 +67,8 @@ export default function SettingsPage() {
 
   const [addUserFormState, addUserFormAction, isAddingUserPending] = useReactActionState(addUserProfileAction, initialAddUserState);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const addUserFormRef = useRef<HTMLFormElement>(null);
+
 
   const [conceptuallyAddedUsers, setConceptuallyAddedUsers] = useState<ConceptuallyAddedUserProfile[]>([]);
   const [isLoadingUsers, startLoadingUsersTransition] = useTransition();
@@ -75,17 +76,30 @@ export default function SettingsPage() {
   const [userToDelete, setUserToDelete] = useState<ConceptuallyAddedUserProfile | null>(null);
 
 
-  const isUserAdmin = MOCK_CURRENT_USER_EMAIL === ADMIN_EMAIL;
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [authCheckCompleted, setAuthCheckCompleted] = useState(false);
+
+
+  useEffect(() => {
+    // Client-side check for admin status based on localStorage
+    const activeUserEmail = localStorage.getItem('conceptualUserEmail');
+    const bypassActive = localStorage.getItem('adminBypassActive') === 'true';
+    if (bypassActive || (activeUserEmail && ADMIN_EMAILS.includes(activeUserEmail.toLowerCase())) ) {
+      setIsUserAdmin(true);
+    } else {
+      setIsUserAdmin(false);
+    }
+    setAuthCheckCompleted(true);
+  }, []);
+
 
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
       const fetchedSettings = await fetchAppSettings();
       setSettings(fetchedSettings);
-      if (isUserAdmin) { // Only load conceptual users if admin
-        const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
-        setConceptuallyAddedUsers(fetchedUsers);
-      }
+      const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
+      setConceptuallyAddedUsers(fetchedUsers);
     } catch (error) {
       console.error("Error loading initial data:", error);
       toast({
@@ -93,7 +107,7 @@ export default function SettingsPage() {
         description: "Could not fetch initial application data.",
         variant: "destructive",
       });
-      setSettings(null);
+      setSettings(null); 
       setConceptuallyAddedUsers([]);
     } finally {
       setIsLoading(false);
@@ -101,16 +115,22 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    if (!isUserAdmin && !isLoading) return;
-    loadInitialData();
+    if (authCheckCompleted) { // Only load data after auth check
+        if (isUserAdmin) {
+            loadInitialData();
+        } else {
+            setIsLoading(false); // Not admin, no need to load admin data
+        }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isUserAdmin, toast]); // Removed isLoading from dependencies to avoid re-triggering loadSettings on its own change
+  }, [isUserAdmin, authCheckCompleted, toast]);
 
   useEffect(() => {
     if (addUserFormState.message && (addUserFormState.success || addUserFormState.errors)) { 
         if (addUserFormState.success) {
             toast({ title: "User Action", description: addUserFormState.message });
             setIsAddUserDialogOpen(false); 
+            addUserFormRef.current?.reset(); 
             // Reload users list
             startLoadingUsersTransition(async () => {
                 const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
@@ -119,8 +139,9 @@ export default function SettingsPage() {
         } else {
             toast({
                 title: "Failed to Add User",
-                description: addUserFormState.message + (addUserFormState.errors ? ` ${addUserFormState.errors.map((e: ZodIssue) => e.message).join(', ')}` : ''),
+                description: addUserFormState.message + (addUserFormState.errors ? ` Errors: ${addUserFormState.errors.map((e: ZodIssue) => `${e.path.join('.')}: ${e.message}`).join('; ')}` : ''),
                 variant: "destructive",
+                duration: 7000,
             });
         }
     }
@@ -143,8 +164,9 @@ export default function SettingsPage() {
       } else {
         toast({
           title: "Save Failed",
-          description: result.message + (result.errors ? ` ${result.errors.map(e => e.message).join(', ')}` : ''),
+          description: result.message + (result.errors ? ` Errors: ${result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ')}` : ''),
           variant: "destructive",
+          duration: 7000,
         });
       }
     });
@@ -160,11 +182,19 @@ export default function SettingsPage() {
       } else {
         toast({ title: "Delete Failed", description: result.message, variant: "destructive" });
       }
-      setUserToDelete(null); // Close dialog
+      setUserToDelete(null); 
     });
   };
   
-  if (!isUserAdmin && !isLoading) { 
+  if (!authCheckCompleted) {
+    return ( // Basic loading state before auth check
+         <div className="flex items-center justify-center min-h-[60vh]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+         </div>
+    );
+  }
+
+  if (!isUserAdmin) { 
     return (
       <div className="container mx-auto py-8 px-4 md:px-6 flex flex-col items-center justify-center min-h-[60vh]">
         <Card className="w-full max-w-md text-center p-8">
@@ -197,7 +227,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (!settings) {
+  if (!settings && !isLoading) { 
     return (
        <div className="flex items-center justify-center min-h-[60vh] flex-col gap-4">
             <AlertTriangle className="h-12 w-12 text-destructive" />
@@ -206,6 +236,9 @@ export default function SettingsPage() {
         </div>
     );
   }
+  
+  if (!settings) return null;
+
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
@@ -350,13 +383,13 @@ export default function SettingsPage() {
         <CardContent className="space-y-6">
           {/* Conceptual User Listing */}
           <div>
-            <h3 className="text-lg font-medium mb-2">Conceptually Added Users</h3>
+            <h3 className="text-lg font-medium mb-2">Conceptually Added Users (Current Session)</h3>
             {isLoadingUsers && <p className="text-sm text-muted-foreground">Loading users...</p>}
             {!isLoadingUsers && conceptuallyAddedUsers.length === 0 && (
               <p className="text-sm text-muted-foreground">No conceptual users added yet in this session.</p>
             )}
             {!isLoadingUsers && conceptuallyAddedUsers.length > 0 && (
-              <ul className="space-y-3">
+              <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
                 {conceptuallyAddedUsers.map(user => (
                   <li key={user.id} className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
                     <div>
@@ -405,31 +438,36 @@ export default function SettingsPage() {
                     Enter the details for the new user. This is a conceptual feature and does not create real accounts.
                   </DialogDescription>
                 </DialogHeader>
-                <form action={addUserFormAction} className="grid gap-4 py-4">
+                <form ref={addUserFormRef} action={addUserFormAction} className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newUserEmail" className="text-right">
+                    <Label htmlFor="newUserEmail-add" className="text-right"> {/* Changed ID to avoid conflict */}
                       Email
                     </Label>
-                    <Input id="newUserEmail" name="newUserEmail" type="email" className="col-span-3" required />
+                    <Input id="newUserEmail-add" name="newUserEmail" type="email" className="col-span-3" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newDisplayName" className="text-right">
+                    <Label htmlFor="newDisplayName-add" className="text-right"> {/* Changed ID */}
                       Display Name
                     </Label>
-                    <Input id="newDisplayName" name="newDisplayName" className="col-span-3" required />
+                    <Input id="newDisplayName-add" name="newDisplayName" className="col-span-3" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newPassword" className="text-right">
+                    <Label htmlFor="newPassword-add" className="text-right"> {/* Changed ID */}
                       Password
                     </Label>
-                    <Input id="newPassword" name="newPassword" type="password" className="col-span-3" required />
+                    <Input id="newPassword-add" name="newPassword" type="password" className="col-span-3" required />
                   </div>
-                  <div className="flex items-center space-x-2 mt-2 pl-4">
-                    <Switch id="isAdmin" name="isAdmin" />
-                    <Label htmlFor="isAdmin">Grant Admin Privileges?</Label>
+                  <div className="flex items-center space-x-2 mt-2 pl-4 col-start-2 col-span-3"> {/* Adjusted for layout */}
+                    <Switch id="isAdmin-add" name="isAdmin" /> {/* Changed ID */}
+                    <Label htmlFor="isAdmin-add">Grant Admin Privileges?</Label> {/* Changed ID */}
                   </div>
                   {addUserFormState.message && !addUserFormState.success && (
                      <p className="col-span-4 text-sm text-destructive text-center">{addUserFormState.message}</p>
+                  )}
+                  {addUserFormState.errors && (
+                    <ul className="col-span-4 text-sm text-destructive list-disc list-inside">
+                      {addUserFormState.errors.map((err, i) => <li key={i}>{err.path.join('.')}: {err.message}</li>)}
+                    </ul>
                   )}
                   <DialogFooter>
                     <DialogClose asChild>
@@ -443,14 +481,13 @@ export default function SettingsPage() {
                 </form>
               </DialogContent>
             </Dialog>
-            {/* Placeholder for Manage Existing Users - would be a link/button to a separate user management page */}
           </div>
         </CardContent>
       </Card>
 
       {/* Delete User Confirmation Dialog */}
       {userToDelete && (
-        <DeleteAlertDialogContent>
+        <DeleteAlertDialogContent> 
           <DeleteAlertDialogHeader>
             <DeleteAlertDialogTitle>Are you sure?</DeleteAlertDialogTitle>
             <DeleteAlertDialogDescription>
