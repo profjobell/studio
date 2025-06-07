@@ -56,15 +56,35 @@ export function UserNav() {
   useEffect(() => {
     setIsClient(true);
     const storedUserType = localStorage.getItem('conceptualUserType') as ConceptualUserType | null;
-    if (storedUserType && conceptualUsers[storedUserType]) {
+    const bypassActive = localStorage.getItem('adminBypassActive') === 'true';
+
+    if (bypassActive) {
+      setCurrentUserType('admin');
+      // Ensure conceptualUserType in localStorage is also admin if bypass is active
+      // This is important if other parts of the app read 'conceptualUserType' directly
+      // and we want them to also reflect admin state due to bypass.
+      if (localStorage.getItem('conceptualUserType') !== 'admin') {
+        localStorage.setItem('conceptualUserType', 'admin');
+      }
+    } else if (storedUserType && conceptualUsers[storedUserType]) {
       setCurrentUserType(storedUserType);
     }
+    // If bypass is NOT active and 'conceptualUserType' was 'admin' due to a previous bypass,
+    // it will remain 'admin' until explicitly switched or localStorage is cleared.
+    // This behavior is acceptable for the demo.
   }, []);
 
   const handleSwitchUser = (userType: ConceptualUserType) => {
     setCurrentUserType(userType);
     if (typeof window !== 'undefined') {
       localStorage.setItem('conceptualUserType', userType);
+      // If switching away from admin, disable the bypass flag
+      if (userType !== 'admin') {
+        localStorage.removeItem('adminBypassActive');
+      } else {
+        // If switching *to* admin manually, also set the bypass flag
+        localStorage.setItem('adminBypassActive', 'true');
+      }
     }
     // Optionally, refresh or navigate to dashboard to reflect changes broadly
     // router.refresh(); 
@@ -74,7 +94,8 @@ export function UserNav() {
   const handleLogout = async () => {
     console.log("Logout action initiated");
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('conceptualUserType'); // Clear conceptual user on logout
+      localStorage.removeItem('conceptualUserType'); 
+      localStorage.removeItem('adminBypassActive'); // Clear bypass flag on logout
     }
     router.push('/signin');
   };
@@ -83,7 +104,6 @@ export function UserNav() {
 
   if (!isClient) {
     // Render a placeholder or null during SSR to avoid hydration mismatch
-    // Or use a skeleton loader
     return (
       <Button variant="ghost" className="relative h-8 w-8 rounded-full">
         <Avatar className="h-8 w-8">
@@ -121,15 +141,6 @@ export function UserNav() {
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </DropdownMenuItem>
           </Link>
-          {/* Settings link is globally controlled by siteConfig now */}
-          {/* conceptualUsers.admin.email === user.email && (
-             <Link href="/settings" passHref>
-                <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Admin Settings</span>
-                </DropdownMenuItem>
-            </Link>
-          )*/}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Switch Conceptual User</DropdownMenuLabel>

@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation"; // Added useRouter
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { handleSignIn, handleGoogleSignIn } from "../actions";
 
 export function SignInForm() {
   const searchParams = useSearchParams();
+  const router = useRouter(); // Initialize router
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,6 +24,14 @@ export function SignInForm() {
       setErrorMessage(null);
     }
   }, [searchParams]);
+
+  const handleAdminBypass = () => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('adminBypassActive', 'true');
+        localStorage.setItem('conceptualUserType', 'admin'); // Set conceptual user to admin
+    }
+    router.push('/dashboard');
+  };
 
   return (
     <>
@@ -63,6 +73,9 @@ export function SignInForm() {
         </div>
         <Button type="submit" className="w-full mt-2">Sign In</Button>
       </form>
+      <Button onClick={handleAdminBypass} variant="outline" className="w-full mt-3 bg-yellow-400 hover:bg-yellow-500 text-black font-bold">
+        Byadm
+      </Button>
       <div className="mt-4 text-center text-sm">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="underline text-primary">
