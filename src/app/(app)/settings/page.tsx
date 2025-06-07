@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, ShieldCheck, UserPlus, Trash2 } from "lucide-react";
+import { Loader2, AlertTriangle, ShieldCheck, UserPlus, Trash2, BookOpen, Edit3 } from "lucide-react"; // Added BookOpen, Edit3
 import {
   Dialog,
   DialogContent,
@@ -36,8 +36,8 @@ import {
   saveGeneralSettings,
   saveAiSettings,
   saveFeatureFlags,
-  manageGlossaryAction,
-  editLearnMoreAction,
+  // manageGlossaryAction, // Will be handled client-side
+  // editLearnMoreAction, // Will be handled client-side
   addUserProfileAction,
   fetchConceptuallyAddedUserProfiles, 
   deleteConceptualUserAction, 
@@ -47,6 +47,9 @@ import {
 } from "./actions";
 import { useRouter } from "next/navigation";
 import type { ZodIssue } from "zod";
+import { useTheme } from "next-themes"; // Import useTheme
+import { FeaturesGuideModal } from "@/components/features-guide"; // Import FeaturesGuideModal
+
 
 const ADMIN_EMAILS = ["admin@kjvsentinel.com", "meta@kjvsentinel.com"]; 
 
@@ -59,6 +62,7 @@ const initialAddUserState: AddUserFormState = {
 export default function SettingsPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { setTheme } = useTheme(); // For applying theme changes
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingGeneral, startSavingGeneralTransition] = useTransition();
@@ -69,19 +73,18 @@ export default function SettingsPage() {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const addUserFormRef = useRef<HTMLFormElement>(null);
 
-
   const [conceptuallyAddedUsers, setConceptuallyAddedUsers] = useState<ConceptuallyAddedUserProfile[]>([]);
   const [isLoadingUsers, startLoadingUsersTransition] = useTransition();
   const [isDeletingUser, startDeletingUserTransition] = useTransition();
   const [userToDelete, setUserToDelete] = useState<ConceptuallyAddedUserProfile | null>(null);
 
-
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [authCheckCompleted, setAuthCheckCompleted] = useState(false);
 
+  const [isFeaturesGuideModalOpen, setIsFeaturesGuideModalOpen] = useState(false);
+
 
   useEffect(() => {
-    // Client-side check for admin status based on localStorage
     const activeUserEmail = localStorage.getItem('conceptualUserEmail');
     const bypassActive = localStorage.getItem('adminBypassActive') === 'true';
     if (bypassActive || (activeUserEmail && ADMIN_EMAILS.includes(activeUserEmail.toLowerCase())) ) {
@@ -115,11 +118,11 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    if (authCheckCompleted) { // Only load data after auth check
+    if (authCheckCompleted) {
         if (isUserAdmin) {
             loadInitialData();
         } else {
-            setIsLoading(false); // Not admin, no need to load admin data
+            setIsLoading(false); 
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,7 +134,6 @@ export default function SettingsPage() {
             toast({ title: "User Action", description: addUserFormState.message });
             setIsAddUserDialogOpen(false); 
             addUserFormRef.current?.reset(); 
-            // Reload users list
             startLoadingUsersTransition(async () => {
                 const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
                 setConceptuallyAddedUsers(fetchedUsers);
@@ -151,7 +153,8 @@ export default function SettingsPage() {
   const handleFormSubmit = async (
     event: FormEvent<HTMLFormElement>,
     saveAction: (formData: FormData) => Promise<{ success: boolean; message: string; errors?: ZodIssue[] }>,
-    startTransition: React.TransitionStartFunction
+    startTransition: React.TransitionStartFunction,
+    actionType?: "general" | "ai" | "features"
   ) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -161,6 +164,9 @@ export default function SettingsPage() {
         toast({ title: "Settings Saved", description: result.message });
         const fetchedSettings = await fetchAppSettings(); 
         setSettings(fetchedSettings);
+        if (actionType === "general" && fetchedSettings) {
+            setTheme(fetchedSettings.general.defaultTheme); // Apply theme immediately
+        }
       } else {
         toast({
           title: "Save Failed",
@@ -187,7 +193,7 @@ export default function SettingsPage() {
   };
   
   if (!authCheckCompleted) {
-    return ( // Basic loading state before auth check
+    return (
          <div className="flex items-center justify-center min-h-[60vh]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
          </div>
@@ -241,6 +247,7 @@ export default function SettingsPage() {
 
 
   return (
+    <>
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight flex items-center">
@@ -255,7 +262,7 @@ export default function SettingsPage() {
           <CardDescription>Configure basic application properties.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(e) => handleFormSubmit(e, saveGeneralSettings, startSavingGeneralTransition)} className="space-y-6">
+          <form onSubmit={(e) => handleFormSubmit(e, saveGeneralSettings, startSavingGeneralTransition, "general")} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="appName">Application Name</Label>
               <Input id="appName" name="appName" defaultValue={settings.general.appName} />
@@ -293,7 +300,7 @@ export default function SettingsPage() {
           <CardDescription>Manage AI model settings and safety filters.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(e) => handleFormSubmit(e, saveAiSettings, startSavingAiTransition)} className="space-y-6">
+          <form onSubmit={(e) => handleFormSubmit(e, saveAiSettings, startSavingAiTransition, "ai")} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="defaultModel">Default AI Model</Label>
               <Select name="defaultModel" defaultValue={settings.ai.defaultModel}>
@@ -352,12 +359,12 @@ export default function SettingsPage() {
           <CardDescription>Enable or disable specific application features.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(e) => handleFormSubmit(e, saveFeatureFlags, startSavingFeaturesTransition)} className="space-y-4">
+          <form onSubmit={(e) => handleFormSubmit(e, saveFeatureFlags, startSavingFeaturesTransition, "features")} className="space-y-4">
             {[
-              { id: "podcastGeneration", label: "Podcast Generation", checked: settings.featureFlags.podcastGeneration },
-              { id: "personalizedFallacyQuiz", label: "Personalized Fallacy Quizzes", checked: settings.featureFlags.personalizedFallacyQuiz },
+              { id: "podcastGeneration", label: "Podcast Generation (Teaching Reports)", checked: settings.featureFlags.podcastGeneration },
+              { id: "personalizedFallacyQuiz", label: "Personalized Fallacy Quizzes (from Reports)", checked: settings.featureFlags.personalizedFallacyQuiz },
               { id: "scriptureMemoryTool", label: "Scripture Memory Tool", checked: settings.featureFlags.scriptureMemoryTool },
-              { id: "ismAwarenessQuiz", label: "Ism Awareness Quiz", checked: settings.featureFlags.ismAwarenessQuiz },
+              { id: "ismAwarenessQuiz", label: "Ism Awareness Quiz (Learning Tools)", checked: settings.featureFlags.ismAwarenessQuiz },
             ].map((feature) => (
               <div key={feature.id} className="flex items-center justify-between">
                 <Label htmlFor={feature.id} className="flex-grow">{feature.label}</Label>
@@ -416,14 +423,15 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button variant="outline" onClick={async () => {
-                const res = await manageGlossaryAction();
-                toast({title: "Glossary Management", description: res.message });
-            }}>Manage Glossary Terms</Button>
-            <Button variant="outline" onClick={async () => {
-                const res = await editLearnMoreAction();
-                toast({title: "'Learn More' Guide", description: res.message });
-            }}>Edit 'Learn More' Guide</Button>
+            <Button variant="outline" onClick={() => router.push('/glossary')}>
+                <BookOpen className="mr-2 h-4 w-4" /> Manage Glossary Terms
+            </Button>
+            
+            <FeaturesGuideModal>
+                <Button variant="outline">
+                    <Edit3 className="mr-2 h-4 w-4" /> View/Edit 'Learn More' Guide
+                </Button>
+            </FeaturesGuideModal>
             
             <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
               <DialogTrigger asChild>
@@ -440,26 +448,26 @@ export default function SettingsPage() {
                 </DialogHeader>
                 <form ref={addUserFormRef} action={addUserFormAction} className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newUserEmail-add" className="text-right"> {/* Changed ID to avoid conflict */}
+                    <Label htmlFor="newUserEmail-add" className="text-right">
                       Email
                     </Label>
                     <Input id="newUserEmail-add" name="newUserEmail" type="email" className="col-span-3" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newDisplayName-add" className="text-right"> {/* Changed ID */}
+                    <Label htmlFor="newDisplayName-add" className="text-right">
                       Display Name
                     </Label>
                     <Input id="newDisplayName-add" name="newDisplayName" className="col-span-3" required />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newPassword-add" className="text-right"> {/* Changed ID */}
+                    <Label htmlFor="newPassword-add" className="text-right">
                       Password
                     </Label>
                     <Input id="newPassword-add" name="newPassword" type="password" className="col-span-3" required />
                   </div>
-                  <div className="flex items-center space-x-2 mt-2 pl-4 col-start-2 col-span-3"> {/* Adjusted for layout */}
-                    <Switch id="isAdmin-add" name="isAdmin" /> {/* Changed ID */}
-                    <Label htmlFor="isAdmin-add">Grant Admin Privileges?</Label> {/* Changed ID */}
+                  <div className="flex items-center space-x-2 mt-2 pl-4 col-start-2 col-span-3">
+                    <Switch id="isAdmin-add" name="isAdmin" />
+                    <Label htmlFor="isAdmin-add">Grant Admin Privileges?</Label>
                   </div>
                   {addUserFormState.message && !addUserFormState.success && (
                      <p className="col-span-4 text-sm text-destructive text-center">{addUserFormState.message}</p>
@@ -508,5 +516,17 @@ export default function SettingsPage() {
         </DeleteAlertDialogContent>
       )}
     </div>
+    {/* This ensures the FeaturesGuideModal is available in the DOM but controlled by its own state for opening */}
+    <FeaturesGuideModal> 
+        {/* This children prop is just a placeholder to satisfy the component, it won't be rendered directly. 
+            The actual trigger will be the "View/Edit 'Learn More' Guide" button above. 
+            Alternatively, we could manage its open state via `isFeaturesGuideModalOpen` here.
+            For simplicity, we'll assume FeaturesGuideModal handles its own trigger/open state or we call it imperatively.
+            Let's use a state to control its visibility from this page.
+        */}
+        <span className="hidden">Hidden Trigger for Programmatic Features Guide Modal</span>
+    </FeaturesGuideModal>
+    </>
   );
 }
+

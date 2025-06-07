@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -11,6 +12,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+
+// Conceptually, you might fetch dynamic AI settings like this:
+// import { fetchAppSettings } from '@/app/(app)/settings/actions'; // This would need to be accessible server-side
 
 const AnalyzeContentInputSchema = z.object({
   content: z.string().describe('The religious content to analyze (text, audio transcript, or video transcript).'),
@@ -53,11 +57,32 @@ export async function analyzeContent(input: AnalyzeContentInput): Promise<Analyz
   return analyzeContentFlow(input);
 }
 
+// Placeholder for how dynamic safety settings could be applied
+// async function getDynamicSafetySettings() {
+//   try {
+//     const appSettings = await fetchAppSettings(); // This action itself needs to be callable from this context
+//     return [
+//       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: appSettings.ai.safetyFilters.hateSpeech },
+//       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: appSettings.ai.safetyFilters.dangerousContent },
+//       { category: 'HARM_CATEGORY_HARASSMENT', threshold: appSettings.ai.safetyFilters.harassment },
+//       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: appSettings.ai.safetyFilters.sexuallyExplicit },
+//       // Potentially add HARM_CATEGORY_CIVIC_INTEGRITY if configurable
+//     ];
+//   } catch (error) {
+//     console.warn("Could not fetch dynamic AI safety settings, using defaults.", error);
+//     return undefined; // Fallback to Genkit defaults or prompt-specific defaults
+//   }
+// }
+
 const analyzeContentPrompt = ai.definePrompt({
   name: 'analyzeContentPrompt',
   input: {schema: AnalyzeContentInputSchema},
   output: {schema: AnalyzeContentOutputSchema},
   prompt: `Analyze the following religious content for theological accuracy, historical context, manipulative tactics, identified "isms", and Calvinistic influence, comparing against the KJV 1611 Bible.\n\nContent: {{{content}}}`,
+  // Illustrative: config would be applied here if getDynamicSafetySettings was made fully operational
+  // config: { 
+  //   safetySettings: getDynamicSafetySettings() // This needs to be resolved before prompt definition or passed to generate
+  // }
 });
 
 const analyzeContentFlow = ai.defineFlow(
@@ -67,7 +92,12 @@ const analyzeContentFlow = ai.defineFlow(
     outputSchema: AnalyzeContentOutputSchema,
   },
   async input => {
+    // If safety settings were fetched dynamically and meant to be applied per-call:
+    // const dynamicSafetySettings = await getDynamicSafetySettings();
+    // const { output } = await analyzeContentPrompt(input, { config: { safetySettings: dynamicSafetySettings }});
+    // Otherwise, if they are part of the prompt definition (more complex for dynamic values):
     const {output} = await analyzeContentPrompt(input);
     return output!;
   }
 );
+

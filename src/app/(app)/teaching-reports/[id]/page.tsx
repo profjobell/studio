@@ -12,6 +12,7 @@ import { AiChatDialog } from "../../reports/components/ai-chat-dialog";
 import { PodcastGenerator } from "./components/podcast-generator";
 import { format } from 'date-fns';
 import type { ChatMessageHistory as GenkitChatMessage } from "@/ai/flows/chat-with-report-flow";
+import { fetchAppSettings, type AppSettings } from "../../settings/actions"; // Import settings
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const report = await fetchTeachingAnalysisFromDatabase(params.id);
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 
 export default async function TeachingReportPage({ params }: { params: { id: string } }) {
   const report: TeachingAnalysisReport | null = await fetchTeachingAnalysisFromDatabase(params.id);
+  const appSettings: AppSettings = await fetchAppSettings(); // Fetch settings
 
   if (!report) {
     notFound();
@@ -84,7 +86,7 @@ Biblical Warnings: ${report.analysisResult.biblicalWarnings}`.trim();
         </CardFooter>
       </Card>
 
-      {report.analysisResult && (
+      {report.analysisResult && appSettings.featureFlags.podcastGeneration && ( // Check feature flag
         <PodcastGenerator analysisId={report.id} initialReport={report} />
       )}
 
