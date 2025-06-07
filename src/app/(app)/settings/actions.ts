@@ -79,7 +79,7 @@ function ensureUserProfilesStore(): ConceptuallyAddedUserProfile[] {
   return global.tempUserProfilesStoreGlobal;
 }
 
-function ensureUserDashboardPreferencesStore(): { [userId: string]: UserDashboardPreference } {
+export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: string]: UserDashboardPreference }> {
   if (!global.userDashboardPreferencesStoreGlobal) {
     console.log("Initializing global.userDashboardPreferencesStoreGlobal.");
     global.userDashboardPreferencesStoreGlobal = {
@@ -265,7 +265,7 @@ export async function addUserProfileAction(
   userProfilesStore.push(newUser);
 
   // Initialize dashboard preference for the new user
-  const dashboardPrefsStore = ensureUserDashboardPreferencesStore();
+  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); // Added await
   dashboardPrefsStore[newUser.id] = {
     enabled: false, // Default to disabled
     notes: `Welcome, ${validation.data.newDisplayName}! Customize your dashboard message on your profile.`,
@@ -290,7 +290,7 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
   const initialLength = userProfilesStore.length;
   global.tempUserProfilesStoreGlobal = userProfilesStore.filter(user => user.id !== userId);
 
-  const dashboardPrefsStore = ensureUserDashboardPreferencesStore();
+  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); // Added await
   if (dashboardPrefsStore[userId]) {
     delete dashboardPrefsStore[userId];
     console.log(`Deleted dashboard preference for conceptual user ID: ${userId}`);
@@ -306,20 +306,8 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
 }
 
 // --- User Dashboard Preferences Actions ---
-export async function fetchUserDashboardPreference(userId: string): Promise<UserDashboardPreference | null> {
-  console.log(`Server Action: Fetching dashboard preference for user ID: ${userId}`);
-  const store = ensureUserDashboardPreferencesStore();
-  return store[userId] || null;
-}
+// fetchUserDashboardPreference and updateUserDashboardPreference are in profile/actions.ts
+// and correctly import the (now exported) ensureUserDashboardPreferencesStore.
+// No changes needed for them here.
 
-export async function updateUserDashboardPreference(
-  userId: string,
-  preferenceData: UserDashboardPreference
-): Promise<{ success: boolean; message: string }> {
-  console.log(`Server Action: Updating dashboard preference for user ID: ${userId}`, preferenceData);
-  const store = ensureUserDashboardPreferencesStore();
-  store[userId] = preferenceData;
-  revalidatePath("/dashboard"); // Revalidate dashboard to show changes
-  revalidatePath("/profile");   // Revalidate profile if it also displays this
-  return { success: true, message: "Dashboard preference updated successfully." };
-}
+

@@ -61,7 +61,7 @@ export async function deleteAccountAction(): Promise<{ success: boolean; message
 // --- User Dashboard Preferences Actions ---
 export async function fetchUserDashboardPreference(userId: string): Promise<UserDashboardPreference | null> {
   console.log(`Server Action: Fetching dashboard preference for user ID: ${userId}`);
-  const store = ensureUserDashboardPreferencesStore(); // This function is exported from settings/actions.ts
+  const store = await ensureUserDashboardPreferencesStore(); // This function is exported from settings/actions.ts
   
   // Fallback for users not explicitly in store (e.g. newly conceptualized dynamic users before first save)
   if (!store[userId]) {
@@ -84,7 +84,7 @@ export async function updateUserDashboardPreference(
   preferenceData: UserDashboardPreference
 ): Promise<{ success: boolean; message: string }> {
   console.log(`Server Action: Updating dashboard preference for user ID: ${userId}`, preferenceData);
-  const store = ensureUserDashboardPreferencesStore(); // This function is exported from settings/actions.ts
+  const store = await ensureUserDashboardPreferencesStore(); // This function is exported from settings/actions.ts
   store[userId] = preferenceData;
   revalidatePath("/dashboard"); 
   revalidatePath("/profile");
