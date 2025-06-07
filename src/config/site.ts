@@ -1,6 +1,6 @@
 
 import type { NavItem, SidebarNavItem } from "@/types";
-import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info, ShieldAlert, Youtube } from 'lucide-react'; // Added ShieldAlert, Youtube
+import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info, ShieldAlert, Youtube, QrCode } from 'lucide-react'; // Added QrCode
 
 export type SiteConfig = {
   name: string;
@@ -75,6 +75,11 @@ export const siteConfig: SiteConfig = {
       title: "Glossary",
       href: "/glossary",
       icon: BookOpen,
+    },
+     {
+      title: "QR Generator",
+      href: "/qr-code-generator",
+      icon: QrCode,
     },
   ],
   sidebarNav: [
@@ -155,6 +160,12 @@ export const siteConfig: SiteConfig = {
           href: "/learning",
           icon: GraduationCap,
           description: "Interactive quizzes and study aids.",
+        },
+        {
+          title: "QR Code Generator",
+          href: "/qr-code-generator",
+          icon: QrCode,
+          description: "Create custom QR codes.",
         },
       ],
     },
