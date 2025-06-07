@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, FileText, Search, Trash2, ExternalLink, Loader2, Image as ImageIcon, Edit } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Activity, FileText, Search, Trash2, ExternalLink, Loader2, Image as ImageIconLucide, Edit } from "lucide-react"; // Renamed Image to avoid conflict
 import { fetchReportsList } from "../reports/actions";
 import { fetchLibraryDocuments } from "../library/actions";
 import type { AnalysisReport, DocumentReference, UserDashboardPreference } from "@/types";
@@ -23,8 +23,10 @@ export default function DashboardPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [dashboardPreference, setDashboardPreference] = useState<UserDashboardPreference | null>(null);
   const [isLoadingPreference, startLoadingPreferenceTransition] = useTransition();
+  const [imageError, setImageError] = useState(false); // State for image loading error
 
   useEffect(() => {
+    // Access localStorage only on the client side
     const id = localStorage.getItem('conceptualUserType') || 'default';
     setCurrentUserId(id);
 
@@ -49,6 +51,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (currentUserId) {
       startLoadingPreferenceTransition(async () => {
+        setImageError(false); // Reset image error state when user/preference changes
         const pref = await fetchUserDashboardPreference(currentUserId);
         setDashboardPreference(pref);
       });
@@ -62,7 +65,7 @@ export default function DashboardPage() {
 
   const hasReports = recentAnalyses.length > 0;
 
-  if (isLoading) {
+  if (isLoading && !currentUserId) { // Adjusted loading condition
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -84,51 +87,49 @@ export default function DashboardPage() {
     }
 
     if (dashboardPreference?.enabled) {
+      let imageDisplayElement;
+      if (dashboardPreference.symbolicPlaceholder || !dashboardPreference.imageUrl || imageError) {
+        imageDisplayElement = (
+          <div 
+            style={{ 
+                width: '100px', 
+                height: '100px', 
+                backgroundColor: dashboardPreference.symbolicColor || 'black', 
+                border: '1px solid hsl(var(--border))',
+                margin: '10px auto'
+            }} 
+            title={imageError && dashboardPreference.imageUrl ? "Symbolic placeholder (image failed to load)" : "Symbolic placeholder"}
+            data-ai-hint="abstract geometric shape"
+          ></div>
+        );
+      } else {
+        imageDisplayElement = (
+          <div className="relative w-full max-w-xs h-40 mx-auto mb-3">
+            <Image 
+              src={dashboardPreference.imageUrl} 
+              alt="User defined image" 
+              fill
+              style={{ objectFit: 'contain' }}
+              className="rounded-md"
+              onError={() => {
+                console.warn(`Failed to load custom dashboard image: ${dashboardPreference.imageUrl}`);
+                setImageError(true);
+              }}
+              data-ai-hint="user provided image"
+            />
+          </div>
+        );
+      }
+
       return (
         <Card className="my-4 p-4 border rounded-md bg-card text-card-foreground text-center shadow-md">
           <CardHeader className="p-2">
              <CardTitle className="text-lg font-semibold flex items-center justify-center gap-2">
-                <ImageIcon className="h-5 w-5 text-primary" /> Your Custom Welcome
+                <ImageIconLucide className="h-5 w-5 text-primary" /> Your Custom Welcome
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2">
-            {dashboardPreference.symbolicPlaceholder || !dashboardPreference.imageUrl ? (
-              <div 
-                style={{ 
-                    width: '100px', 
-                    height: '100px', 
-                    backgroundColor: dashboardPreference.symbolicColor || 'black', 
-                    border: '1px solid hsl(var(--border))',
-                    margin: '10px auto'
-                }} 
-                title="Symbolic placeholder"
-              ></div>
-            ) : (
-              <div className="relative w-full max-w-xs h-40 mx-auto mb-3">
-                <Image 
-                  src={dashboardPreference.imageUrl} 
-                  alt="User defined image" 
-                  layout="fill" 
-                  objectFit="contain" 
-                  className="rounded-md"
-                  onError={(e) => {
-                    // Fallback to symbolic if image fails to load
-                    e.currentTarget.style.display = 'none'; 
-                    const parent = e.currentTarget.parentElement;
-                    if (parent) {
-                        const fallbackSquare = document.createElement('div');
-                        fallbackSquare.style.width = '100px';
-                        fallbackSquare.style.height = '100px';
-                        fallbackSquare.style.backgroundColor = dashboardPreference.symbolicColor || 'black';
-                        fallbackSquare.style.border = '1px solid hsl(var(--border))';
-                        fallbackSquare.style.margin = '10px auto';
-                        fallbackSquare.title = "Symbolic placeholder (image failed)";
-                        parent.appendChild(fallbackSquare);
-                    }
-                  }}
-                />
-              </div>
-            )}
+            {imageDisplayElement}
             {dashboardPreference.notes && (
               <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{dashboardPreference.notes}</p>
             )}
@@ -307,3 +308,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
