@@ -36,6 +36,14 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      <div className="my-4 p-4 border rounded-md bg-card text-card-foreground">
+        <p className="text-sm text-muted-foreground mb-2">User-requested image placement (symbolic):</p>
+        <div style={{ width: '50px', height: '50px', backgroundColor: 'black', border: '1px solid hsl(var(--border))' }} title="Representation of user-provided black image"></div>
+        <p className="text-xs text-muted-foreground mt-1">
+          The image provided appeared all black. This square is a symbolic placement. If you had a specific location, purpose, or a different image/content in mind, please provide further details.
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Link href={stat.href || "#"} key={stat.title} className="block hover:shadow-lg transition-shadow rounded-lg">
