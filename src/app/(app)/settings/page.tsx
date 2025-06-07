@@ -31,13 +31,12 @@ import {
   AlertDialogHeader as DeleteAlertDialogHeader,
   AlertDialogTitle as DeleteAlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area"; // Added ScrollArea
 import {
   fetchAppSettings,
   saveGeneralSettings,
   saveAiSettings,
   saveFeatureFlags,
-  // manageGlossaryAction, // Will be handled client-side
-  // editLearnMoreAction, // Will be handled client-side
   addUserProfileAction,
   fetchConceptuallyAddedUserProfiles, 
   deleteConceptualUserAction, 
@@ -81,7 +80,7 @@ export default function SettingsPage() {
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [authCheckCompleted, setAuthCheckCompleted] = useState(false);
 
-  const [isFeaturesGuideModalOpen, setIsFeaturesGuideModalOpen] = useState(false);
+  // const [isFeaturesGuideModalOpen, setIsFeaturesGuideModalOpen] = useState(false); // Not directly controlled here, modal handles its own state
 
 
   useEffect(() => {
@@ -134,6 +133,9 @@ export default function SettingsPage() {
             toast({ title: "User Action", description: addUserFormState.message });
             setIsAddUserDialogOpen(false); 
             addUserFormRef.current?.reset(); 
+            // Reset the action state so the message doesn't reappear on next open without a new submission
+            // This typically requires a more complex reset mechanism for useActionState or a key prop on the form
+            // For now, we'll rely on the toast and closing the dialog.
             startLoadingUsersTransition(async () => {
                 const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
                 setConceptuallyAddedUsers(fetchedUsers);
@@ -396,29 +398,31 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">No conceptual users added yet in this session.</p>
             )}
             {!isLoadingUsers && conceptuallyAddedUsers.length > 0 && (
-              <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                {conceptuallyAddedUsers.map(user => (
-                  <li key={user.id} className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
-                    <div>
-                      <p className="font-semibold">{user.newDisplayName}</p>
-                      <p className="text-sm text-muted-foreground">{user.newUserEmail}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       {user.isAdmin && <ShieldCheck className="h-5 w-5 text-primary" title="Admin Privileges"/>}
-                       <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => setUserToDelete(user)}
-                        disabled={isDeletingUser}
-                        className="text-destructive hover:text-destructive/80"
-                       >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete user</span>
-                       </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <ScrollArea className="max-h-60 border rounded-md">
+                <ul className="space-y-px p-3">
+                  {conceptuallyAddedUsers.map(user => (
+                    <li key={user.id} className="flex items-center justify-between p-2 hover:bg-accent/50 rounded-md">
+                      <div>
+                        <p className="font-semibold">{user.newDisplayName}</p>
+                        <p className="text-sm text-muted-foreground">{user.newUserEmail}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {user.isAdmin && <ShieldCheck className="h-5 w-5 text-primary" title="Admin Privileges"/>}
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setUserToDelete(user)}
+                          disabled={isDeletingUser}
+                          className="text-destructive hover:text-destructive/80"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete user</span>
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
             )}
           </div>
 
@@ -439,54 +443,56 @@ export default function SettingsPage() {
                   <UserPlus className="mr-2 h-4 w-4" /> Add New Profile
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-md md:max-w-lg max-h-[90vh] flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Add New User Profile</DialogTitle>
                   <DialogDescription>
                     Enter the details for the new user. This is a conceptual feature and does not create real accounts.
                   </DialogDescription>
                 </DialogHeader>
-                <form ref={addUserFormRef} action={addUserFormAction} className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newUserEmail-add" className="text-right">
-                      Email
-                    </Label>
-                    <Input id="newUserEmail-add" name="newUserEmail" type="email" className="col-span-3" required />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newDisplayName-add" className="text-right">
-                      Display Name
-                    </Label>
-                    <Input id="newDisplayName-add" name="newDisplayName" className="col-span-3" required />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="newPassword-add" className="text-right">
-                      Password
-                    </Label>
-                    <Input id="newPassword-add" name="newPassword" type="password" className="col-span-3" required />
-                  </div>
-                  <div className="flex items-center space-x-2 mt-2 pl-4 col-start-2 col-span-3">
-                    <Switch id="isAdmin-add" name="isAdmin" />
-                    <Label htmlFor="isAdmin-add">Grant Admin Privileges?</Label>
-                  </div>
-                  {addUserFormState.message && !addUserFormState.success && (
-                     <p className="col-span-4 text-sm text-destructive text-center">{addUserFormState.message}</p>
-                  )}
-                  {addUserFormState.errors && (
-                    <ul className="col-span-4 text-sm text-destructive list-disc list-inside">
-                      {addUserFormState.errors.map((err, i) => <li key={i}>{err.path.join('.')}: {err.message}</li>)}
-                    </ul>
-                  )}
-                  <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit" disabled={isAddingUserPending}>
-                      {isAddingUserPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Add User (Simulated)
-                    </Button>
-                  </DialogFooter>
-                </form>
+                <ScrollArea className="flex-grow py-4 pr-2 -mr-2"> {/* Added ScrollArea here */}
+                  <form ref={addUserFormRef} action={addUserFormAction} className="grid gap-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="newUserEmail-add" className="text-right">
+                        Email
+                      </Label>
+                      <Input id="newUserEmail-add" name="newUserEmail" type="email" className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="newDisplayName-add" className="text-right">
+                        Display Name
+                      </Label>
+                      <Input id="newDisplayName-add" name="newDisplayName" className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="newPassword-add" className="text-right">
+                        Password
+                      </Label>
+                      <Input id="newPassword-add" name="newPassword" type="password" className="col-span-3" required />
+                    </div>
+                    <div className="flex items-center space-x-2 mt-2 col-start-2 col-span-3">
+                      <Switch id="isAdmin-add" name="isAdmin" />
+                      <Label htmlFor="isAdmin-add">Grant Admin Privileges?</Label>
+                    </div>
+                    {addUserFormState.message && !addUserFormState.success && (
+                      <p className="col-span-4 text-sm text-destructive text-center">{addUserFormState.message}</p>
+                    )}
+                    {addUserFormState.errors && (
+                      <ul className="col-span-4 text-sm text-destructive list-disc list-inside">
+                        {addUserFormState.errors.map((err, i) => <li key={i}>{err.path.join('.')}: {err.message}</li>)}
+                      </ul>
+                    )}
+                    <DialogFooter className="mt-4 sticky bottom-0 bg-background py-3"> {/* Made footer sticky to keep buttons visible */}
+                      <DialogClose asChild>
+                          <Button type="button" variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <Button type="submit" disabled={isAddingUserPending}>
+                        {isAddingUserPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add User (Simulated)
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </ScrollArea>
               </DialogContent>
             </Dialog>
           </div>
@@ -518,12 +524,6 @@ export default function SettingsPage() {
     </div>
     {/* This ensures the FeaturesGuideModal is available in the DOM but controlled by its own state for opening */}
     <FeaturesGuideModal> 
-        {/* This children prop is just a placeholder to satisfy the component, it won't be rendered directly. 
-            The actual trigger will be the "View/Edit 'Learn More' Guide" button above. 
-            Alternatively, we could manage its open state via `isFeaturesGuideModalOpen` here.
-            For simplicity, we'll assume FeaturesGuideModal handles its own trigger/open state or we call it imperatively.
-            Let's use a state to control its visibility from this page.
-        */}
         <span className="hidden">Hidden Trigger for Programmatic Features Guide Modal</span>
     </FeaturesGuideModal>
     </>
