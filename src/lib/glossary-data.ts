@@ -155,6 +155,743 @@ export const glossaryTermsArray: GlossaryEntry[] = [
     `,
   },
   {
+    id: "poisonous-influence-of-augustine",
+    term: "The Poisonous Influence of Augustine (Critical Analysis)",
+    htmlDefinition: `
+      <h2>The Poisonous Influence of Augustine</h2>
+      <p>Augustine of Hippo (354–430 AD) is often regarded as one of the most important figures in the formation of Western Christianity. However, Jacob Prasch, among other critics, argues that Augustine’s theology introduced a stream of non-biblical, Hellenistic thought into the heart of the Church—an influence so pervasive that it shaped both Roman Catholicism and Reformed Protestantism in deep and counterintuitive ways. This document examines how Augustine "Platonized" the Church, replacing apostolic truth with philosophical abstraction, and how both sides of the Reformation war ironically revere his legacy.</p>
+      <h3>Summary: Augustine’s Influencers and Their Theological Impact</h3>
+      <h4>1. Manichaeanism</h4>
+      <ul>
+        <li>Augustine spent nine years as a follower of Mani, embracing a dualistic worldview (spirit = good, flesh = evil).</li>
+        <li>This heavily influenced his pessimistic view of human nature, especially sexuality and physical existence.</li>
+      </ul>
+      <h4>2. Neo-Platonism (Plotinus and Porphyry)</h4>
+      <ul>
+        <li>Augustine adopted the spiritual hierarchy of Neo-Platonism: the soul must ascend from the material world to the divine.</li>
+        <li>Result: Amillennialism, mysticism in sacraments, disdain for the physical world—all foreign to Hebrew Scripture.</li>
+      </ul>
+      <h4>3. Stoicism</h4>
+      <ul>
+        <li>Stoic fatalism and determinism seeped into his theology.</li>
+        <li>Result: Double predestination and a denial of meaningful human free will.</li>
+      </ul>
+      <h3>Augustinian vs. Apostolic Theology (Side-by-Side)</h3>
+      <table>
+        <thead>
+          <tr><th>Theological Area</th><th>Augustinian Theology</th><th>Apostolic Theology (NT-based)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Source of Authority</td><td>Scripture + Tradition, filtered through Greek philosophical reasoning</td><td>Scripture alone, interpreted through Hebrew prophetic and apostolic worldview</td></tr>
+          <tr><td>Material World</td><td>Dualistic: spiritual = good, material = corrupt</td><td>Creation is good (Gen. 1:31); sin is moral, not physical</td></tr>
+          <tr><td>Human Nature</td><td>Totally depraved due to inherited guilt; soul imprisoned in the body</td><td>Fallen but redeemable; image of God remains</td></tr>
+          <tr><td>Original Sin</td><td>Guilt inherited from Adam biologically</td><td>Mortality, not guilt, passed to all (Rom. 5:12)</td></tr>
+          <tr><td>Baptism</td><td>Infant baptism washes away guilt; sacramental and mystical</td><td>Believer’s baptism follows repentance; symbolic and declarative</td></tr>
+          <tr><td>Predestination</td><td>God unconditionally elects some to salvation, others to damnation</td><td>Based on divine foreknowledge of response (Rom. 8:29)</td></tr>
+          <tr><td>Free Will</td><td>Largely denied; grace is irresistible</td><td>Affirmed; grace can be resisted (Acts 7:51)</td></tr>
+          <tr><td>Salvation</td><td>God's unilateral act; man contributes nothing</td><td>Requires faith and obedience in response to grace</td></tr>
+          <tr><td>Ecclesiology</td><td>Hierarchical, sacramental priesthood</td><td>Spirit-led, elder-guided body of believers</td></tr>
+          <tr><td>Eschatology</td><td>Amillennial: no literal kingdom; heaven is timeless state</td><td>Premillennial: Christ returns to reign physically (Rev. 20)</td></tr>
+          <tr><td>Israel &amp; the Church</td><td>Supersessionism: Church replaces Israel</td><td>Israel and Church distinct in covenantal role (Rom. 11:25–29)</td></tr>
+          <tr><td>Religious Coercion</td><td>Justified—"Compel them to come in" used to support Inquisition</td><td>Faith is voluntary; evangelism persuades, not coerces (2 Cor. 5:11)</td></tr>
+          <tr><td>Philosophical Influence</td><td>Strong: Plato, Plotinus, Stoicism, Manichaean dualism</td><td>Minimal: Jewish prophets, teachings of Jesus and apostles</td></tr>
+        </tbody>
+      </table>
+      <h3>Key Aspects of Augustine's "Platonizing" (Hellenizing) of the Church</h3>
+      <table>
+        <thead>
+          <tr><th>Platonizing Element</th><th>What Augustine Did</th><th>Why This is Problematic (per Jacob Prasch)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Matter vs. Spirit Dualism</td><td>Saw the body as a problem; salvation = escape from the material</td><td>Contradicts resurrection of the body and physicality of Christ</td></tr>
+          <tr><td>Timeless Idealism</td><td>Salvation viewed through eternal ideals, not narrative history</td><td>Removes the dynamic nature of covenantal faith</td></tr>
+          <tr><td>Sacramental Mysticism</td><td>Treated sacraments like Platonic mysteries with spiritual efficacy</td><td>Opened door to Roman Catholicism's ex opere operato rituals</td></tr>
+          <tr><td>Church-State Model</td><td>Wrote City of God to align Rome with the Church; sanctioned coercion</td><td>Paved way for papal states, Crusades, and Christian imperialism</td></tr>
+        </tbody>
+      </table>
+      <h3>Why Do Both Catholics and Protestants Revere Augustine?</h3>
+      <p>Despite their doctrinal hostility, both Roman Catholicism and Reformed Protestantism consider Augustine a theological father:</p>
+      <table>
+        <thead>
+          <tr><th>Tradition</th><th>Doctrines Inherited from Augustine</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Roman Catholicism</td><td>Sacramental theology, infant baptism, ecclesial authority, amillennialism, Just War theory</td></tr>
+          <tr><td>Reformed Protestantism (esp. Calvinism)</td><td>Total depravity, monergistic salvation, irresistible grace, predestination</td></tr>
+        </tbody>
+      </table>
+      <p><strong>➤ Why is this possible?</strong></p>
+      <ul>
+        <li>Augustine provides philosophical justification for both authority-based salvation (Catholicism) and grace-only determinism (Calvinism).</li>
+        <li>Both systems draw from Greek logic and metaphysical categories, not Hebrew narrative theology.</li>
+        <li>He offered systematized theology that appealed to scholarly and political power structures.</li>
+      </ul>
+      <p>This shared reverence is a historical paradox: Two traditions that fought bitterly during the Reformation still cling to a common, Hellenized foundation, one that Jacob Prasch argues must be rejected in order to return to a biblically faithful, apostolic faith.</p>
+      <h3>Calvinism as Augustinianism</h3>
+      <p>Calvinism is essentially Augustinian theology with a Protestant label. John Calvin explicitly cited Augustine over 400 times in the Institutes of the Christian Religion.</p>
+      <table>
+        <thead>
+          <tr><th>Doctrine</th><th>Augustine’s Teaching</th><th>Calvin’s Development</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Total Depravity</td><td>Human will is bound by sin; no good action without grace</td><td>Human will is dead; no capacity to choose God</td></tr>
+          <tr><td>Unconditional Election</td><td>God elects the saved without regard to merit</td><td>Same, with added emphasis on reprobation</td></tr>
+          <tr><td>Limited Atonement</td><td>(Implied) Christ died only for the elect</td><td>Explicit: Atonement is only effective for the elect</td></tr>
+          <tr><td>Irresistible Grace</td><td>Grace cannot be resisted by the elect</td><td>Same; regeneration precedes faith</td></tr>
+          <tr><td>Perseverance of the Saints</td><td>True elect will never fall away</td><td>Same</td></tr>
+        </tbody>
+      </table>
+      <p>While the Reformation opposed Catholic authority, it did not oppose Augustinian metaphysics—thus, Calvinism retained a core framework that Prasch contends is unbiblical and fatalistic.</p>
+      <h3>Chronology of Major Heresies (Earliest to 19th Century)</h3>
+      <table>
+        <thead>
+          <tr><th>Heresy Name</th><th>Period</th><th>Core Error</th><th>Influence/Effect</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Gnosticism</td><td>1st–3rd Century</td><td>Salvation through secret knowledge; dualism of matter/spirit</td><td>Denied physical resurrection; basis for many later mystical sects</td></tr>
+          <tr><td>Marcionism</td><td>2nd Century</td><td>OT God = evil; NT God = love</td><td>Rejected Hebrew Bible; fostered anti-Semitism</td></tr>
+          <tr><td>Montanism</td><td>2nd Century</td><td>New prophecy superseded apostolic authority</td><td>Led to prophetic extremism and division</td></tr>
+          <tr><td>Arianism</td><td>4th Century</td><td>Denied full deity of Christ</td><td>Sparked major councils; nearly overtook early Church</td></tr>
+          <tr><td>Pelagianism</td><td>5th Century</td><td>Denied original sin; exalted human will</td><td>Opposed Augustine; eventually condemned</td></tr>
+          <tr><td>Manichaeanism</td><td>3rd–5th Century</td><td>Eternal conflict between light and darkness</td><td>Influenced Augustine’s early dualism</td></tr>
+          <tr><td>Albigensianism</td><td>12th–13th Century</td><td>Gnostic return; denied flesh, sacraments, authority</td><td>Wiped out by Crusade, but ideas endured</td></tr>
+          <tr><td>Scholasticism</td><td>12th–15th Century</td><td>Faith reduced to logic; theology over revelation</td><td>Led to sterile theology; influenced Catholic dogmatics</td></tr>
+          <tr><td>Indulgence Theology</td><td>13th–16th Century</td><td>Sins pardoned by payment</td><td>Prompted Reformation</td></tr>
+          <tr><td>Calvinism</td><td>16th Century</td><td>Predestination, limited atonement, grace monergism</td><td>Embedded Augustinianism in Protestant framework</td></tr>
+          <tr><td>Rationalism/Deism</td><td>17th–18th Century</td><td>God as remote watchmaker; miracles rejected</td><td>Undermined biblical faith; fostered Enlightenment theology</td></tr>
+          <tr><td>19th-Century Liberalism</td><td>19th Century</td><td>Bible as myth; focus on ethics over doctrine</td><td>Led to theological modernism and moral relativism</td></tr>
+        </tbody>
+      </table>
+    `,
+  },
+  {
+    id: "exposing-false-teachings-kjv-analysis",
+    term: "Exposing False Teachings: Biblical Questions and KJV Passages",
+    htmlDefinition: `
+      <p>The following identifies biblical questions or passages that expose the false teachings listed in the previous response requires analyzing each heresy or false teaching to pinpoint specific KJV Bible verses or theological questions that challenge their core claims. False teachings often deviate from orthodox Christian doctrine regarding Christology, the Trinity, salvation, scripture, or ecclesiology, and the KJV, as a reflection of Nicene-Chalcedonian orthodoxy, provides clear passages that contradict these deviations. Below, I provide a concise analysis for each of the 24 false teachings from the 1st century to June 5, 2025, identifying:</p>
+      <ul>
+        <li><strong>False Teaching:</strong> The heresy or movement.</li>
+        <li><strong>Biblical Questions:</strong> Key questions raised by orthodox theology that the teaching fails to answer satisfactorily.</li>
+        <li><strong>Exposing KJV Passages:</strong> Specific verses that directly challenge or expose the teaching’s errors, with explanations of the contradiction.</li>
+        <li><strong>Context:</strong> Brief recap of the teaching’s philosophy to frame the critique.</li>
+      </ul>
+      <p>The response is organized by historical periods, mirroring the previous timeline, and focuses on clarity and scriptural fidelity. I avoid repeating extensive historical details, assuming familiarity with the prior list, and emphasize passages that orthodox Christians historically used to refute these teachings. The artifact is updated to include these exposing questions and passages for quick reference.</p>
+
+      <h3>Defining the Approach</h3>
+      <ul>
+        <li><strong>False Teachings:</strong> Doctrines condemned by mainstream Christianity (Catholic, Orthodox, Protestant) as deviating from apostolic tradition and scripture, often concerning Christ’s nature, God’s essence, or salvation.</li>
+        <li><strong>Biblical Questions:</strong> Theological queries that test the teaching’s alignment with KJV scripture, exposing logical or doctrinal inconsistencies.</li>
+        <li><strong>Exposing Passages:</strong> KJV verses that contradict the teaching’s claims, rooted in orthodox interpretations used by church fathers, councils, or modern theologians.</li>
+        <li><strong>Scope:</strong> Covers the 24 false teachings from Ebionism to Progressive Christianity, ensuring each is addressed with at least one critical question and passage.</li>
+        <li><strong>Sources:</strong> KJV Bible (1611), supplemented by historical theological critiques (e.g., Irenaeus, Augustine, modern scholars) to contextualize scriptural arguments.</li>
+      </ul>
+
+      <h3>Biblical Questions and Passages Exposing False Teachings</h3>
+
+      <h4>Early Church (1st–5th Century CE)</h4>
+      <ol>
+        <li>
+          <p><strong>Ebionism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Taught Jesus was a human prophet, not divine, rejecting the virgin birth and Paul’s epistles, emphasizing Mosaic Law.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>How can Jesus be merely a human prophet if scripture calls him God incarnate?</li>
+                <li>Why reject the virgin birth if prophecy foretells it?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>John 1:1, 14 (KJV): “In the beginning was the Word, and the Word was with God, and the Word was God… And the Word was made flesh, and dwelt among us.” Exposes Ebionism’s denial of Christ’s divinity by affirming Jesus as God incarnate.</li>
+                <li>Matthew 1:23 (KJV): “Behold, a virgin shall be with child, and shall bring forth a son, and they shall call his name Emmanuel, which being interpreted is, God with us.” Contradicts rejection of the virgin birth, linking it to Christ’s divine identity.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Gnosticism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Dualistic belief that the material world is evil, created by a Demiurge; salvation through secret knowledge (gnosis); Jesus as a divine aeon, often Docetist.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If the material world is evil, why does God declare it good?</li>
+                <li>How can Jesus only appear human if scripture insists he came in the flesh?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Genesis 1:31 (KJV): “And God saw every thing that he had made, and, behold, it was very good.” Refutes dualism by affirming the goodness of creation, opposing Gnostic views of an evil material world.</li>
+                <li>1 John 4:2–3 (KJV): “Every spirit that confesseth that Jesus Christ is come in the flesh is of God: And every spirit that confesseth not that Jesus Christ is come in the flesh is not of God.” Directly condemns Docetism, exposing Gnostic denial of Christ’s true humanity.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Marcionism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Two gods (harsh Old Testament Demiurge vs. loving New Testament God); rejected Old Testament; Jesus as divine, not human-born (Docetist).</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>How can there be two gods if scripture declares one God?</li>
+                <li>Why reject the Old Testament if Jesus fulfills its prophecies?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Isaiah 45:5 (KJV): “I am the LORD, and there is none else, there is no God beside me.” Contradicts Marcion’s dual gods, affirming monotheism.</li>
+                <li>Matthew 5:17 (KJV): “Think not that I am come to destroy the law, or the prophets: I am not come to destroy, but to fulfil.” Exposes Marcion’s rejection of the Old Testament by showing Jesus’ continuity with it.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Montanism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Claimed new Holy Spirit revelations, emphasizing ecstatic prophecy and imminent eschatology, prioritizing revelations over scripture.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>Why add new revelations if scripture warns against it?</li>
+                <li>How can prophecy lack order if scripture demands control?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Revelation 22:18–19 (KJV): “If any man shall add unto these things, God shall add unto him the plagues that are written in this book.” Challenges Montanist claims to new revelations, warning against altering scripture.</li>
+                <li>1 Corinthians 14:32 (KJV): “And the spirits of the prophets are subject to the prophets.” Contradicts ecstatic, uncontrolled prophecy, demanding orderly worship.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Arianism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Jesus as a created being, subordinate to the Father, not co-eternal or consubstantial, denying Trinity equality.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If Jesus is created, how can he be called God?</li>
+                <li>How can Jesus be subordinate if he claims equality with the Father?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>John 1:1 (KJV): “In the beginning was the Word, and the Word was with God, and the Word was God.” Refutes Arianism by affirming Christ’s divinity and eternal existence.</li>
+                <li>John 10:30 (KJV): “I and my Father are one.” Exposes Arian subordinationism by indicating Christ’s equality with the Father.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Sabellianism (Modalism)</strong></p>
+          <ul>
+            <li><strong>Context:</strong> God as one person manifesting in three modes, not three distinct persons; Jesus as the Father in human form.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>How can Father, Son, and Spirit be one person if they interact distinctly?</li>
+                <li>Why does Jesus pray to the Father if they are the same person?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Matthew 3:16–17 (KJV): “And Jesus, when he was baptized… lo a voice from heaven, saying, This is my beloved Son… And… the Spirit of God descending like a dove.” Shows distinct Trinitarian persons, contradicting Modalism.</li>
+                <li>John 17:5 (KJV): “And now, O Father, glorify thou me with thine own self with the glory which I had with thee before the world was.” Highlights Jesus’ distinct pre-existence, opposing the idea that he is the Father.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Donatism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Sacraments’ validity depends on clergy purity; rejected “traditores,” claiming to be the true church.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If sacraments depend on human purity, why does scripture uphold authority despite flaws?</li>
+                <li>How can a schismatic church be the true church if scripture calls for unity?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Matthew 23:2–3 (KJV): “The scribes and the Pharisees sit in Moses’ seat: All therefore whatsoever they bid you observe, that observe and do; but do not ye after their works.” Affirms authority despite personal failings, contradicting Donatist reliance on clergy purity.</li>
+                <li>Ephesians 4:4–5 (KJV): “There is one body, and one Spirit… one Lord, one faith, one baptism.” Exposes Donatist schism by emphasizing church unity.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Nestorianism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Christ had two distinct natures and persons, loosely united; rejected Mary as “Theotokos.”</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>How can Christ be two persons if scripture speaks of one incarnate Word?</li>
+                <li>Why reject Mary as Mother of God if she bore the divine Lord?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>John 1:14 (KJV): “And the Word was made flesh, and dwelt among us.” Affirms one person uniting divinity and humanity, contradicting two-person Nestorianism.</li>
+                <li>Luke 1:43 (KJV): “And whence is this to me, that the mother of my Lord should come to me?” Supports Mary as Theotokos, opposing Nestorius’ “Christotokos.”</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Monophysitism (Eutychianism)</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Christ had one divine nature, absorbing his humanity, denying full human nature.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If Christ has no human nature, how can he be our mediator?</li>
+                <li>Why does scripture emphasize Christ’s human likeness if his humanity is absorbed?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Hebrews 2:17 (KJV): “Wherefore in all things it behoved him to be made like unto his brethren.” Affirms Christ’s full humanity, contradicting Monophysitism’s one-nature view.</li>
+                <li>Philippians 2:7–8 (KJV): “But made himself of no reputation, and took upon him the form of a servant, and was made in the likeness of men.” Emphasizes Christ’s human nature, opposing its absorption.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Pelagianism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Humans can achieve salvation without divine grace, denying original sin’s full impact.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If humans can save themselves, why does scripture emphasize grace?</li>
+                <li>How can sin be overcome without Christ if all have sinned?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Ephesians 2:8–9 (KJV): “For by grace are ye saved through faith; and that not of yourselves: it is the gift of God: Not of works, lest any man should boast.” Refutes Pelagianism’s reliance on human effort, emphasizing grace.</li>
+                <li>Romans 5:12 (KJV): “Wherefore, as by one man sin entered into the world, and death by sin; and so death passed upon all men, for that all have sinned.” Affirms original sin, contradicting Pelagius’ denial.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ol>
+
+      <h4>Medieval Period (6th–15th Century CE)</h4>
+      <ol>
+        <li>
+          <p><strong>Iconoclasm</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Rejected icon veneration as idolatrous, destroying religious art.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If icons are idolatrous, why does scripture describe God-ordained images?</li>
+                <li>How can veneration be idolatry if it honors, not worships, the prototype?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Exodus 25:18–20 (KJV): “And thou shalt make two cherubims of gold… upon the mercy seat.” Shows God commanding images in worship contexts, contradicting iconoclastic bans.</li>
+                <li>Colossians 1:15 (KJV): “Who is the image of the invisible God.” Supports icons as reflections of Christ, opposing their rejection as idolatrous.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Bogomilism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Dualistic sect; material world created by an evil god (Satan); rejected sacraments and hierarchy.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If the material world is evil, why does God call it good?</li>
+                <li>Why reject sacraments if Christ instituted them?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Genesis 1:31 (KJV): “And God saw every thing that he had made, and, behold, it was very good.” Refutes dualism, affirming creation’s goodness.</li>
+                <li>Matthew 28:19 (KJV): “Go ye therefore, and teach all nations, baptizing them…” Supports sacraments like baptism, contradicting Bogomilist rejection.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Catharism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Gnostic-like dualism; two gods (spiritual good, material evil); rejected incarnation, sacraments, and procreation.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>How can the material world be evil if God became flesh?</li>
+                <li>Why reject the body if scripture affirms resurrection?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>John 1:14 (KJV): “And the Word was made flesh, and dwelt among us.” Contradicts Cathar denial of the incarnation, affirming God’s embrace of materiality.</li>
+                <li>1 Corinthians 15:42–44 (KJV): “So also is the resurrection of the dead… It is sown a natural body; it is raised a spiritual body.” Affirms bodily resurrection, opposing Cathar anti-materialism.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Waldensianism (Early Form)</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Rejected Catholic wealth and hierarchy, emphasizing lay preaching; early denial of purgatory and sacraments.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If church authority is invalid, why does scripture uphold it?</li>
+                <li>How can lay preaching override established order?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Hebrews 13:17 (KJV): “Obey them that have the rule over you, and submit yourselves: for they watch for your souls.” Supports church authority, challenging unauthorized preaching.</li>
+                <li>1 Timothy 5:17 (KJV): “Let the elders that rule well be counted worthy of double honour.” Affirms hierarchical leadership, opposing early Waldensian anti-clericalism.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ol>
+
+      <h4>Reformation and Early Modern Period (16th–18th Century CE)</h4>
+      <ol>
+        <li>
+          <p><strong>Anabaptist Radicalism (Certain Sects)</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Radical sects (e.g., Münsterites) embraced apocalypticism, polygamy, and rebellion against authority.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>Why practice polygamy if scripture upholds monogamy?</li>
+                <li>How can rebellion align with submission to authorities?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>1 Timothy 3:2 (KJV): “A bishop then must be blameless, the husband of one wife.” Condemns polygamy, contradicting Münsterite practices.</li>
+                <li>Romans 13:1 (KJV): “Let every soul be subject unto the higher powers. For there is no power but of God.” Opposes rebellion, exposing radical Anabaptist defiance.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Socinianism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Rejected Trinity, Christ’s divinity, and original sin; Jesus as human exemplar.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If Jesus is not divine, how can he be the Savior?</li>
+                <li>Why deny original sin if scripture teaches universal sinfulness?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Colossians 2:9 (KJV): “For in him dwelleth all the fulness of the Godhead bodily.” Affirms Christ’s divinity, contradicting Socinian human-only view.</li>
+                <li>Romans 5:12 (KJV): “By one man sin entered into the world, and death by sin; and so death passed upon all men.” Supports original sin, opposing Socinian denial.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Antinomianism (Extreme Forms)</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Taught saved Christians were free from moral law, claiming grace superseded obligations.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If grace frees from law, why does scripture link faith with works?</li>
+                <li>How can sin continue if grace transforms?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>James 2:17 (KJV): “Even so faith, if it hath not works, is dead, being alone.” Links faith and works, contradicting antinomian lawlessness.</li>
+                <li>Romans 6:1–2 (KJV): “What shall we say then? Shall we continue in sin, that grace may abound? God forbid.” Rejects sin’s continuation under grace, exposing antinomianism.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ol>
+      
+      <h4>Modern Period (19th Century–Present)</h4>
+      <ol>
+        <li>
+          <p><strong>Mormonism (Latter-day Saints)</strong></p>
+          <ul>
+            <li><strong>Context:</strong> God as former human, humans can become gods; new scriptures (Book of Mormon); rejects traditional Trinity.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>How can multiple gods exist if scripture declares one God?</li>
+                <li>Why add new scriptures if the Bible warns against it?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Isaiah 44:6 (KJV): “Thus saith the LORD… I am the first, and I am the last; and beside me there is no God.” Refutes Mormon polytheism, affirming monotheism.</li>
+                <li>Revelation 22:18 (KJV): “If any man shall add unto these things, God shall add unto him the plagues.” Condemns adding scriptures like the Book of Mormon.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Jehovah’s Witnesses</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Jesus as created (Michael the Archangel), not divine; rejects Trinity, hell; uses altered New World Translation.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If Jesus is created, how can he be eternal God?</li>
+                <li>Why deny hell if scripture describes eternal punishment?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>John 1:1 (KJV): “In the beginning was the Word, and the Word was with God, and the Word was God.” Affirms Christ’s divinity, contradicting Jehovah’s Witnesses’ view.</li>
+                <li>Matthew 25:46 (KJV): “And these shall go away into everlasting punishment: but the righteous into life eternal.” Supports hell, opposing their annihilationism.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Oneness Pentecostalism</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Rejects Trinity, teaching God as one person in three modes (Modalism); Jesus-only baptism and tongues required.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>How can God be one person if Father, Son, and Spirit act distinctly?</li>
+                <li>Why limit baptism to Jesus’ name if scripture uses Trinitarian formula?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Matthew 28:19 (KJV): “Go ye therefore, and teach all nations, baptizing them in the name of the Father, and of the Son, and of the Holy Ghost.” Supports Trinitarian baptism, contradicting Jesus-only formula.</li>
+                <li>John 14:16–17 (KJV): “And I will pray the Father, and he shall give you another Comforter… even the Spirit of truth.” Shows distinct persons, opposing Modalism.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Christian Science</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Matter and illness as illusions; God as mind; Jesus as human exemplar, not uniquely divine; Science and Health authoritative.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If matter is illusory, why does God create and affirm it?</li>
+                <li>How can Jesus be non-divine if he’s called God?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Genesis 1:31 (KJV): “And God saw every thing that he had made, and, behold, it was very good.” Affirms material creation, contradicting illusory matter.</li>
+                <li>Colossians 2:9 (KJV): “For in him dwelleth all the fulness of the Godhead bodily.” Affirms Christ’s divinity, opposing human-only view.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Prosperity Gospel</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Faith guarantees wealth and health; God rewards positive confession and tithing.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If faith ensures prosperity, why do righteous suffer?</li>
+                <li>How can wealth be God’s goal if scripture warns against materialism?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Matthew 6:24 (KJV): “No man can serve two masters… Ye cannot serve God and mammon.” Condemns materialism, contradicting prosperity focus.</li>
+                <li>Job 1:21 (KJV): “The LORD gave, and the LORD hath taken away; blessed be the name of the LORD.” Shows suffering as part of faith, opposing guaranteed wealth.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>New Apostolic Reformation (NAR)</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Modern apostles and prophets receive new revelations; emphasizes dominionism and spiritual warfare.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>Why add revelations if scripture is complete?</li>
+                <li>How can earthly dominion align with a spiritual kingdom?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>Revelation 22:18 (KJV): “If any man shall add unto these things, God shall add unto him the plagues.” Warns against new revelations, contradicting NAR claims.</li>
+                <li>John 18:36 (KJV): “Jesus answered, My kingdom is not of this world.” Opposes dominionism, emphasizing a spiritual kingdom.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <p><strong>Progressive Christianity</strong></p>
+          <ul>
+            <li><strong>Context:</strong> Denies Christ’s divinity, miracles, or resurrection; emphasizes social justice and human reason over doctrine.</li>
+            <li><strong>Biblical Questions:</strong>
+              <ul>
+                <li>If Christ didn’t rise, how can Christians have hope?</li>
+                <li>Why deny miracles if scripture testifies to them?</li>
+              </ul>
+            </li>
+            <li><strong>Exposing KJV Passages:</strong>
+              <ul>
+                <li>1 Corinthians 15:14 (KJV): “And if Christ be not risen, then is our preaching vain, and your faith is also vain.” Affirms resurrection’s centrality, contradicting denial.</li>
+                <li>John 2:11 (KJV): “This beginning of miracles did Jesus in Cana of Galilee, and manifested forth his glory.” Supports miracles, opposing skepticism.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ol>
+
+      <h3>Synthesis and Observations</h3>
+      <ul>
+        <li><strong>Common Biblical Challenges:</strong>
+          <ul>
+            <li><strong>Christology:</strong> Teachings denying Christ’s divinity (Ebionism, Arianism, Jehovah’s Witnesses) or humanity (Gnosticism, Monophysitism) fail against John 1:14 (KJV), affirming the incarnation.</li>
+            <li><strong>Trinity:</strong> Non-Trinitarian views (Sabellianism, Socinianism, Oneness Pentecostalism) cannot explain Matthew 3:16–17 (KJV), showing distinct persons.</li>
+            <li><strong>Scripture:</strong> Adding or rejecting scriptures (Marcionism, Mormonism, NAR) contradicts 2 Timothy 3:16 (KJV), upholding all scripture’s inspiration.</li>
+            <li><strong>Salvation:</strong> Works, knowledge, or prosperity-based salvation (Pelagianism, Gnosticism, Prosperity Gospel) fails against Ephesians 2:8–9 (KJV), emphasizing grace.</li>
+            <li><strong>Ecclesiology:</strong> Schisms or anti-authority stances (Donatism, Waldensianism) oppose Ephesians 4:4–5 (KJV), calling for unity.</li>
+          </ul>
+        </li>
+        <li><strong>Exposing Power of Scripture:</strong> The KJV’s clarity on core doctrines (Trinity, incarnation, grace) consistently exposes false teachings, as early church fathers (e.g., Irenaeus, Athanasius) and modern theologians have argued. Heretics often reinterpret these passages, but orthodox exegesis prevails in mainstream Christianity.</li>
+        <li><strong>Modern Relevance:</strong> As of June 5, 2025, these questions remain vital. Modern false teachings like Prosperity Gospel or Progressive Christianity face the same scriptural critiques as their ancient counterparts, showing theology’s enduring challenges. Social media amplifies these debates, making scriptural literacy crucial.</li>
+        <li><strong>Controversy:</strong> Labeling teachings “false” is sensitive, as groups like Jehovah’s Witnesses or Mormons claim orthodoxy. This analysis reflects mainstream Christian consensus, using the KJV as a standard, but acknowledges diverse perspectives.</li>
+      </ul>
+      
+      <h3>Updated Artifact</h3>
+      <p>Timeline of False Teachings in Christianity with Exposing Biblical Questions and Passages</p>
+      
+      <h3>Sources</h3>
+      <p><strong>Primary:</strong> Irenaeus, <em>Against Heresies</em>; Tertullian, <em>Against Marcion, Against Praxeas</em>; Augustine, <em>Against the Donatists</em>; conciliar documents (Nicaea, Chalcedon, Ephesus).</p>
+      <p><strong>Secondary:</strong> Wikipedia entries on Heresy in Christianity, Gnosticism, Mormonism; theological works by Spong, Pagels; church websites (JW.org, UPCI.org).</p>
+      <p><strong>Scripture:</strong> King James Version (1611), used for all citations and analysis.</p>
+      <p><strong>Modern Context:</strong> Pew Research on religious movements; membership data for 2025 estimates.</p>
+
+      <h3>Notes</h3>
+      <ul>
+        <li><strong>Scope Limitation:</strong> Focuses on the 24 major false teachings previously listed. Minor sects or niche heresies (e.g., Ophites, Swedenborgianism) are excluded but can be explored if requested.</li>
+        <li><strong>KJV as Standard:</strong> The KJV reflects post-Reformation orthodoxy, aligning with early creeds, making it a consistent benchmark. Heretics often reinterpret these passages, but orthodox exegesis (per church fathers and councils) is prioritized.</li>
+        <li><strong>Controversy:</strong> Some groups (e.g., Mormons, Jehovah’s Witnesses) reject the “false teaching” label. This analysis reflects mainstream Christian consensus but acknowledges diverse perspectives.</li>
+        <li><strong>Further Inquiry:</strong> If you seek deeper exegesis of specific passages, additional heresies, or modern applications, please specify.</li>
+      </ul>
+      <p>This response identifies precise biblical questions and KJV passages that expose each false teaching’s errors, ensuring a scripturally grounded critique while respecting the complexity of theological debates as of June 5, 2025. The updated artifact provides a clear reference for these challenges.</p>
+      <hr/>
+      <p>The analysis covers 31 false teachings, including major heresies (e.g., Arianism, Gnosticism) and minor sects (e.g., Ophites, Swedenborgianism), as identified in prior research. Influence is assessed through direct impacts (modern movements within Evangelicalism) and indirect effects (historical shaping of doctrine). The King James Version (KJV) serves as a benchmark for orthodox theology, reflecting mainstream Christian consensus. Sources include historical theological works, modern surveys (e.g., State of Theology report), and online resources, ensuring a robust examination as of June 5, 2025.</p>
+
+      <h3>Direct Influence Through Modern Movements</h3>
+      <h4>Prosperity Gospel (1950s–Present)</h4>
+      <ul>
+        <li><strong>Context:</strong> Promotes faith as guaranteeing wealth and health, rooted in Pelagianism (salvation by effort) and New Thought movements. Popular among Evangelical megachurches, with leaders like Joel Osteen and Kenneth Hagin.</li>
+        <li><strong>Overt Influence:</strong> Research suggests the Prosperity Gospel has infiltrated many Evangelical churches, particularly in the U.S., with its emphasis on material blessings challenging traditional doctrines of grace and suffering. It has led to a focus on positive confession and tithing, seen in televangelism and megachurches.</li>
+        <li><strong>Evidence:</strong> The Lutheran Witness article critiques it as resembling early greed sects, influencing Evangelical responses in apologetics.</li>
+        <li><strong>Impact on Evangelicals:</strong> While conservative Evangelicals reject it, its popularity shows how historical heresies can resurface, prompting theological debates over materialism versus spiritual focus.</li>
+      </ul>
+      <h4>Oneness Pentecostalism (1910s–Present)</h4>
+      <ul>
+        <li><strong>Context:</strong> Denies the Trinity, teaching Modalism (God as one person in three modes), echoing Sabellianism. Leaders like Frank Ewart and Garfield T. Haywood have influenced Pentecostal Evangelicals.</li>
+        <li><strong>Overt Influence:</strong> It seems likely that Oneness Pentecostalism has impacted some charismatic Evangelical denominations, leading to debates over baptismal formulas and the nature of God. The Christian Research Network labels it a heresy, noting its influence within broader Pentecostal traditions.</li>
+        <li><strong>Evidence:</strong> The Wikipedia article highlights its challenge to Trinitarian doctrine, prompting Evangelical defenses.</li>
+        <li><strong>Impact on Evangelicals:</strong> Trinitarian Evangelicals engage in apologetics against it, reinforcing orthodox Trinitarianism, but its presence in some circles shows direct theological influence.</li>
+      </ul>
+      <h4>Universalism and Inclusivism (Modern Trends)</h4>
+      <ul>
+        <li><strong>Context:</strong> Some Evangelicals affirm that "God accepts the worship of all religions," echoing Marcionism and Gnosticism's downplaying of Christ's exclusivity. The State of Theology report (2022) shows 56% of Evangelicals holding this view, up from 42% in 2020.</li>
+        <li><strong>Overt Influence:</strong> This trend challenges traditional Evangelical exclusivism (salvation through Christ alone), prompting debates over soteriology. It reflects historical heresies' influence on modern inclusivist theology.</li>
+        <li><strong>Evidence:</strong> Christianity Today notes this as a resurgence of universalism, influencing how Evangelicals articulate salvation.</li>
+        <li><strong>Impact on Evangelicals:</strong> It has led to theological clarification, with conservative Evangelicals emphasizing John 14:6 (KJV): "I am the way, and the truth, and the life: no man cometh unto the Father, but by me."</li>
+      </ul>
+
+      <h3>Indirect Influence Through Historical Development</h3>
+      <h4>Arianism (3rd–4th Century CE)</h4>
+      <ul>
+        <li><strong>Context:</strong> Taught Jesus as a created being, condemned at Nicaea (325 CE). The State of Theology report shows 73% of Evangelicals affirming "Jesus is the first and greatest being created by God," a form of Arianism.</li>
+        <li><strong>Covert Influence:</strong> The evidence leans toward Arianism's historical response shaping Evangelical Trinitarian doctrine, but its resurgence indicates covert influence through cultural drift. Fordham University notes Arianism's recurring accusations, influencing Evangelical apologetics.</li>
+        <li><strong>Impact on Evangelicals:</strong> This prompts renewed education on Christology, with Evangelicals defending John 1:1 (KJV): "In the beginning was the Word, and the Word was with God, and the Word was God."</li>
+      </ul>
+      <h4>Pelagianism (5th Century CE)</h4>
+      <ul>
+        <li><strong>Context:</strong> Denied original sin, teaching salvation by human effort. Augustine's response influenced Reformation theology, particularly Calvinism, which Evangelicals often affirm.</li>
+        <li><strong>Covert Influence:</strong> Surveys show many Evangelicals hold Pelagian views, such as "humans are basically good," reflecting subtle influence. Ligonier Ministries notes Pelagianism's modern liberal Christian parallels, influencing Evangelical soteriology.</li>
+        <li><strong>Impact on Evangelicals:</strong> It has led to debates over grace versus works, with Evangelicals emphasizing Ephesians 2:8–9 (KJV): "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God."</li>
+      </ul>
+      <h4>Antinomianism (16th–17th Century CE)</h4>
+      <ul>
+        <li><strong>Context:</strong> Taught Christians are freed from moral law by grace, debated during the Reformation and in early American Puritanism (e.g., Anne Hutchinson). The Gospel Coalition notes its modern relevance.</li>
+        <li><strong>Covert Influence:</strong> It seems likely that Antinomianism has influenced Evangelical debates over grace and obedience, with some accusing others of legalism or antinomianism. Britannica notes its historical impact on Separatists and Independents, shaping early American Evangelical thought.</li>
+        <li><strong>Impact on Evangelicals:</strong> This has led to ongoing theological clarification, with Evangelicals balancing Romans 6:1–2 (KJV): "Shall we continue in sin, that grace may abound? God forbid," against grace-centered teachings.</li>
+      </ul>
+      <h4>Socinianism (16th–17th Century CE)</h4>
+      <ul>
+        <li><strong>Context:</strong> Denied the Trinity and Christ's divinity, influencing Unitarianism. GotQuestions.org notes its rationalistic approach to Scripture.</li>
+        <li><strong>Covert Influence:</strong> While not directly influencing Evangelicals, its impact on Unitarianism has prompted defenses of the Trinity, influencing Evangelical apologetics. Place for Truth notes "Neo-Socinianism" among some theologians, affecting Evangelical responses to rationalism.</li>
+        <li><strong>Impact on Evangelicals:</strong> It has led to a stronger emphasis on Colossians 2:9 (KJV): "For in him dwelleth all the fulness of the Godhead bodily," reinforcing Trinitarian doctrine.</li>
+      </ul>
+      <h4>Gnosticism (1st–3rd Century CE)</h4>
+      <ul>
+        <li><strong>Context:</strong> Taught salvation through secret knowledge, viewing the material world as evil. Ship.edu notes its influence on modern spiritualities like New Age.</li>
+        <li><strong>Covert Influence:</strong> Gnostic dualism has influenced New Age movements, which Evangelicals encounter in apologetics, shaping their engagement with culture. The Gospel Coalition notes its role in defining orthodox Christology.</li>
+        <li><strong>Impact on Evangelicals:</strong> It has led to defenses of Genesis 1:31 (KJV): "And God saw every thing that he had made, and, behold, it was very good," affirming creation's goodness.</li>
+      </ul>
+
+      <h3>Influence of Minor Sects and Niche Heresies</h3>
+      <h4>Ophites (2nd Century CE)</h4>
+      <ul>
+        <li><strong>Context:</strong> A Gnostic sect venerating the serpent, with dualistic beliefs. Hippolytus (Refutation of All Heresies) describes their practices.</li>
+        <li><strong>Influence on Evangelicals:</strong> Direct influence is minimal, but understanding Ophites helps Evangelicals appreciate early church responses to dualism, influencing apologetics against modern esoteric movements.</li>
+      </ul>
+      <h4>Swedenborgianism (18th Century–Present)</h4>
+      <ul>
+        <li><strong>Context:</strong> Denied the Trinity, teaching a unipersonal God; influenced by Emanuel Swedenborg's visions. The New Church persists with small global presence.</li>
+        <li><strong>Influence on Evangelicals:</strong> Covert influence through New Age and spiritualist movements, which Evangelicals engage in apologetics, reinforcing Matthew 28:19 (KJV): "Baptizing them in the name of the Father, and of the Son, and of the Holy Ghost."</li>
+      </ul>
+
+      <h3>Cultural and Theological Challenges</h3>
+      <h4>Progressive Christianity (Late 20th Century–Present)</h4>
+      <ul>
+        <li><strong>Context:</strong> Denies Christ's divinity, miracles, and resurrection, echoing Marcionism and Pelagianism. Leaders like John Shelby Spong and Marcus Borg influence mainline denominations.</li>
+        <li><strong>Influence on Evangelicals:</strong> Challenges traditional doctrines, prompting theological clarification on 1 Corinthians 15:14 (KJV): "If Christ be not risen, then is our preaching vain." It has led to debates over biblical authority and social issues.</li>
+      </ul>
+      <h4>New Apostolic Reformation (NAR) (1990s–Present)</h4>
+      <ul>
+        <li><strong>Context:</strong> Emphasizes modern apostles and prophets, echoing Montanism's new revelations. Leaders like C. Peter Wagner and Bill Johnson influence charismatic Evangelicals.</li>
+        <li><strong>Influence on Evangelicals:</strong> Some accept NAR teachings, while others reject them as unbiblical, influencing debates over church governance and authority, with reference to Revelation 22:18 (KJV): "If any man shall add unto these things, God shall add unto him the plagues."</li>
+      </ul>
+
+      <h3>Summary Table: Key Influences on Evangelicals</h3>
+      <table>
+        <thead>
+          <tr><th>Heresy</th><th>Type of Influence</th><th>Overt/Covert</th><th>Key Impact on Evangelicals</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Prosperity Gospel</td><td>Direct</td><td>Overt</td><td>Promotes materialism, challenges grace doctrines</td></tr>
+          <tr><td>Oneness Pentecostalism</td><td>Direct</td><td>Overt</td><td>Challenges Trinity, prompts Trinitarian defenses</td></tr>
+          <tr><td>Arianism</td><td>Indirect</td><td>Covert</td><td>Resurgence in surveys, necessitates Christology education</td></tr>
+          <tr><td>Pelagianism</td><td>Indirect</td><td>Covert</td><td>Influences soteriology, prompts grace vs. works debates</td></tr>
+          <tr><td>Antinomianism</td><td>Indirect</td><td>Covert</td><td>Shapes grace-law balance, ongoing theological debates</td></tr>
+          <tr><td>Socinianism</td><td>Indirect</td><td>Covert</td><td>Influences Unitarianism, prompts Trinitarian defenses</td></tr>
+          <tr><td>Gnosticism</td><td>Indirect</td><td>Covert</td><td>Influences New Age, shapes apologetics against dualism</td></tr>
+          <tr><td>Progressive Christianity</td><td>Cultural</td><td>Overt</td><td>Challenges doctrines, prompts biblical authority debates</td></tr>
+          <tr><td>New Apostolic Reformation</td><td>Cultural</td><td>Overt/Covert</td><td>Influences church governance, prompts authority debates</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Conclusion</h3>
+      <p>Research suggests historical false teachings have influenced Evangelicals both overtly, through modern movements like the Prosperity Gospel and Oneness Pentecostalism, and covertly, through the shaping of orthodox doctrine and cultural challenges like Progressive Christianity and NAR. Surveys indicate resurgences of ancient heresies like Arianism and Pelagianism, highlighting ongoing theological tensions. This influence underscores the importance of biblical literacy and theological discernment within Evangelicalism, ensuring doctrinal integrity amid contemporary debates.</p>
+
+      <h3>Key Citations</h3>
+      <ul>
+        <li>Top 5 Heresies Among American Evangelicals</li>
+        <li>Prosperity Gospel: A Heresy of False Promises</li>
+        <li>Oneness Pentecostalism</li>
+        <li>Heresy: Oneness Pentecostalism</li>
+        <li>Oneness Pentecostalism</li>
+        <li>What is Socinianism?</li>
+        <li>Socinianism: Then and Now?</li>
+        <li>What is Antinomianism and who teaches it?</li>
+        <li>Antinomianism</li>
+        <li>Early Christian Heresies</li>
+        <li>Christological Controversies in the Early Church</li>
+        <li>Heresy in the Early Church</li>
+        <li>Top 10 Heresies in the History of Christianity</li>
+        <li>What does the Bible say about the prosperity gospel?</li>
+      </ul>
+    `
+  },
+  {
     id: "f-placeholder",
     term: "F Placeholder",
     htmlDefinition: `
@@ -622,3 +1359,6 @@ export const glossaryTermsArray: GlossaryEntry[] = [
     `,
   },
 ];
+
+
+    
