@@ -7,65 +7,71 @@ import { revalidatePath } from "next/cache";
 
 // Placeholder for actual Firebase Auth or DB operations
 
-// The server action now accepts `prevState` as the first argument,
-// and `formData` as the second, as expected by `useActionState`.
 export async function updateProfileAction(
-  prevState: { success: boolean; message: string }, // Or `any` if you don't use prevState
+  prevState: { success: boolean; message: string },
   formData: FormData
 ): Promise<{ success: boolean; message: string }> {
+  const userId = formData.get("userId") as string; // Get userId from formData
   const displayName = formData.get("displayName") as string;
   const email = formData.get("email") as string;
-  // const newPassword = formData.get("newPassword") as string; // if handling password
+  // const newPassword = formData.get("newPassword") as string;
 
-  console.log("Server Action: Updating profile:", { displayName, email });
-  // TODO: Implement actual Firebase update logic here:
-  // e.g., updateProfile(auth.currentUser, { displayName, email });
-  // if (newPassword) { updatePassword(auth.currentUser, newPassword); }
+  console.log("Server Action: Updating profile for userId:", userId, { displayName, email });
   
-  // Simulate success/failure
-  if (displayName && email) {
-    // For demo purposes, we'll just log and return success.
-    // In a real app, you would interact with your backend/Firebase here.
-
-    // Conceptually update user data if it's a dynamic user
-    if (global.tempUserProfilesStoreGlobal) {
-        const userIdFromEmail = localStorage.getItem('conceptualUserType'); // Assuming email is unique identifier for base conceptual, or id for dynamic
-        const userIndex = global.tempUserProfilesStoreGlobal.findIndex(u => u.newUserEmail === email || u.id === userIdFromEmail);
-        if(userIndex > -1 && global.tempUserProfilesStoreGlobal[userIndex].newUserEmail === email) { // Check if the email matches the found user
-             global.tempUserProfilesStoreGlobal[userIndex].newDisplayName = displayName;
-             console.log("Updated display name for conceptual user: ", email);
-             revalidatePath("/profile");
-             revalidatePath("/settings"); // If user list on settings page needs update
-        } else if (global.baseConceptualUsers && global.baseConceptualUsers[email]) {
-            // This part is tricky as baseConceptualUsers is not easily mutable server-side
-            console.log("Attempted to update a base conceptual user's display name - requires different handling.");
-        }
-    }
-
-
-    return { success: true, message: "Profile updated successfully (simulated)." };
+  if (!displayName || !email) {
+    return { success: false, message: "Display name and email are required." };
   }
-  return { success: false, message: "Failed to update profile. Display name and email are required (simulated)." };
+  if (!userId) {
+    return { success: false, message: "User ID is missing. Cannot update profile." };
+  }
+
+  // Conceptually update user data if it's a dynamic user
+  let profileUpdated = false;
+  if (global.tempUserProfilesStoreGlobal) {
+    // Find user by ID first, as email might also be changing
+    const userIndexById = global.tempUserProfilesStoreGlobal.findIndex(u => u.id === userId);
+
+    if (userIndexById > -1) {
+      global.tempUserProfilesStoreGlobal[userIndexById].newDisplayName = displayName;
+      // Optionally update email if it changed, though this has implications for conceptual login
+      // global.tempUserProfilesStoreGlobal[userIndexById].newUserEmail = email; 
+      console.log("Updated conceptual user profile for ID:", userId);
+      profileUpdated = true;
+    } else {
+        // Fallback: if ID not found, try by email if that's a consistent identifier you rely on
+        // However, relying on ID passed from form is more robust for conceptual users.
+        console.warn(`Conceptual user with ID ${userId} not found in tempUserProfilesStoreGlobal during profile update.`);
+    }
+  }
+
+  if (profileUpdated) {
+    revalidatePath("/profile");
+    revalidatePath("/settings"); // If user list on settings page needs update
+    revalidatePath("/dashboard"); // If user name is displayed on dashboard
+    return { success: true, message: "Profile updated successfully (conceptually)." };
+  } else {
+    // If not found in conceptual store, it might be a base user or an error.
+    // Base users (admin, richard, meta) are not meant to be updated this way in the current conceptual model.
+    // We can still return success for UI purposes, as the form values would "change" visually.
+    console.log("Profile update attempted for a user not in the conceptual dynamic store, or no actual change made to display name.");
+    return { success: true, message: "Profile information processed (base user names are static in this demo)." };
+  }
 }
 
 export async function deleteAccountAction(): Promise<{ success: boolean; message: string }> {
   console.log("Server Action: Deleting account...");
   // TODO: Implement actual Firebase account deletion logic here
-  // e.g., await deleteUser(auth.currentUser);
-  // This action should ideally trigger a sign-out and redirect on the client after success.
   
-  // Simulate success
   return { success: true, message: "Account deletion process initiated (simulated). You would be signed out and redirected." };
 }
 
 // --- User Dashboard Preferences Actions ---
 export async function fetchUserDashboardPreference(userId: string): Promise<UserDashboardPreference | null> {
   console.log(`Server Action: Fetching dashboard preference for user ID: ${userId}`);
-  const store = await ensureUserDashboardPreferencesStore(); // This function is exported from settings/actions.ts
+  const store = await ensureUserDashboardPreferencesStore(); 
   
-  // Fallback for users not explicitly in store (e.g. newly conceptualized dynamic users before first save)
   if (!store[userId]) {
-    const defaultUserType = 'default'; // Or derive based on some logic if needed
+    const defaultUserType = 'default'; 
     const conceptualUser = global.tempUserProfilesStoreGlobal?.find(u => u.id === userId);
     const displayName = conceptualUser?.newDisplayName || userId;
 
@@ -84,7 +90,7 @@ export async function updateUserDashboardPreference(
   preferenceData: UserDashboardPreference
 ): Promise<{ success: boolean; message: string }> {
   console.log(`Server Action: Updating dashboard preference for user ID: ${userId}`, preferenceData);
-  const store = await ensureUserDashboardPreferencesStore(); // This function is exported from settings/actions.ts
+  const store = await ensureUserDashboardPreferencesStore(); 
   store[userId] = preferenceData;
   revalidatePath("/dashboard"); 
   revalidatePath("/profile");

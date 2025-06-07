@@ -12,14 +12,6 @@ import { format } from 'date-fns';
 import { fetchConceptuallyAddedUserProfiles, type ConceptuallyAddedUserProfile } from "../settings/actions";
 import { ShieldAlert, Loader2 } from "lucide-react"; // Added Loader2
 
-// No longer using static user, will fetch or use localStorage
-// const user = {
-//   name: "John Doe", 
-//   email: "john.doe@example.com",
-//   avatarUrl: "https://picsum.photos/seed/userprofile/200/200",
-//   joinedDate: new Date("2023-01-15"),
-// };
-
 export default function ProfilePage() {
   const [conceptuallyAddedUsers, setConceptuallyAddedUsers] = useState<ConceptuallyAddedUserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
@@ -38,46 +30,48 @@ export default function ProfilePage() {
         const fetchedDynamicUsers = await fetchConceptuallyAddedUserProfiles();
         setConceptuallyAddedUsers(fetchedDynamicUsers);
 
-        // Determine current user based on localStorage
-        const currentUserId = localStorage.getItem('conceptualUserType'); // This acts as ID for base users
+        const currentUserId = localStorage.getItem('conceptualUserType'); 
         const currentUserEmailFromStorage = localStorage.getItem('conceptualUserEmail');
         
         let name = "KJV User";
         let email = "user@example.com";
         let avatar = "https://placehold.co/100x100/eeeeee/333333?text=U";
+        let userIdToSet = 'default';
         
         if (currentUserId === 'admin' || currentUserId === 'meta') {
             name = currentUserId === 'admin' ? "Admin Sentinel" : "Meta Admin";
             email = `${currentUserId}@kjvsentinel.com`;
             avatar = currentUserId === 'admin' ? "https://placehold.co/100x100/eb2525/ffffff?text=A" : "https://placehold.co/100x100/34d399/000000?text=M";
+            userIdToSet = currentUserId;
         } else if (currentUserId === 'richard') {
             name = "Richard Wilkinson";
             email = "rich@home.com";
             avatar = "https://placehold.co/100x100/2563eb/ffffff?text=R";
+            userIdToSet = currentUserId;
         } else if (currentUserId && currentUserEmailFromStorage) {
-            // Check if it's one of the dynamically added users
             const dynamicUser = fetchedDynamicUsers.find(du => du.id === currentUserId || du.newUserEmail === currentUserEmailFromStorage);
             if (dynamicUser) {
                 name = dynamicUser.newDisplayName;
                 email = dynamicUser.newUserEmail;
                 avatar = `https://placehold.co/100x100/78716c/ffffff?text=${name.charAt(0).toUpperCase()}`;
-            } else if (currentUserEmailFromStorage) { // Fallback if ID not found but email exists
-                 name = currentUserEmailFromStorage.split('@')[0]; // Simple name from email
+                userIdToSet = dynamicUser.id;
+            } else if (currentUserEmailFromStorage) { 
+                 name = currentUserEmailFromStorage.split('@')[0]; 
                  email = currentUserEmailFromStorage;
+                 userIdToSet = currentUserId; // Keep the ID from storage if it's not a known dynamic user but email exists
             }
         }
         
         setCurrentUserDetails({
-          id: currentUserId || 'default', // Use 'default' if no ID found
+          id: userIdToSet,
           name,
           email,
           avatarUrl: avatar,
-          joinedDate: new Date("2023-01-15"), // Placeholder join date
+          joinedDate: new Date("2023-01-15"), 
         });
 
       } catch (error) {
         console.error("Error loading user profiles data:", error);
-        // Fallback to a default display if error occurs
         setCurrentUserDetails({
             id: 'default',
             name: "KJV User",
@@ -109,7 +103,6 @@ export default function ProfilePage() {
         <p className="text-muted-foreground">View and manage your account details.</p>
       </div>
 
-      {/* Main User Profile Card */}
       <Card className="shadow-lg">
         <CardHeader>
           <div className="flex items-center space-x-4">
@@ -124,18 +117,21 @@ export default function ProfilePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <ProfileUpdateForm initialDisplayName={currentUserDetails.name} initialEmail={currentUserDetails.email} />
+          {/* Pass userId to ProfileUpdateForm */}
+          <ProfileUpdateForm 
+            userId={currentUserDetails.id!} 
+            initialDisplayName={currentUserDetails.name} 
+            initialEmail={currentUserDetails.email} 
+          />
         </CardContent>
       </Card>
 
       <Separator />
       
-      {/* Dashboard Preference Form */}
       <DashboardPreferenceForm userId={currentUserDetails.id} />
 
       <Separator />
 
-      {/* Conceptually Added User Profiles Section */}
       {conceptuallyAddedUsers.length > 0 && (
         <Card className="shadow-lg">
           <CardHeader>
@@ -166,7 +162,6 @@ export default function ProfilePage() {
       
       <Separator />
 
-      {/* Danger Zone Card */}
       <Card className="border-destructive shadow-lg">
         <CardHeader>
           <CardTitle className="text-destructive">Danger Zone</CardTitle>
