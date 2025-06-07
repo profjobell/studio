@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, ShieldCheck, UserPlus, Trash2, BookOpen, Edit3 } from "lucide-react"; // Added BookOpen, Edit3
+import { Loader2, AlertTriangle, ShieldCheck, UserPlus, Trash2, BookOpen, Edit3 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +31,7 @@ import {
   AlertDialogHeader as DeleteAlertDialogHeader,
   AlertDialogTitle as DeleteAlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area"; // Added ScrollArea
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   fetchAppSettings,
   saveGeneralSettings,
@@ -46,8 +46,8 @@ import {
 } from "./actions";
 import { useRouter } from "next/navigation";
 import type { ZodIssue } from "zod";
-import { useTheme } from "next-themes"; // Import useTheme
-import { FeaturesGuideModal } from "@/components/features-guide"; // Import FeaturesGuideModal
+import { useTheme } from "next-themes";
+import { FeaturesGuideModal } from "@/components/features-guide";
 
 
 const ADMIN_EMAILS = ["admin@kjvsentinel.com", "meta@kjvsentinel.com"]; 
@@ -61,7 +61,7 @@ const initialAddUserState: AddUserFormState = {
 export default function SettingsPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { setTheme } = useTheme(); // For applying theme changes
+  const { setTheme } = useTheme();
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingGeneral, startSavingGeneralTransition] = useTransition();
@@ -79,8 +79,6 @@ export default function SettingsPage() {
 
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [authCheckCompleted, setAuthCheckCompleted] = useState(false);
-
-  // const [isFeaturesGuideModalOpen, setIsFeaturesGuideModalOpen] = useState(false); // Not directly controlled here, modal handles its own state
 
 
   useEffect(() => {
@@ -133,9 +131,6 @@ export default function SettingsPage() {
             toast({ title: "User Action", description: addUserFormState.message });
             setIsAddUserDialogOpen(false); 
             addUserFormRef.current?.reset(); 
-            // Reset the action state so the message doesn't reappear on next open without a new submission
-            // This typically requires a more complex reset mechanism for useActionState or a key prop on the form
-            // For now, we'll rely on the toast and closing the dialog.
             startLoadingUsersTransition(async () => {
                 const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
                 setConceptuallyAddedUsers(fetchedUsers);
@@ -167,7 +162,7 @@ export default function SettingsPage() {
         const fetchedSettings = await fetchAppSettings(); 
         setSettings(fetchedSettings);
         if (actionType === "general" && fetchedSettings) {
-            setTheme(fetchedSettings.general.defaultTheme); // Apply theme immediately
+            setTheme(fetchedSettings.general.defaultTheme);
         }
       } else {
         toast({
@@ -257,7 +252,6 @@ export default function SettingsPage() {
         </h1>
       </div>
 
-      {/* General App Settings Card */}
       <Card>
         <CardHeader>
           <CardTitle>General Application Settings</CardTitle>
@@ -295,7 +289,6 @@ export default function SettingsPage() {
 
       <Separator />
 
-      {/* AI Configuration Card */}
       <Card>
         <CardHeader>
           <CardTitle>AI Configuration</CardTitle>
@@ -354,7 +347,6 @@ export default function SettingsPage() {
 
       <Separator />
 
-      {/* Feature Flags Card */}
       <Card>
         <CardHeader>
           <CardTitle>Feature Flags</CardTitle>
@@ -383,14 +375,12 @@ export default function SettingsPage() {
       
       <Separator />
 
-      {/* Content & User Management */}
       <Card>
         <CardHeader>
           <CardTitle>Content & User Management</CardTitle>
           <CardDescription>Manage application data and users.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Conceptual User Listing */}
           <div>
             <h3 className="text-lg font-medium mb-2">Conceptually Added Users (Current Session)</h3>
             {isLoadingUsers && <p className="text-sm text-muted-foreground">Loading users...</p>}
@@ -443,52 +433,46 @@ export default function SettingsPage() {
                   <UserPlus className="mr-2 h-4 w-4" /> Add New Profile
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md md:max-w-lg max-h-[90vh] flex flex-col">
+              <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Add New User Profile</DialogTitle>
                   <DialogDescription>
-                    Enter the details for the new user. This is a conceptual feature and does not create real accounts.
+                    Enter the details for the new user profile.
                   </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-grow py-4 pr-2 -mr-2"> {/* Added ScrollArea here */}
-                  <form ref={addUserFormRef} action={addUserFormAction} className="grid gap-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="newUserEmail-add" className="text-right">
-                        Email
-                      </Label>
-                      <Input id="newUserEmail-add" name="newUserEmail" type="email" className="col-span-3" required />
+                <ScrollArea className="flex-grow py-4 pr-2 -mr-2">
+                  <form ref={addUserFormRef} action={addUserFormAction} className="space-y-4">
+                    <div>
+                      <Label htmlFor="newUserEmail-add">Email</Label>
+                      <Input id="newUserEmail-add" name="newUserEmail" type="email" required />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="newDisplayName-add" className="text-right">
-                        Display Name
-                      </Label>
-                      <Input id="newDisplayName-add" name="newDisplayName" className="col-span-3" required />
+                    <div>
+                      <Label htmlFor="newDisplayName-add">Display Name</Label>
+                      <Input id="newDisplayName-add" name="newDisplayName" required />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="newPassword-add" className="text-right">
-                        Password
-                      </Label>
-                      <Input id="newPassword-add" name="newPassword" type="password" className="col-span-3" required />
+                    <div>
+                      <Label htmlFor="newPassword-add">Password</Label>
+                      <Input id="newPassword-add" name="newPassword" type="password" required />
                     </div>
-                    <div className="flex items-center space-x-2 mt-2 col-start-2 col-span-3">
+                    <div className="flex items-center space-x-2 pt-2">
                       <Switch id="isAdmin-add" name="isAdmin" />
                       <Label htmlFor="isAdmin-add">Grant Admin Privileges?</Label>
                     </div>
                     {addUserFormState.message && !addUserFormState.success && (
-                      <p className="col-span-4 text-sm text-destructive text-center">{addUserFormState.message}</p>
+                      <p className="text-sm text-destructive text-center">{addUserFormState.message}</p>
                     )}
                     {addUserFormState.errors && (
-                      <ul className="col-span-4 text-sm text-destructive list-disc list-inside">
+                      <ul className="text-sm text-destructive list-disc list-inside">
                         {addUserFormState.errors.map((err, i) => <li key={i}>{err.path.join('.')}: {err.message}</li>)}
                       </ul>
                     )}
-                    <DialogFooter className="mt-4 sticky bottom-0 bg-background py-3"> {/* Made footer sticky to keep buttons visible */}
+                    <DialogFooter className="mt-4 sticky bottom-0 bg-background py-3">
                       <DialogClose asChild>
                           <Button type="button" variant="outline">Cancel</Button>
                       </DialogClose>
                       <Button type="submit" disabled={isAddingUserPending}>
                         {isAddingUserPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Add User (Simulated)
+                        Add User
                       </Button>
                     </DialogFooter>
                   </form>
@@ -499,13 +483,12 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Delete User Confirmation Dialog */}
       {userToDelete && (
         <DeleteAlertDialogContent> 
           <DeleteAlertDialogHeader>
             <DeleteAlertDialogTitle>Are you sure?</DeleteAlertDialogTitle>
             <DeleteAlertDialogDescription>
-              This will remove the conceptual user profile for &quot;{userToDelete.newDisplayName}&quot; ({userToDelete.newUserEmail}) from the current session. This action is only for this demo session and does not affect real user accounts.
+              This will remove the conceptual user profile for &quot;{userToDelete.newDisplayName}&quot; ({userToDelete.newUserEmail}) from the current session.
             </DeleteAlertDialogDescription>
           </DeleteAlertDialogHeader>
           <DeleteAlertDialogFooter>
@@ -522,11 +505,9 @@ export default function SettingsPage() {
         </DeleteAlertDialogContent>
       )}
     </div>
-    {/* This ensures the FeaturesGuideModal is available in the DOM but controlled by its own state for opening */}
     <FeaturesGuideModal> 
         <span className="hidden">Hidden Trigger for Programmatic Features Guide Modal</span>
     </FeaturesGuideModal>
     </>
   );
 }
-

@@ -85,9 +85,9 @@ ensureUserProfilesStore();
 // --- Server Actions ---
 
 export async function fetchAppSettings(): Promise<AppSettings> {
-  console.log("Server Action: Fetching app settings (simulated)");
-  const store = ensureSettingsStore(); // Ensure initialized
-  return JSON.parse(JSON.stringify(store)); // Return a deep copy
+  console.log("Server Action: Fetching app settings");
+  const store = ensureSettingsStore(); 
+  return JSON.parse(JSON.stringify(store)); 
 }
 
 const generalSettingsSchema = z.object({
@@ -113,8 +113,8 @@ export async function saveGeneralSettings(
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
 
-  console.log("Server Action: Saving General App Settings (simulated):", validation.data);
-  const store = ensureSettingsStore(); // Ensure initialized
+  console.log("Server Action: Saving General App Settings:", validation.data);
+  const store = ensureSettingsStore(); 
   store.general = validation.data;
   
   revalidatePath("/settings");
@@ -150,8 +150,8 @@ export async function saveAiSettings(
         return { success: false, message: "Validation failed.", errors: validation.error.issues };
     }
     
-  console.log("Server Action: Saving AI Configuration (simulated):", validation.data);
-  const store = ensureSettingsStore(); // Ensure initialized
+  console.log("Server Action: Saving AI Configuration:", validation.data);
+  const store = ensureSettingsStore(); 
   store.ai = {
       defaultModel: validation.data.defaultModel,
       safetyFilters: {
@@ -189,8 +189,8 @@ export async function saveFeatureFlags(
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
 
-  console.log("Server Action: Saving Feature Flags (simulated):", validation.data);
-  const store = ensureSettingsStore(); // Ensure initialized
+  console.log("Server Action: Saving Feature Flags:", validation.data);
+  const store = ensureSettingsStore(); 
   store.featureFlags = validation.data;
   revalidatePath("/settings");
   return { success: true, message: "Feature flags saved successfully." };
@@ -206,7 +206,6 @@ export async function editLearnMoreAction() {
   return { success: true, message: "Navigating to guide editor (placeholder)." };
 }
 
-// New Action for Adding User Profile
 const addUserProfileSchema = z.object({
   newUserEmail: z.string().email("Invalid email address."),
   newDisplayName: z.string().min(3, "Display name must be at least 3 characters."),
@@ -240,8 +239,25 @@ export async function addUserProfileAction(
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
 
-  console.log("Server Action: Adding New User Profile (Simulated):", validation.data);
+  // For a "live" version, here you would integrate Firebase Authentication:
+  // try {
+  //   const userCredential = await createUserWithEmailAndPassword(auth, validation.data.newUserEmail, validation.data.newPassword);
+  //   await updateProfile(userCredential.user, { displayName: validation.data.newDisplayName });
+  //   if (validation.data.isAdmin) {
+  //     // Set custom claims for admin role (requires Admin SDK on a backend)
+  //     // For client-side, this part is conceptual or managed differently.
+  //     console.log(`Admin role conceptually assigned to ${validation.data.newUserEmail}`);
+  //   }
+  //   revalidatePath("/settings");
+  //   revalidatePath("/profile");
+  //   return { success: true, message: `User ${validation.data.newDisplayName} created successfully.`, errors: undefined };
+  // } catch (error: any) {
+  //   console.error("Error creating Firebase user:", error);
+  //   return { success: false, message: error.message || "Failed to create user.", errors: undefined };
+  // }
   
+  // Current conceptual user addition:
+  console.log("Server Action: Adding New Conceptual User Profile:", validation.data);
   const userProfilesStore = ensureUserProfilesStore(); 
   const newUser: ConceptuallyAddedUserProfile = {
     id: `user-${Date.now()}`,
@@ -251,11 +267,11 @@ export async function addUserProfileAction(
   
   revalidatePath("/settings");
   revalidatePath("/profile"); 
-  return { success: true, message: `User profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added conceptually.`, errors: undefined };
+  return { success: true, message: `Conceptual user profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added.`, errors: undefined };
 }
 
 export async function fetchConceptuallyAddedUserProfiles(): Promise<ConceptuallyAddedUserProfile[]> {
-  console.log("Server Action: Fetching conceptually added user profiles (simulated)");
+  console.log("Server Action: Fetching conceptually added user profiles");
   const store = ensureUserProfilesStore(); 
   return JSON.parse(JSON.stringify(store)); 
 }
@@ -269,7 +285,7 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
   if (global.tempUserProfilesStoreGlobal.length < initialLength) {
     revalidatePath("/settings");
     revalidatePath("/profile");
-    return { success: true, message: `Conceptual user ${userId} deleted successfully.` };
+    return { success: true, message: `Conceptual user ${userId} deleted.` };
   } else {
     return { success: false, message: `Conceptual user ${userId} not found.` };
   }
