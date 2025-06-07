@@ -3,6 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { UserDashboardPreference } from "@/types";
 
 // Define a type for all settings
 export interface AppSettings {
@@ -56,6 +57,8 @@ declare global {
   var tempAppSettingsStoreGlobal: AppSettings | undefined;
   // eslint-disable-next-line no-var
   var tempUserProfilesStoreGlobal: ConceptuallyAddedUserProfile[] | undefined;
+  // eslint-disable-next-line no-var
+  var userDashboardPreferencesStoreGlobal: { [userId: string]: UserDashboardPreference } | undefined;
 }
 
 // Function to ensure the global settings store is initialized
@@ -76,10 +79,24 @@ function ensureUserProfilesStore(): ConceptuallyAddedUserProfile[] {
   return global.tempUserProfilesStoreGlobal;
 }
 
+function ensureUserDashboardPreferencesStore(): { [userId: string]: UserDashboardPreference } {
+  if (!global.userDashboardPreferencesStoreGlobal) {
+    console.log("Initializing global.userDashboardPreferencesStoreGlobal.");
+    global.userDashboardPreferencesStoreGlobal = {
+      'default': { enabled: true, notes: "Default user dashboard message. Edit this on your profile.", symbolicPlaceholder: true, symbolicColor: "hsl(var(--foreground))" },
+      'admin': { enabled: true, notes: "Admin User: The image provided appeared all black. This square is a symbolic placement.", symbolicPlaceholder: true, symbolicColor: "black" },
+      'richard': { enabled: true, notes: "Richard's custom dashboard message. Welcome back!", imageUrl: "https://placehold.co/200x100.png" },
+      'meta': { enabled: true, notes: "Meta Admin: Dashboard ready for configuration.", symbolicPlaceholder: true, symbolicColor: "hsl(var(--primary))" },
+    };
+  }
+  return global.userDashboardPreferencesStoreGlobal;
+}
+
 
 // Initialize stores on module load
 ensureSettingsStore();
 ensureUserProfilesStore();
+ensureUserDashboardPreferencesStore();
 
 
 // --- Server Actions ---
@@ -238,25 +255,7 @@ export async function addUserProfileAction(
   if (!validation.success) {
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
-
-  // For a "live" version, here you would integrate Firebase Authentication:
-  // try {
-  //   const userCredential = await createUserWithEmailAndPassword(auth, validation.data.newUserEmail, validation.data.newPassword);
-  //   await updateProfile(userCredential.user, { displayName: validation.data.newDisplayName });
-  //   if (validation.data.isAdmin) {
-  //     // Set custom claims for admin role (requires Admin SDK on a backend)
-  //     // For client-side, this part is conceptual or managed differently.
-  //     console.log(`Admin role conceptually assigned to ${validation.data.newUserEmail}`);
-  //   }
-  //   revalidatePath("/settings");
-  //   revalidatePath("/profile");
-  //   return { success: true, message: `User ${validation.data.newDisplayName} created successfully.`, errors: undefined };
-  // } catch (error: any) {
-  //   console.error("Error creating Firebase user:", error);
-  //   return { success: false, message: error.message || "Failed to create user.", errors: undefined };
-  // }
   
-  // Current conceptual user addition:
   console.log("Server Action: Adding New Conceptual User Profile:", validation.data);
   const userProfilesStore = ensureUserProfilesStore(); 
   const newUser: ConceptuallyAddedUserProfile = {
@@ -264,6 +263,15 @@ export async function addUserProfileAction(
     ...validation.data
   };
   userProfilesStore.push(newUser);
+
+  // Initialize dashboard preference for the new user
+  const dashboardPrefsStore = ensureUserDashboardPreferencesStore();
+  dashboardPrefsStore[newUser.id] = {
+    enabled: false, // Default to disabled
+    notes: `Welcome, ${validation.data.newDisplayName}! Customize your dashboard message on your profile.`,
+    symbolicPlaceholder: true,
+    symbolicColor: "hsl(var(--muted-foreground))"
+  };
   
   revalidatePath("/settings");
   revalidatePath("/profile"); 
@@ -282,6 +290,12 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
   const initialLength = userProfilesStore.length;
   global.tempUserProfilesStoreGlobal = userProfilesStore.filter(user => user.id !== userId);
 
+  const dashboardPrefsStore = ensureUserDashboardPreferencesStore();
+  if (dashboardPrefsStore[userId]) {
+    delete dashboardPrefsStore[userId];
+    console.log(`Deleted dashboard preference for conceptual user ID: ${userId}`);
+  }
+
   if (global.tempUserProfilesStoreGlobal.length < initialLength) {
     revalidatePath("/settings");
     revalidatePath("/profile");
@@ -289,4 +303,23 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
   } else {
     return { success: false, message: `Conceptual user ${userId} not found.` };
   }
+}
+
+// --- User Dashboard Preferences Actions ---
+export async function fetchUserDashboardPreference(userId: string): Promise<UserDashboardPreference | null> {
+  console.log(`Server Action: Fetching dashboard preference for user ID: ${userId}`);
+  const store = ensureUserDashboardPreferencesStore();
+  return store[userId] || null;
+}
+
+export async function updateUserDashboardPreference(
+  userId: string,
+  preferenceData: UserDashboardPreference
+): Promise<{ success: boolean; message: string }> {
+  console.log(`Server Action: Updating dashboard preference for user ID: ${userId}`, preferenceData);
+  const store = ensureUserDashboardPreferencesStore();
+  store[userId] = preferenceData;
+  revalidatePath("/dashboard"); // Revalidate dashboard to show changes
+  revalidatePath("/profile");   // Revalidate profile if it also displays this
+  return { success: true, message: "Dashboard preference updated successfully." };
 }

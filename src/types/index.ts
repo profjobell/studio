@@ -122,3 +122,11 @@ export type TeachingAnalysisReport = {
   podcast?: PodcastData | null; // Added for podcast feature
   recording?: AudioRecordingData | null; // Added for audio recording feature
 };
+
+export type UserDashboardPreference = {
+  enabled: boolean;
+  imageUrl?: string;
+  notes?: string;
+  symbolicPlaceholder?: boolean; // If true, imageUrl is ignored, and a default square is shown
+  symbolicColor?: string; // e.g., 'black', '#333333'
+};

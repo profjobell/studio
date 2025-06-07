@@ -1,22 +1,59 @@
 
+"use client"; // Converted to client component
+
 import Link from "next/link";
+import { useEffect, useState, useTransition } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, FileText, Search, Trash2, ExternalLink } from "lucide-react";
+import { Activity, FileText, Search, Trash2, ExternalLink, Loader2, Image as ImageIcon, Edit } from "lucide-react";
 import { fetchReportsList } from "../reports/actions";
 import { fetchLibraryDocuments } from "../library/actions";
-import type { AnalysisReport, DocumentReference } from "@/types";
+import type { AnalysisReport, DocumentReference, UserDashboardPreference } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClearHistoryButton } from "./components/clear-history-button";
 import { format } from 'date-fns';
 import { FeaturesGuideModal } from "@/components/features-guide";
+import { fetchUserDashboardPreference } from "../profile/actions"; // Action to fetch preference
 
-export default async function DashboardPage() {
-  const allReports: AnalysisReport[] = await fetchReportsList();
-  const libraryDocuments: DocumentReference[] = await fetchLibraryDocuments();
+export default function DashboardPage() {
+  const [recentAnalyses, setRecentAnalyses] = useState<AnalysisReport[]>([]);
+  const [libraryDocuments, setLibraryDocuments] = useState<DocumentReference[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [dashboardPreference, setDashboardPreference] = useState<UserDashboardPreference | null>(null);
+  const [isLoadingPreference, startLoadingPreferenceTransition] = useTransition();
 
-  const recentAnalyses = allReports
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  useEffect(() => {
+    const id = localStorage.getItem('conceptualUserType') || 'default';
+    setCurrentUserId(id);
+
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      try {
+        const [reports, docs] = await Promise.all([
+          fetchReportsList(),
+          fetchLibraryDocuments(),
+        ]);
+        setRecentAnalyses(reports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        setLibraryDocuments(docs);
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      startLoadingPreferenceTransition(async () => {
+        const pref = await fetchUserDashboardPreference(currentUserId);
+        setDashboardPreference(pref);
+      });
+    }
+  }, [currentUserId]);
 
   const stats = [
     { title: "Total Analyses", value: recentAnalyses.length.toString(), icon: FileText, change: "", href:"/reports" },
@@ -24,6 +61,99 @@ export default async function DashboardPage() {
   ];
 
   const hasReports = recentAnalyses.length > 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+      </div>
+    );
+  }
+  
+  const renderCustomDashboardSection = () => {
+    if (isLoadingPreference) {
+      return (
+        <Card className="my-4 p-4 border rounded-md bg-card text-card-foreground">
+          <div className="flex items-center justify-center h-24">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <p className="ml-2 text-muted-foreground">Loading your custom section...</p>
+          </div>
+        </Card>
+      );
+    }
+
+    if (dashboardPreference?.enabled) {
+      return (
+        <Card className="my-4 p-4 border rounded-md bg-card text-card-foreground text-center shadow-md">
+          <CardHeader className="p-2">
+             <CardTitle className="text-lg font-semibold flex items-center justify-center gap-2">
+                <ImageIcon className="h-5 w-5 text-primary" /> Your Custom Welcome
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-2">
+            {dashboardPreference.symbolicPlaceholder || !dashboardPreference.imageUrl ? (
+              <div 
+                style={{ 
+                    width: '100px', 
+                    height: '100px', 
+                    backgroundColor: dashboardPreference.symbolicColor || 'black', 
+                    border: '1px solid hsl(var(--border))',
+                    margin: '10px auto'
+                }} 
+                title="Symbolic placeholder"
+              ></div>
+            ) : (
+              <div className="relative w-full max-w-xs h-40 mx-auto mb-3">
+                <Image 
+                  src={dashboardPreference.imageUrl} 
+                  alt="User defined image" 
+                  layout="fill" 
+                  objectFit="contain" 
+                  className="rounded-md"
+                  onError={(e) => {
+                    // Fallback to symbolic if image fails to load
+                    e.currentTarget.style.display = 'none'; 
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                        const fallbackSquare = document.createElement('div');
+                        fallbackSquare.style.width = '100px';
+                        fallbackSquare.style.height = '100px';
+                        fallbackSquare.style.backgroundColor = dashboardPreference.symbolicColor || 'black';
+                        fallbackSquare.style.border = '1px solid hsl(var(--border))';
+                        fallbackSquare.style.margin = '10px auto';
+                        fallbackSquare.title = "Symbolic placeholder (image failed)";
+                        parent.appendChild(fallbackSquare);
+                    }
+                  }}
+                />
+              </div>
+            )}
+            {dashboardPreference.notes && (
+              <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{dashboardPreference.notes}</p>
+            )}
+          </CardContent>
+           <CardFooter className="p-2 pt-3 justify-center">
+                <Button variant="outline" size="sm" asChild>
+                    <Link href="/profile">
+                        <Edit className="mr-2 h-3 w-3"/> Edit This Section
+                    </Link>
+                </Button>
+           </CardFooter>
+        </Card>
+      );
+    }
+    // Default if not enabled or no preference
+    return (
+      <Card className="my-4 p-4 border rounded-md bg-card text-card-foreground">
+        <p className="text-sm text-muted-foreground mb-2">Welcome to your dashboard!</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          You can customize this welcome section on your <Link href="/profile" className="text-primary hover:underline">profile page</Link>.
+        </p>
+      </Card>
+    );
+  };
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -36,13 +166,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="my-4 p-4 border rounded-md bg-card text-card-foreground">
-        <p className="text-sm text-muted-foreground mb-2">User-requested image placement (symbolic):</p>
-        <div style={{ width: '50px', height: '50px', backgroundColor: 'black', border: '1px solid hsl(var(--border))' }} title="Representation of user-provided black image"></div>
-        <p className="text-xs text-muted-foreground mt-1">
-          The image provided appeared all black. This square is a symbolic placement. If you had a specific location, purpose, or a different image/content in mind, please provide further details.
-        </p>
-      </div>
+      {renderCustomDashboardSection()}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
