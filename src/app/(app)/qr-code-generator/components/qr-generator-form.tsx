@@ -50,7 +50,6 @@ const qrFormSchema = z.object({
     if (!data.imageWidth) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image width required.", path: ["imageWidth"] });
     if (!data.imageHeight) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image height required.", path: ["imageHeight"] });
   }
-  // Ensure marginSize is provided if includeMargin is true and marginSize is not explicitly set to 0
   if (data.includeMargin && typeof data.marginSize !== 'number') {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Margin size is required when 'Quiet Zone' is enabled.", path: ["marginSize"] });
   }
@@ -85,16 +84,16 @@ export function QrGeneratorForm() {
     mode: "onChange",
   });
 
-  const watchAllFields = form.watch(); // Watch all fields for real-time updates
+  const watchAllFields = form.watch(); 
 
   useEffect(() => {
     const currentValues = form.getValues();
     constructAndSetQrValue(currentValues);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchAllFields]); // Re-run when any form field changes
+  }, [watchAllFields]); 
 
   const constructAndSetQrValue = (data: QrFormValues) => {
-    let url = new URL(data.baseInviteUrl || "https://example.com"); // Default if base empty
+    let url = new URL(data.baseInviteUrl || "https://example.com"); 
     if (data.invitedUserEmail) url.searchParams.append("email", data.invitedUserEmail);
     if (data.assignedRole) url.searchParams.append("role", data.assignedRole);
     if (data.definedPrivileges) url.searchParams.append("privileges", data.definedPrivileges.split(',').map(p=>p.trim()).join(','));
@@ -108,7 +107,7 @@ export function QrGeneratorForm() {
         bgColor: data.bgColor,
         fgColor: data.fgColor,
         includeMargin: data.includeMargin,
-        marginSize: data.includeMargin ? data.marginSize : 0, // Ensure marginSize is 0 if not included
+        marginSize: data.includeMargin && typeof data.marginSize === 'number' ? data.marginSize : 0,
         enableImageOverlay: data.enableImageOverlay,
         imageSrc: data.imageSrc,
         imageWidth: data.imageWidth,
@@ -118,8 +117,6 @@ export function QrGeneratorForm() {
   };
 
   const onSubmit = (data: QrFormValues) => {
-    // constructAndSetQrValue is already called by useEffect on field changes
-    // This explicit call ensures it's set on manual submit if needed, or for toast
     constructAndSetQrValue(data); 
     toast({
       title: "Invite QR Code Parameters Updated",
@@ -341,8 +338,8 @@ export function QrGeneratorForm() {
                             width: qrDisplayConfig.imageWidth,
                             height: qrDisplayConfig.imageHeight,
                             excavate: qrDisplayConfig.imageExcavate ?? true,
-                            x: undefined, // Let library center it
-                            y: undefined, // Let library center it
+                            x: undefined, 
+                            y: undefined, 
                           }
                         : undefined
                     }
