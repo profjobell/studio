@@ -1,12 +1,12 @@
 
-"use client"; // Converted to client component
+"use client"; 
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Activity, FileText, Search, Trash2, ExternalLink, Loader2, Image as ImageIconLucide, Edit } from "lucide-react"; // Renamed Image to avoid conflict
+import { Activity, FileText, Search, Edit, ExternalLink, Loader2, Image as ImageIconLucide } from "lucide-react"; 
 import { fetchReportsList } from "../reports/actions";
 import { fetchLibraryDocuments } from "../library/actions";
 import type { AnalysisReport, DocumentReference, UserDashboardPreference } from "@/types";
@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClearHistoryButton } from "./components/clear-history-button";
 import { format } from 'date-fns';
 import { FeaturesGuideModal } from "@/components/features-guide";
-import { fetchUserDashboardPreference } from "../profile/actions"; // Action to fetch preference
+import { fetchUserDashboardPreference } from "../profile/actions"; 
 
 export default function DashboardPage() {
   const [recentAnalyses, setRecentAnalyses] = useState<AnalysisReport[]>([]);
@@ -23,10 +23,9 @@ export default function DashboardPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [dashboardPreference, setDashboardPreference] = useState<UserDashboardPreference | null>(null);
   const [isLoadingPreference, startLoadingPreferenceTransition] = useTransition();
-  const [imageError, setImageError] = useState(false); // State for image loading error
+  const [imageError, setImageError] = useState(false); 
 
   useEffect(() => {
-    // Access localStorage only on the client side
     const id = localStorage.getItem('conceptualUserType') || 'default';
     setCurrentUserId(id);
 
@@ -51,7 +50,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (currentUserId) {
       startLoadingPreferenceTransition(async () => {
-        setImageError(false); // Reset image error state when user/preference changes
+        setImageError(false); 
         const pref = await fetchUserDashboardPreference(currentUserId);
         setDashboardPreference(pref);
       });
@@ -65,7 +64,7 @@ export default function DashboardPage() {
 
   const hasReports = recentAnalyses.length > 0;
 
-  if (isLoading && !currentUserId) { // Adjusted loading condition
+  if (isLoading && !currentUserId) { 
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -88,7 +87,9 @@ export default function DashboardPage() {
 
     if (dashboardPreference?.enabled) {
       let imageDisplayElement;
-      if (dashboardPreference.symbolicPlaceholder || !dashboardPreference.imageUrl || imageError) {
+      const shouldUseSymbolic = dashboardPreference.symbolicPlaceholder || !dashboardPreference.imageUrl || imageError;
+
+      if (shouldUseSymbolic) {
         imageDisplayElement = (
           <div 
             style={{ 
@@ -106,7 +107,7 @@ export default function DashboardPage() {
         imageDisplayElement = (
           <div className="relative w-full max-w-xs h-40 mx-auto mb-3">
             <Image 
-              src={dashboardPreference.imageUrl} 
+              src={dashboardPreference.imageUrl!} 
               alt="User defined image" 
               fill
               style={{ objectFit: 'contain' }}

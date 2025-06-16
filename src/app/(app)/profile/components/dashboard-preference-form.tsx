@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useTransition, FormEvent } from "react";
+import { useEffect, useState, useTransition, FormEvent, ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { fetchUserDashboardPreference, updateUserDashboardPreference } from "../actions";
 import type { UserDashboardPreference } from "@/types";
-import { Loader2, Image as ImageIcon, Info } from "lucide-react";
+import { Loader2, Image as ImageIcon, Info, UploadCloud } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image"; // For preview
 
 
 interface DashboardPreferenceFormProps {
@@ -31,6 +32,8 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
   const [isLoading, startLoadingTransition] = useTransition();
   const [isSaving, startSavingTransition] = useTransition();
   const { toast } = useToast();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
   useEffect(() => {
     if (userId) {
@@ -38,13 +41,25 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
         const fetchedPreference = await fetchUserDashboardPreference(userId);
         if (fetchedPreference) {
           setPreference(fetchedPreference);
+          if (fetchedPreference.imageUrl && !fetchedPreference.symbolicPlaceholder) {
+            if (fetchedPreference.imageUrl.startsWith('data:image')) {
+              setImagePreview(fetchedPreference.imageUrl);
+              setUploadedFileName("Previously uploaded image");
+            } else {
+              setImagePreview(fetchedPreference.imageUrl); // For external URLs
+              setUploadedFileName(null); // Not an upload, but an external URL
+            }
+          } else {
+            setImagePreview(null);
+            setUploadedFileName(null);
+          }
         } else {
-          // If no preference exists, initialize for the user (could also be done on first save)
-          // For now, we use a client-side default, backend will create if not exists on update.
            setPreference({
             ...defaultPreference,
             notes: `Welcome! Customize your dashboard section here.`
           });
+          setImagePreview(null);
+          setUploadedFileName(null);
         }
       });
     }
@@ -56,6 +71,10 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
       toast({ title: "Error", description: "User not identified.", variant: "destructive" });
       return;
     }
+
+    // If a new file was selected and previewed, its data URI is already in preference.imageUrl
+    // If an external URL was typed, it's also in preference.imageUrl
+    // If symbolic placeholder is chosen, imageUrl might be irrelevant or could be cleared.
 
     startSavingTransition(async () => {
       const result = await updateUserDashboardPreference(userId, preference);
@@ -70,10 +89,34 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setPreference(prev => ({ ...prev, [name]: value }));
+    if (name === "imageUrl") { // If user types in URL, clear file upload state
+        setImagePreview(value); // Show preview of typed URL
+        setUploadedFileName(null);
+    }
   };
-
+  
   const handleSwitchChange = (checked: boolean, name: keyof UserDashboardPreference) => {
     setPreference(prev => ({ ...prev, [name]: checked }));
+    if (name === "symbolicPlaceholder" && checked) { // If switching to symbolic, clear image preview
+        setImagePreview(null);
+        setUploadedFileName(null);
+        // Optionally clear imageUrl if symbolic is chosen
+        // setPreference(prev => ({ ...prev, imageUrl: "" })); 
+    }
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        setPreference(prev => ({ ...prev, imageUrl: dataUri, symbolicPlaceholder: false }));
+        setImagePreview(dataUri);
+        setUploadedFileName(file.name);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
 
@@ -98,7 +141,7 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
                 Custom Dashboard Welcome Section
             </CardTitle>
             <CardDescription>
-                Personalize the welcome message and image shown on your dashboard.
+                Personalize the welcome message and image/placeholder shown on your dashboard.
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -120,24 +163,19 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
                     id="symbolicPlaceholder"
                     name="symbolicPlaceholder"
                     checked={preference.symbolicPlaceholder}
-                    onCheckedChange={(checked) => handleSwitchChange(checked, "symbolicPlaceholder")}
+                    onCheckedChange={(checked) => {
+                        handleSwitchChange(checked, "symbolicPlaceholder");
+                        if (checked) { // If switching to symbolic
+                            setPreference(prev => ({ ...prev, imageUrl: "" })); // Clear image URL
+                            setImagePreview(null);
+                            setUploadedFileName(null);
+                        }
+                    }}
                     />
-                    <Label htmlFor="symbolicPlaceholder">Use Symbolic Placeholder (instead of Image URL)</Label>
+                    <Label htmlFor="symbolicPlaceholder">Use Symbolic Color Placeholder</Label>
                 </div>
 
-                {!preference.symbolicPlaceholder ? (
-                    <div className="space-y-2">
-                        <Label htmlFor="imageUrl">Image URL</Label>
-                        <Input
-                            id="imageUrl"
-                            name="imageUrl"
-                            value={preference.imageUrl || ""}
-                            onChange={handleInputChange}
-                            placeholder="https://example.com/your-image.png"
-                        />
-                        <p className="text-xs text-muted-foreground">Enter a direct link to an image (e.g., PNG, JPG).</p>
-                    </div>
-                ) : (
+                {preference.symbolicPlaceholder ? (
                     <div className="space-y-2">
                         <Label htmlFor="symbolicColor">Symbolic Placeholder Color</Label>
                         <Input
@@ -149,6 +187,44 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
                             className="w-24 h-10 p-1"
                         />
                         <p className="text-xs text-muted-foreground">Choose a color for the symbolic square.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        <div>
+                            <Label htmlFor="imageUrl">Image URL (External Link)</Label>
+                            <Input
+                                id="imageUrl"
+                                name="imageUrl"
+                                value={preference.imageUrl && !preference.imageUrl.startsWith('data:image') ? preference.imageUrl : ""}
+                                onChange={handleInputChange}
+                                placeholder="https://example.com/your-image.png"
+                                disabled={!!uploadedFileName} 
+                            />
+                            <FormDescription className="text-xs mt-1">Paste an external image URL, or use the upload option below.</FormDescription>
+                        </div>
+                        <div className="relative p-4 border-2 border-dashed rounded-md hover:border-primary transition-colors">
+                            <Label htmlFor="imageUpload" className="block text-sm font-medium text-center cursor-pointer">
+                                <UploadCloud className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                                {uploadedFileName ? `File: ${uploadedFileName}` : "Click to upload or drag & drop image"}
+                                <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 1MB (recommended)</p>
+                            </Label>
+                            <Input
+                                id="imageUpload"
+                                name="imageUpload"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                        </div>
+                         {imagePreview && (
+                            <div className="mt-2">
+                                <Label>Image Preview:</Label>
+                                <div className="relative w-full max-w-xs h-32 border rounded-md overflow-hidden bg-muted">
+                                <Image src={imagePreview} alt="Preview" fill style={{objectFit: "contain"}} data-ai-hint="image preview"/>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
                 
@@ -179,3 +255,4 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
     </Card>
   );
 }
+
