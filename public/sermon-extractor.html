@@ -1,184 +1,192 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sermon Extractor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .loader {
-      border: 4px solid #f3f3f3; /* Light grey */
-      border-top: 4px solid #3498db; /* Blue */
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      margin-right: 8px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KJV Sentinel - Sermon Extractor</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 800px; margin: auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #2563eb; text-align: center; }
+        textarea { width: 98%; min-height: 150px; margin-bottom: 10px; padding: 10px; border-radius: 4px; border: 1px solid #ddd; font-size: 14px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        button { background-color: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top:10px; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        button:hover:not(:disabled) { background-color: #1d4ed8; }
+        .message { padding: 10px; margin-top: 15px; border-radius: 4px; }
+        .status { background-color: #e0e0e0; color: #333; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .note { font-size: 0.9em; color: #555; margin-top: 15px; }
+        #pasteTranscriptBtn { background-color: #2563eb; color: white; font-weight: bold; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
+        #pasteTranscriptBtn:hover { background-color: #1d4ed8; }
+        .link-button {
+            display: inline-block;
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .link-button:hover {
+            background-color: #45a049;
+        }
+         .home-button-container {
+            text-align: center; /* Center the button */
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
-    <h1 class="text-2xl font-bold mb-4 text-center text-gray-800">Church Sermon Extractor</h1>
-    <p class="text-sm text-gray-600 mb-1">
-      This tool helps isolate sermon content from a full church service transcript.
-    </p>
-    <p class="text-sm text-gray-600 mb-4">
-      For best results, obtain a transcript from a service like 
-      <a href="https://kome.ai/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Kome.ai YouTube Transcript Generator</a>,
-      paste the full transcript below, then click "Isolate Sermon".
-    </p>
+<body>
+    <div class="container">
+        <h1>Sermon &amp; Prayer Extractor</h1>
+        <p class="note">This tool helps isolate the main sermon and individual prayers from a full church service transcript. Paste your transcript below.</p>
+        
+        <div class="home-button-container">
+            <a href="/dashboard" class="link-button">Back to KJV Sentinel Dashboard</a>
+        </div>
 
-    <div class="mb-4">
-      <label for="transcript-input" class="block text-sm font-medium text-gray-700">
-        Paste Full Transcript Here:
-      </label>
-      <textarea
-        id="transcript-input"
-        placeholder="Paste the entire transcript from Kome.ai or another source..."
-        class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 h-40"
-      ></textarea>
+        <label for="transcriptInput">Paste Full Transcript Here:</label>
+        <button id="pasteTranscriptBtn">Paste Transcript</button>
+        <textarea id="transcriptInput" placeholder="Paste the full transcript of the service here..."></textarea>
+
+        <button id="submitBtn" type="button" disabled>Isolate Sermon & Prayers from Pasted Text</button>
+
+        <div id="statusMessage" class="message status" style="display:none;"></div>
+        <div id="warningMessage" class="message warning" style="display:none;"></div>
+        <div id="errorMessage" class="message error" style="display:none;"></div>
+
+        <label for="result" style="margin-top:20px;">Isolated Sermon & Prayers:</label>
+        <textarea id="result" readonly placeholder="The isolated sermon and prayers will appear here..."></textarea>
+        <button id="copyResultBtn" type="button" style="display:none;">Copy Result to Clipboard</button>
     </div>
 
-    <button
-      id="process-button"
-      onclick="processPastedSermon()"
-      class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 flex items-center justify-center"
-    >
-      <span id="button-text">Isolate Sermon from Pasted Text</span>
-      <span id="button-loader" class="loader hidden ml-2"></span>
-    </button>
+    <script>
+        const transcriptInput = document.getElementById('transcriptInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultTextarea = document.getElementById('result');
+        const statusMessageDiv = document.getElementById('statusMessage');
+        const warningMessageDiv = document.getElementById('warningMessage');
+        const errorMessageDiv = document.getElementById('errorMessage');
+        const copyResultBtn = document.getElementById('copyResultBtn');
+        const pasteTranscriptBtn = document.getElementById('pasteTranscriptBtn');
 
-    <div class="mt-6">
-      <label for="sermon-output" class="block text-sm font-medium text-gray-700">Isolated Sermon Text:</label>
-      <textarea
-        id="sermon-output"
-        readonly
-        class="mt-1 block w-full p-2 border border-gray-300 rounded-md h-64 bg-gray-50"
-      ></textarea>
-    </div>
-    <button
-      id="copy-button"
-      onclick="copySermonText()"
-      class="mt-2 w-full bg-green-500 text-white p-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 hidden"
-    >
-      Copy Sermon Text to Clipboard
-    </button>
-    <p id="status-message" class="mt-2 text-sm"></p>
+        const yourFirebaseFunctionUrl = '/__/functions/processSermon'; 
+        // For local testing with Firebase Emulator, you might use:
+        // const yourFirebaseFunctionUrl = 'http://localhost:5001/your-project-id/us-central1/processSermon';
+        // Replace 'your-project-id' with your actual Firebase project ID if testing locally.
+        // When deployed, '/__/functions/processSermon' should work due to Firebase Hosting rewrites.
 
-    <div class="mt-6 text-center">
-        <button 
-            onclick="javascript:history.back()" 
-            class="text-sm text-blue-500 hover:underline focus:outline-none"
-        >
-            &larr; Back to KJV Sentinel
-        </button>
-    </div>
-    <p class="text-xs text-gray-400 mt-4 text-center">
-        Please ensure your use of any third-party transcription service like Kome.ai complies with their terms of service.
-    </p>
-  </div>
 
-  <script>
-    const processButton = document.getElementById('process-button');
-    const buttonText = document.getElementById('button-text');
-    const buttonLoader = document.getElementById('button-loader');
-    const outputTextarea = document.getElementById('sermon-output');
-    const statusMessage = document.getElementById('status-message');
-    const copyButton = document.getElementById('copy-button');
-    const transcriptInput = document.getElementById('transcript-input');
-
-    async function processPastedSermon() {
-      const transcript = transcriptInput.value;
-
-      if (!transcript.trim()) {
-        statusMessage.textContent = 'Please paste a transcript into the input field.';
-        statusMessage.className = 'mt-2 text-sm text-red-600';
-        copyButton.classList.add('hidden');
-        return;
-      }
-
-      buttonText.textContent = 'Processing...';
-      buttonLoader.classList.remove('hidden');
-      processButton.disabled = true;
-      outputTextarea.value = '';
-      statusMessage.textContent = 'Processing transcript with AI... this may take a moment.';
-      statusMessage.className = 'mt-2 text-sm text-blue-600';
-      copyButton.classList.add('hidden');
-
-      try {
-        const response = await fetch('/processSermon', { // This still calls your Firebase Cloud Function
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ transcript: transcript }) // Send the pasted transcript
+        pasteTranscriptBtn.addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                transcriptInput.value = text;
+                submitBtn.disabled = !text.trim();
+                if (text.trim()) {
+                     statusMessageDiv.textContent = 'Transcript pasted. Ready to isolate.';
+                     statusMessageDiv.style.display = 'block';
+                     warningMessageDiv.style.display = 'none';
+                     errorMessageDiv.style.display = 'none';
+                } else {
+                    statusMessageDiv.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Failed to read clipboard contents: ', err);
+                errorMessageDiv.textContent = 'Failed to paste from clipboard. Please ensure you have granted permission or try manual paste.';
+                errorMessageDiv.style.display = 'block';
+            }
         });
         
-        // Check if the response is JSON
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-            const data = await response.json();
-            if (response.ok) {
-                if (data.error) {
-                    statusMessage.textContent = data.error;
-                    statusMessage.className = 'mt-2 text-sm text-red-600';
-                } else {
-                    outputTextarea.value = data.sermon || "No sermon content could be extracted by AI.";
-                    if (data.sermon && data.sermon !== "No sermon content could be identified in the transcript." && data.sermon !== "No sermon content could be extracted by AI.") {
-                        statusMessage.textContent = 'Sermon isolated by AI! Ready to copy.';
-                        statusMessage.className = 'mt-2 text-sm text-green-600';
-                        copyButton.classList.remove('hidden');
-                    } else {
-                        statusMessage.textContent = data.sermon || "No sermon content identified by AI.";
-                        statusMessage.className = 'mt-2 text-sm text-yellow-600';
-                    }
-                    if (data.warning) {
-                        statusMessage.textContent += ` Warning: ${data.warning}`;
-                    }
-                }
-            } else {
-                 statusMessage.textContent = `Error: ${response.status} ${response.statusText}. ${data.error || 'Failed to process sermon via AI.'}`;
-                 statusMessage.className = 'mt-2 text-sm text-red-600';
+        transcriptInput.addEventListener('input', function() {
+            submitBtn.disabled = !this.value.trim();
+            if (!this.value.trim()) {
+                statusMessageDiv.style.display = 'none';
             }
-        } else {
-            // Handle non-JSON responses (like HTML error pages)
-            const textResponse = await response.text();
-            console.error("Received non-JSON response:", textResponse);
-            statusMessage.textContent = `Error: Server returned an unexpected response (Status: ${response.status}). Check console for details.`;
-            statusMessage.className = 'mt-2 text-sm text-red-600';
-        }
-
-      } catch (error) {
-        console.error('Error in processPastedSermon:', error);
-        statusMessage.textContent = 'Client-side error processing sermon: ' + error.message;
-        statusMessage.className = 'mt-2 text-sm text-red-600';
-      } finally {
-        buttonText.textContent = 'Isolate Sermon from Pasted Text';
-        buttonLoader.classList.add('hidden');
-        processButton.disabled = false;
-      }
-    }
-
-    function copySermonText() {
-        const sermonText = outputTextarea.value;
-        if (!sermonText) {
-            statusMessage.textContent = 'Nothing to copy.';
-            statusMessage.className = 'mt-2 text-sm text-yellow-600';
-            return;
-        }
-        navigator.clipboard.writeText(sermonText).then(() => {
-            statusMessage.textContent = 'Sermon text copied to clipboard!';
-            statusMessage.className = 'mt-2 text-sm text-green-600';
-        }).catch(err => {
-            console.error('Failed to copy text: ', err);
-            statusMessage.textContent = 'Failed to copy sermon text. Please copy manually.';
-            statusMessage.className = 'mt-2 text-sm text-red-600';
         });
-    }
-  </script>
+
+        submitBtn.addEventListener('click', submitTranscript);
+        copyResultBtn.addEventListener('click', copyResultToClipboard);
+
+        async function submitTranscript() {
+            const transcript = transcriptInput.value.trim();
+            if (!transcript) {
+                errorMessageDiv.textContent = 'Please paste a transcript first.';
+                errorMessageDiv.style.display = 'block';
+                return;
+            }
+
+            statusMessageDiv.textContent = 'Processing... please wait.';
+            statusMessageDiv.style.display = 'block';
+            warningMessageDiv.style.display = 'none';
+            errorMessageDiv.style.display = 'none';
+            resultTextarea.value = '';
+            copyResultBtn.style.display = 'none';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(yourFirebaseFunctionUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: transcript })
+                });
+
+                submitBtn.disabled = false;
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                let outputText = "Sermon:\n" + (data.sermon || "No sermon content could be identified.");
+                if (data.prayers && data.prayers.length > 0) {
+                    outputText += "\n\nPrayers:\n";
+                    data.prayers.forEach((p, index) => {
+                        outputText += `\nPrayer ${index + 1}:\n${p.prayer}\n`;
+                    });
+                }
+                resultTextarea.value = outputText;
+
+                if (data.warning) {
+                    warningMessageDiv.textContent = 'Warning: ' + data.warning;
+                    warningMessageDiv.style.display = 'block';
+                }
+                statusMessageDiv.textContent = 'Processing complete.';
+                if (resultTextarea.value.trim()) {
+                    copyResultBtn.style.display = 'inline-block';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessageDiv.textContent = 'Error: ' + error.message;
+                errorMessageDiv.style.display = 'block';
+                statusMessageDiv.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+
+        function copyResultToClipboard() {
+            if (!resultTextarea.value.trim()) {
+                warningMessageDiv.textContent = 'Nothing to copy.';
+                warningMessageDiv.style.display = 'block';
+                return;
+            }
+            navigator.clipboard.writeText(resultTextarea.value).then(() => {
+                statusMessageDiv.textContent = 'Result copied to clipboard!';
+                statusMessageDiv.style.display = 'block';
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                errorMessageDiv.textContent = 'Failed to copy to clipboard. Your browser might not support this feature or permission was denied.';
+                errorMessageDiv.style.display = 'block';
+            });
+        }
+    </script>
 </body>
 </html>

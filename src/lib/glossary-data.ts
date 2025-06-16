@@ -1360,5 +1360,3 @@ export const glossaryTermsArray: GlossaryEntry[] = [
   },
 ];
     
-
-    

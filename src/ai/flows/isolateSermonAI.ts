@@ -1,9 +1,9 @@
 
 'use server';
 /**
- * @fileOverview Genkit AI flow to isolate sermon or lecture content from a transcript.
+ * @fileOverview Genkit AI flow to isolate sermon or lecture content and prayers from a transcript.
  *
- * - isolateSermonAI - A function that uses an LLM to extract sermon/lecture text.
+ * - isolateSermonAI - A function that uses an LLM to extract sermon/lecture text and prayers.
  * - IsolateSermonAIInput - The input type for the isolateSermonAI function.
  * - IsolateSermonAIOutput - The return type for the isolateSermonAI function.
  */
@@ -17,7 +17,8 @@ const IsolateSermonAIInputSchema = z.object({
 export type IsolateSermonAIInput = z.infer<typeof IsolateSermonAIInputSchema>;
 
 const IsolateSermonAIOutputSchema = z.object({
-  sermon: z.string().describe('The extracted sermon or lecture text. If no sermon/lecture is identifiable, this will be "No sermon or lecture content found."'),
+  sermon: z.string().describe('The extracted sermon or lecture text. If no sermon/lecture is identifiable, this will be an empty string or a specific message like "No sermon or lecture content found."'),
+  prayers: z.array(z.object({ prayer: z.string() })).describe('An array of distinct prayers found in the transcript, verbatim. Empty if no prayers are found.'),
   warning: z.string().optional().describe('Optional warning, e.g., if the transcript seems incomplete or ambiguous.'),
 });
 export type IsolateSermonAIOutput = z.infer<typeof IsolateSermonAIOutputSchema>;
@@ -27,75 +28,68 @@ export async function isolateSermonAI(input: IsolateSermonAIInput): Promise<Isol
 }
 
 const isolateSermonPrompt = ai.definePrompt({
-  name: 'isolateSermonOrLecturePrompt', // Updated name for clarity
+  name: 'isolateSermonAndPrayersPrompt',
   input: {schema: IsolateSermonAIInputSchema},
   output: {schema: IsolateSermonAIOutputSchema},
   prompt: `Task:
-From any transcript of a church service, religious meeting, lecture, class, or public talk, extract and return ONLY the full verbatim text of the main sermon or lecture delivered by the primary speaker.
+From a transcript of a church service, religious meeting, or lecture, extract and return:
+
+Only the main sermon or lecture (full, verbatim, with all non-sermon elements, timestamps, and music removed).
+
+Each individual prayer (e.g., opening prayer, intercessory prayer, closing prayer) as a separate item, verbatim, in the order they appear.
 
 Instructions:
 
-Do not summarize, paraphrase, or alter the wording of the extracted sermon or lecture in any way.
+Do not summarize or alter the wording of the sermon or prayers in any way.
 
-Present the result as a continuous, verbatim transcript—no notes, commentary, or summaries.
+Identify and extract each distinct prayer as its own separate object.
 
-Specifically:
+Prayers may begin with phrases like “Let us pray…”, “Father in Heaven…”, “Our Father…”, “Dear God…”, or any invocation, and usually end with “Amen” or a similar conclusion.
 
-Remove all non-sermon or non-lecture elements, including but not limited to:
+Exclude all music, songs, announcements, notices, non-sermon dialog, and timestamps from both the sermon and the prayers.
 
-Music or song lyrics, musical notations, “[Music]”, “[Applause]”, “[Laughter]”, or any similar stage directions or sound cues.
+The sermon/lecture and each prayer must be presented verbatim and in full, in the order they appear in the transcript.
 
-Opening and closing prayers, communal prayers, readings of announcements, group introductions, logistical details, or information about social events (e.g., youth groups, food lists, etc.).
-
-All announcements, notices, administrative information, greetings, and welcomes not integral to the actual start of the sermon/lecture.
-
-Q&A, audience discussion, audience participation, or unrelated side conversations unless part of the core teaching.
-
-Any dialogue or sections led by others that are not part of the main teaching content.
-
-All timestamps (e.g., [00:12:34], 12:34, or any other time markers, whether bracketed or not) and any markers indicating time or speaker turns, unless these are spoken as part of the sermon/lecture itself.
-
-Retain ONLY the actual sermon or lecture content, starting from the main teaching/scripture reading (if it is part of the sermon/lecture) and including all spoken exposition, illustration, and teaching through to the end as delivered by the main speaker.
-
-If the sermon or lecture is interrupted by non-sermon content (e.g., additional music or notices), skip these interruptions and continue extracting the teaching content only.
-
-Maintain the original order and wording. Do not omit any part of the main teaching, and do not insert or remove words from the original.
-
-Output only the verbatim sermon or lecture content, and nothing else—no introductory explanation or closing statement.
-
-If no sermon is detected, return: "No sermon or lecture content found."
-
-Example Input: [Music] Announcements: Pizza tonight. Prayer: Father, we thank you... Psalm 15: O Lord, who shall... Sermon: We’re in a series on maturity... [Applause] Closing Prayer: Lord, bless us...
-Example Output: Sermon We’re in a series on maturity...
+If no sermon is detected, the "sermon" field in the JSON output should be "No sermon or lecture content found." or an empty string.
+If no prayers are detected, the "prayers" field should be an empty array.
 
 Transcript to process:
 {{{transcript}}}
 
 Your JSON response must strictly adhere to the IsolateSermonAIOutputSchema.
-Ensure 'sermon' is always a string.
-The JSON output should look like: {"sermon": "extracted sermon/lecture text here...", "warning": "optional warning if applicable"}
-or if no sermon/lecture: {"sermon": "No sermon or lecture content found."}
+The JSON output should look like:
+{
+  "sermon": "Full verbatim text of the main sermon/lecture...",
+  "prayers": [
+    {"prayer": "Full verbatim text of Prayer 1."},
+    {"prayer": "Full verbatim text of Prayer 2."}
+  ],
+  "warning": "Optional warning message if applicable."
+}
+Do not include any commentary, summary, or additional explanation outside this JSON structure.
 `,
 });
 
 const isolateSermonAIFlow = ai.defineFlow(
   {
-    name: 'isolateSermonOrLectureFlow', // Updated name
+    name: 'isolateSermonAndPrayersFlow',
     inputSchema: IsolateSermonAIInputSchema,
     outputSchema: IsolateSermonAIOutputSchema,
   },
   async (input) => {
     const {output} = await isolateSermonPrompt(input);
     if (!output) {
-      console.error("AI failed to generate sermon/lecture isolation output.");
-      // Ensure a valid output structure even on complete failure from the prompt call
-      return { sermon: "Error: AI failed to process the transcript for sermon/lecture isolation." };
+      console.error("AI failed to generate sermon/prayer isolation output.");
+      return {
+        sermon: "Error: AI failed to process the transcript.",
+        prayers: [],
+        warning: "AI processing resulted in no output."
+      };
     }
-    // Ensure the output always has a sermon field, even if it's a fallback message.
     return {
-      sermon: output.sermon || "No sermon or lecture content found.", // Default if sermon is null/undefined
+      sermon: output.sermon || "No sermon or lecture content found.",
+      prayers: output.prayers || [],
       warning: output.warning
     };
   }
 );
-
