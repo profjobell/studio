@@ -30,27 +30,38 @@ const isolateSermonPrompt = ai.definePrompt({
   name: 'isolateSermonOrLecturePrompt', // Updated name for clarity
   input: {schema: IsolateSermonAIInputSchema},
   output: {schema: IsolateSermonAIOutputSchema},
-  prompt: `Extract only the sermon or lecture content from the provided text input, which may include music, songs, prayers, announcements, scripture readings, applause, introductions, or other non-sermon elements. The sermon or lecture is the main teaching or discourse delivered by the primary speaker, including embedded scripture references or quotes directly supporting the teaching.
+  prompt: `Task:
+From any transcript of a church service, religious meeting, lecture, class, or public talk, extract and return ONLY the full verbatim text of the main sermon or lecture delivered by the primary speaker.
 
 Instructions:
 
-Identify the sermon or lecture, typically the speaker’s core message, theological or educational exposition, arguments, or examples, including scripture references within the narrative.
+Do not summarize, paraphrase, or alter the wording of the extracted sermon or lecture in any way.
 
-Exclude:
+Present the result as a continuous, verbatim transcript—no notes, commentary, or summaries.
 
-Music or songs, often marked by "[Music]" or repetitive hymn-like phrases.
-Prayers, identified by addresses to God (e.g., "Father," "we pray," "amen").
-Announcements, introductions, or logistical details (e.g., event schedules, instructions).
-Standalone scripture readings before or after the sermon.
-Audience reactions like "[Applause]" or "[Laughter]."
-Non-sermon activities (e.g., "children are going out").
-Closing remarks outside the sermon’s teaching, like final prayers or hymns.
+Specifically:
 
-Retain the sermon’s structure, including headings and embedded scripture quotes, but remove separate scripture sections.
+Remove all non-sermon or non-lecture elements, including but not limited to:
 
-Focus on the primary speaker’s sermon if multiple speakers are present.
+Music or song lyrics, musical notations, “[Music]”, “[Applause]”, “[Laughter]”, or any similar stage directions or sound cues.
 
-Output only the sermon or lecture content, cleanly formatted with preserved headings and spacing. Do not include commentary or metadata.
+Opening and closing prayers, communal prayers, readings of announcements, group introductions, logistical details, or information about social events (e.g., youth groups, food lists, etc.).
+
+All announcements, notices, administrative information, greetings, and welcomes not integral to the actual start of the sermon/lecture.
+
+Q&A, audience discussion, audience participation, or unrelated side conversations unless part of the core teaching.
+
+Any dialogue or sections led by others that are not part of the main teaching content.
+
+All timestamps (e.g., [00:12:34], 12:34, or any other time markers, whether bracketed or not) and any markers indicating time or speaker turns, unless these are spoken as part of the sermon/lecture itself.
+
+Retain ONLY the actual sermon or lecture content, starting from the main teaching/scripture reading (if it is part of the sermon/lecture) and including all spoken exposition, illustration, and teaching through to the end as delivered by the main speaker.
+
+If the sermon or lecture is interrupted by non-sermon content (e.g., additional music or notices), skip these interruptions and continue extracting the teaching content only.
+
+Maintain the original order and wording. Do not omit any part of the main teaching, and do not insert or remove words from the original.
+
+Output only the verbatim sermon or lecture content, and nothing else—no introductory explanation or closing statement.
 
 If no sermon is detected, return: "No sermon or lecture content found."
 
@@ -87,3 +98,4 @@ const isolateSermonAIFlow = ai.defineFlow(
     };
   }
 );
+
