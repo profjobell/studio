@@ -53,7 +53,13 @@ const baseConceptualUsers: Record<string, Omit<CombinedUserProfile, 'id' | 'isBa
     email: "meta@kjvsentinel.com",
     avatar: "https://placehold.co/100x100/34d399/000000?text=M",
     isAdmin: true,
-  }
+  },
+  'btf-kvn-guest': { 
+    name: "BTF-KVN Guest",
+    email: "btf-kvn@guest.com",
+    avatar: "https://placehold.co/100x100/64748b/ffffff?text=BG", // Placeholder avatar for BTF-KVN Guest
+    isAdmin: false,
+  },
 };
 
 const getGeneratedAvatarUrlForUser = (name: string) => {
@@ -76,7 +82,7 @@ export function UserNav() {
     const loadUsersAndAvatar = async () => {
       startLoadingUsersTransition(async () => {
         const baseUsersArray: CombinedUserProfile[] = Object.entries(baseConceptualUsers).map(([key, val]) => ({
-          id: key,
+          id: key, // Use key as ID for base users
           type: key,
           ...val,
           isBaseUser: true,
@@ -89,7 +95,7 @@ export function UserNav() {
             id: du.id,
             name: du.newDisplayName,
             email: du.newUserEmail,
-            avatar: getGeneratedAvatarUrlForUser(du.newDisplayName), // Use generated for dynamic by default
+            avatar: getGeneratedAvatarUrlForUser(du.newDisplayName), 
             isBaseUser: false,
             isAdmin: du.isAdmin,
             type: du.id, 
@@ -108,37 +114,35 @@ export function UserNav() {
         if (adminBypassActive) {
           activeUser = combinedUsers.find(u => u.type === 'admin' && u.isBaseUser);
         } else if (storedUserType) {
+          // Prioritize matching by 'type' (which is 'id' for dynamic users)
           activeUser = combinedUsers.find(u => u.type === storedUserType);
         }
         
         const resolvedCurrentUser = activeUser || combinedUsers.find(u => u.type === 'default' && u.isBaseUser) || baseUsersArray[0];
         setCurrentUser(resolvedCurrentUser);
 
-        // Load custom avatar for the resolvedCurrentUser
         if (resolvedCurrentUser && resolvedCurrentUser.id) {
           const storedAvatarSrc = localStorage.getItem(`avatarSrc_${resolvedCurrentUser.id}`);
           const storedAvatarType = localStorage.getItem(`avatarType_${resolvedCurrentUser.id}`);
           if (storedAvatarSrc && storedAvatarType === 'uploaded') {
             setDisplayAvatarSrc(storedAvatarSrc);
-          } else if (storedAvatarType === 'generated' && storedAvatarSrc) { // If explicitly set to generated
+          } else if (storedAvatarType === 'generated' && storedAvatarSrc) {
             setDisplayAvatarSrc(storedAvatarSrc);
           }
           else {
-            setDisplayAvatarSrc(resolvedCurrentUser.avatar); // Fallback to base avatar
+            setDisplayAvatarSrc(resolvedCurrentUser.avatar); 
           }
         } else if (resolvedCurrentUser) {
-           setDisplayAvatarSrc(resolvedCurrentUser.avatar); // Fallback if ID is somehow null
+           setDisplayAvatarSrc(resolvedCurrentUser.avatar);
         }
-
       });
     };
     
     loadUsersAndAvatar();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
+  }, []); 
 
 
-  // Effect to update displayAvatarSrc when currentUser changes (e.g., after user switch)
   useEffect(() => {
     if (currentUser && currentUser.id) {
       const storedAvatarSrc = localStorage.getItem(`avatarSrc_${currentUser.id}`);
@@ -150,7 +154,7 @@ export function UserNav() {
         setDisplayAvatarSrc(storedAvatarSrc);
       }
       else {
-        setDisplayAvatarSrc(currentUser.avatar); // Fallback to base avatar from user object
+        setDisplayAvatarSrc(currentUser.avatar); 
       }
     } else if (currentUser) {
       setDisplayAvatarSrc(currentUser.avatar);
@@ -161,7 +165,6 @@ export function UserNav() {
   const handleSwitchUser = (userTypeOrId: string) => {
     const selectedUser = allUsers.find(u => u.type === userTypeOrId);
     if (selectedUser) {
-      // Set currentUser state immediately for UI responsiveness
       setCurrentUser(selectedUser); 
       
       localStorage.setItem('conceptualUserType', selectedUser.type);
@@ -172,7 +175,6 @@ export function UserNav() {
         localStorage.removeItem('adminBypassActive');
       }
       
-      // Update avatar display based on new user's preference
       const storedAvatarSrc = localStorage.getItem(`avatarSrc_${selectedUser.id}`);
       const storedAvatarType = localStorage.getItem(`avatarType_${selectedUser.id}`);
       if (storedAvatarSrc && storedAvatarType === 'uploaded') {
@@ -181,7 +183,7 @@ export function UserNav() {
          setDisplayAvatarSrc(storedAvatarSrc);
       }
       else {
-        setDisplayAvatarSrc(selectedUser.avatar); // Fallback to base avatar
+        setDisplayAvatarSrc(selectedUser.avatar);
       }
       
       router.refresh();
@@ -196,10 +198,8 @@ export function UserNav() {
     localStorage.removeItem('adminBypassActive');
     localStorage.removeItem('conceptualUserEmail');
     
-    // Clear current user and avatar state related to the logged-out user
     setCurrentUser(defaultUser); 
     if (defaultUser) {
-        // Check if default user has a custom avatar set, unlikely but good practice
         const defaultAvatarSrc = localStorage.getItem(`avatarSrc_${defaultUser.id}`);
         const defaultAvatarType = localStorage.getItem(`avatarType_${defaultUser.id}`);
         if(defaultAvatarSrc && defaultAvatarType === 'uploaded') {
@@ -208,7 +208,7 @@ export function UserNav() {
             setDisplayAvatarSrc(defaultUser.avatar);
         }
     } else {
-        setDisplayAvatarSrc(undefined); // No user, no avatar
+        setDisplayAvatarSrc(undefined); 
     }
     
     router.push('/signin');

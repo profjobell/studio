@@ -1,4 +1,6 @@
 
+"use client"; // This page needs to be a client component for localStorage and router
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons/logo';
@@ -6,8 +8,20 @@ import { siteConfig } from '@/config/site';
 import Image from 'next/image';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { FeaturesGuideModal } from '@/components/features-guide';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 export default function LandingPage() {
+  const router = useRouter();
+
+  const handleBtfKvnGuestLogin = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('conceptualUserType', 'btf-kvn-guest');
+      localStorage.setItem('conceptualUserEmail', 'btf-kvn@guest.com');
+      localStorage.removeItem('adminBypassActive'); // Ensure no admin bypass
+      router.push('/dashboard');
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -18,10 +32,29 @@ export default function LandingPage() {
               {siteConfig.name}
             </span>
           </Link>
-          <nav className="flex flex-1 items-center space-x-4 sm:justify-end">
+          <nav className="flex flex-1 items-center space-x-2 sm:space-x-4 sm:justify-end"> {/* Adjusted spacing for new button */}
             {/* Future public nav items can go here */}
             <ThemeToggle />
-             <Button asChild variant="ghost">
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full h-9 w-9" // Ensure circular and size consistency
+              onClick={handleBtfKvnGuestLogin}
+              title="BTF-KVN Guest Access"
+              aria-label="BTF-KVN Guest Access"
+            >
+              <Image 
+                src="/images/btf-kvn-logo.png" 
+                alt="BTF-KVN Logo" 
+                width={28}  // Adjust size as needed to fit well within the button
+                height={28} 
+                className="rounded-full" // if the image itself isn't perfectly circular
+                data-ai-hint="logo symbol"
+              />
+            </Button>
+
+            <Button asChild variant="ghost">
               <Link href="/signin">Login</Link>
             </Button>
             <Button asChild>
@@ -54,7 +87,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="mx-auto flex flex-col items-center justify-center rounded-xl bg-muted p-6 shadow-md sm:w-full lg:order-last lg:aspect-square">
-                <h2 className="text-xl font-semibold text-primary mb-4 text-center">
+                 <h2 className="text-xl font-semibold text-primary mb-4 text-center">
                   Illuminating Truth Through Scriptural Analysis
                 </h2>
                 <p className="text-center text-foreground/80 text-sm md:text-base leading-relaxed">
@@ -147,4 +180,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
