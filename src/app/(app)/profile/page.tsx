@@ -3,14 +3,16 @@
 
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ProfileUpdateForm } from "./components/profile-update-form";
 import { DeleteAccountSection } from "./components/delete-account-section";
-import { DashboardPreferenceForm } from "./components/dashboard-preference-form"; // Import new component
+import { DashboardPreferenceForm } from "./components/dashboard-preference-form";
 import { format } from 'date-fns';
 import { fetchConceptuallyAddedUserProfiles, type ConceptuallyAddedUserProfile } from "../settings/actions";
-import { ShieldAlert, Loader2 } from "lucide-react"; // Added Loader2
+import { ShieldAlert, Loader2, ArrowLeft } from "lucide-react"; // Added ArrowLeft
+import { useRouter } from "next/navigation"; // Added useRouter
 
 export default function ProfilePage() {
   const [conceptuallyAddedUsers, setConceptuallyAddedUsers] = useState<ConceptuallyAddedUserProfile[]>([]);
@@ -22,6 +24,7 @@ export default function ProfilePage() {
     avatarUrl: string;
     joinedDate: Date;
   } | null>(null);
+  const router = useRouter(); // Initialize router
 
   useEffect(() => {
     const loadData = async () => {
@@ -30,14 +33,14 @@ export default function ProfilePage() {
         const fetchedDynamicUsers = await fetchConceptuallyAddedUserProfiles();
         setConceptuallyAddedUsers(fetchedDynamicUsers);
 
-        const currentUserId = localStorage.getItem('conceptualUserType'); 
+        const currentUserId = localStorage.getItem('conceptualUserType');
         const currentUserEmailFromStorage = localStorage.getItem('conceptualUserEmail');
-        
+
         let name = "KJV User";
         let email = "user@example.com";
         let avatar = "https://placehold.co/100x100/eeeeee/333333?text=U";
         let userIdToSet = 'default';
-        
+
         if (currentUserId === 'admin' || currentUserId === 'meta') {
             name = currentUserId === 'admin' ? "Admin Sentinel" : "Meta Admin";
             email = `${currentUserId}@kjvsentinel.com`;
@@ -55,19 +58,19 @@ export default function ProfilePage() {
                 email = dynamicUser.newUserEmail;
                 avatar = `https://placehold.co/100x100/78716c/ffffff?text=${name.charAt(0).toUpperCase()}`;
                 userIdToSet = dynamicUser.id;
-            } else if (currentUserEmailFromStorage) { 
-                 name = currentUserEmailFromStorage.split('@')[0]; 
+            } else if (currentUserEmailFromStorage) {
+                 name = currentUserEmailFromStorage.split('@')[0];
                  email = currentUserEmailFromStorage;
                  userIdToSet = currentUserId; // Keep the ID from storage if it's not a known dynamic user but email exists
             }
         }
-        
+
         setCurrentUserDetails({
           id: userIdToSet,
           name,
           email,
           avatarUrl: avatar,
-          joinedDate: new Date("2023-01-15"), 
+          joinedDate: new Date("2023-01-15"),
         });
 
       } catch (error) {
@@ -98,9 +101,15 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">User Profile</h1>
-        <p className="text-muted-foreground">View and manage your account details.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">User Profile</h1>
+          <p className="text-muted-foreground">View and manage your account details.</p>
+        </div>
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Previous Screen
+        </Button>
       </div>
 
       <Card className="shadow-lg">
@@ -118,16 +127,16 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent>
           {/* Pass userId to ProfileUpdateForm */}
-          <ProfileUpdateForm 
-            userId={currentUserDetails.id!} 
-            initialDisplayName={currentUserDetails.name} 
-            initialEmail={currentUserDetails.email} 
+          <ProfileUpdateForm
+            userId={currentUserDetails.id!}
+            initialDisplayName={currentUserDetails.name}
+            initialEmail={currentUserDetails.email}
           />
         </CardContent>
       </Card>
 
       <Separator />
-      
+
       <DashboardPreferenceForm userId={currentUserDetails.id} />
 
       <Separator />
@@ -159,7 +168,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       )}
-      
+
       <Separator />
 
       <Card className="border-destructive shadow-lg">
