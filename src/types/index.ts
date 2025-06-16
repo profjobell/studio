@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from "lucide-react";
-import type { AnalyzeContentOutput } from "@/ai/flows/analyze-content";
+import type { AnalyzeContentOutput as FullAnalyzeContentOutput, AnalyzeContentInput as FullAnalyzeContentInput } from "@/ai/flows/analyze-content"; // Renamed to avoid conflict
 import type { z } from "zod";
 import type { AnalyzeTeachingInputSchema, AnalyzeTeachingOutputSchema } from "@/ai/flows/analyze-teaching-flow";
 
@@ -39,7 +39,8 @@ export interface ClientChatMessage {
   sources?: string[];
 }
 
-export type AnalysisReport = AnalyzeContentOutput & {
+// Use the imported FullAnalyzeContentOutput type
+export type AnalysisReport = FullAnalyzeContentOutput & {
   id: string;
   userId: string;
   title: string;
@@ -50,8 +51,8 @@ export type AnalysisReport = AnalyzeContentOutput & {
   createdAt: Date; // Or string if you store as ISO string
   updatedAt: Date; // Or string
   originalContent?: string; // For text submissions
-  calvinismDeepDiveAnalysis?: string; // Added for deep dive results
-  aiChatTranscript?: ClientChatMessage[]; // For storing AI chat
+  calvinismDeepDiveAnalysis?: string; 
+  aiChatTranscript?: ClientChatMessage[]; 
 };
 
 export type UserProfile = {
@@ -77,9 +78,10 @@ export type DocumentReference = {
   indexedKeywords?: string[];
 };
 
-// Simplified types for AI flow outputs for now
-// These are already defined in the AI flow files but re-exporting or creating specific report types can be useful.
-export type { AnalyzeContentInput, AnalyzeContentOutput } from "@/ai/flows/analyze-content";
+// Re-exporting the full types from the AI flow
+export type AnalyzeContentInput = FullAnalyzeContentInput;
+export type AnalyzeContentOutput = FullAnalyzeContentOutput;
+
 export type { CalvinismDeepDiveInput, CalvinismDeepDiveOutput } from "@/ai/flows/calvinism-deep-dive";
 
 

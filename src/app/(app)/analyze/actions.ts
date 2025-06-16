@@ -6,11 +6,12 @@ import { calvinismDeepDive, type CalvinismDeepDiveInput, type CalvinismDeepDiveO
 import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory as GenkitChatMessageHistory } from "@/ai/flows/chat-with-report-flow"; // Renamed import to avoid conflict
 import { transcribeYouTubeVideoFlow, type TranscribeYouTubeInput, type TranscribeYouTubeOutput } from "@/ai/flows/transcribe-youtube-flow"; // Import new flow
 import { isolateSermonAI } from "@/ai/flows/isolateSermonAI"; // Import the sermon isolation flow
-import type { AnalysisReport } from "@/types";
+import type { AnalysisReport, ClientChatMessage } from "@/types";
 import { z } from "zod";
 
 const analyzeContentSchema = z.object({
   content: z.string().min(1, "Content cannot be empty."),
+  referenceMaterial: z.string().optional(),
 });
 
 const calvinismDeepDiveSchema = z.object({
@@ -18,13 +19,15 @@ const calvinismDeepDiveSchema = z.object({
 });
 
 // Temporary in-memory store for reports
+// StoredReportData now directly uses AnalyzeContentOutput and adds report-specific metadata
 interface StoredReportData extends AnalyzeContentOutput {
   title: string;
   originalContent: string;
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
   fileName?: string;
-  calvinismDeepDiveAnalysis?: string;
+  calvinismDeepDiveAnalysis?: string; // Already part of AnalyzeContentOutput if the schema is updated but good to be explicit for storage
+  aiChatTranscript?: ClientChatMessage[];
 }
 
 interface TempReportStore {
@@ -36,6 +39,30 @@ declare global {
 }
 
 let tempReportDatabase: TempReportStore;
+
+const defaultMoralisticFraming = {
+  description: "Not specifically assessed or no clear moralistic framing detected.",
+  advantagesForSpeakerObedience: "N/A",
+  linkedLogicalFallacies: [],
+  historicalParallels: [],
+};
+
+const defaultVirtueSignalling = {
+  description: "Not specifically assessed or no clear virtue signalling detected.",
+  advantagesForSpeakerObedience: "N/A",
+  linkedLogicalFallacies: [],
+  historicalParallels: [],
+};
+
+const defaultBiblicalRemonstrance = {
+  scripturalFoundationAssessment: "No specific issues noted or not applicable.",
+  historicalTheologicalContextualization: "Standard KJV 1611 interpretation assumed unless otherwise noted.",
+  rhetoricalAndHomileticalObservations: "Standard delivery assumed unless otherwise noted.",
+  theologicalFrameworkRemarks: "Assumed to be within general KJV 1611 orthodoxy unless specific points are raised.",
+  kjvScripturalCounterpoints: "No specific counterpoints raised or not applicable.",
+  suggestionsForFurtherStudy: "Continue general study of the KJV 1611.",
+};
+
 
 if (process.env.NODE_ENV === 'production') {
   tempReportDatabase = {};
@@ -64,7 +91,6 @@ if (process.env.NODE_ENV === 'production') {
         { technique: "Proof-texting", description: "Uses isolated Bible verses out of context to support a preconceived idea." },
         { technique: "Loaded Language", description: "Employs terms with strong emotional connotations to sway the audience." },
       ],
-      biblicalRemonstrance: "The KJV 1611 emphasizes God's desire for all to be saved (2 Peter 3:9, 1 Timothy 2:4), which should be considered alongside verses on election. For further study, see Blue Letter Bible (https://www.blueletterbible.org).",
       identifiedIsms: [
         { ism: "Arminianism (Partial)", description: "Emphasizes free will in salvation, conditional election.", evidence: "Statements like 'humans must choose to accept God's offer'." },
         { ism: "Dispensationalism (Minor)", description: "Hints at a pre-tribulation rapture view.", evidence: "Reference to 'the Church being taken out before the great suffering'."},
@@ -73,7 +99,13 @@ if (process.env.NODE_ENV === 'production') {
         { element: "Unconditional Election (Hinted)", description: "Suggests God chose specific individuals for salvation irrespective of their actions.", evidence: "Interpretation of Ephesians 1:4-5.", infiltrationTactic: "Subtle rephrasing of 'foreknowledge' as 'predetermination'."},
         { element: "Sovereignty (Emphasized)", description: "Strong focus on God's absolute control over all events, including salvation.", evidence: "Repeated phrases like 'God's sovereign decree'."},
       ],
+      moralisticFramingAnalysis: defaultMoralisticFraming,
+      virtueSignallingAnalysis: defaultVirtueSignalling,
+      biblicalRemonstrance: defaultBiblicalRemonstrance,
+      potentialManipulativeSpeakerProfile: "The speaker profile for this sample is not specifically assessed for manipulative traits beyond general rhetorical observations.",
+      guidanceOnWiseConfrontation: "For this sample, confrontation guidance would focus on ensuring understanding of the original KJV context of cited verses and encouraging dialogue on differing interpretations of sovereignty and election.",
       calvinismDeepDiveAnalysis: undefined,
+      aiChatTranscript: [],
     };
     global.tempReportDatabaseGlobal[sampleReportId] = sampleReportData;
   }
@@ -98,7 +130,7 @@ export async function transcribeYouTubeVideoAction(
 
 
 export async function analyzeSubmittedContent(
-  submission: { content: string; analysisType: AnalysisReport['analysisType']; }
+  submission: { content: string; analysisType: AnalysisReport['analysisType']; referenceMaterial?: string; }
 ): Promise<AnalyzeContentOutput | { error: string }> {
   
   let contentToActuallyAnalyze = submission.content;
@@ -127,16 +159,18 @@ export async function analyzeSubmittedContent(
     }
   }
 
-  const validatedInputForAnalysis = analyzeContentSchema.safeParse({ content: contentToActuallyAnalyze });
+  const validatedInputForAnalysis = analyzeContentSchema.safeParse({ 
+    content: contentToActuallyAnalyze,
+    referenceMaterial: submission.referenceMaterial // Pass through if provided
+  });
+
   if (!validatedInputForAnalysis.success) {
-    // This might happen if isolated content is somehow invalid for the main analysis schema, though less likely if it's just text.
     return { error: validatedInputForAnalysis.error.errors.map(e => e.message).join(", ") };
   }
 
   try {
     const analysisResult = await analyzeContent(validatedInputForAnalysis.data);
     
-    // Prepend isolation warning to the summary if it exists and analysis was successful
     if (isolationWarningMessage && analysisResult && !('error' in analysisResult)) {
       analysisResult.summary = `${isolationWarningMessage}\n\n${analysisResult.summary}`;
     }
@@ -179,7 +213,7 @@ export async function initiateCalvinismDeepDive(
 export async function saveReportToDatabase(
   reportData: AnalyzeContentOutput,
   title: string,
-  originalContent: string, // This should be the raw user input
+  originalContent: string, 
   analysisType: AnalysisReport['analysisType'],
   fileName?: string
 ): Promise<string | { error: string }> {
@@ -188,12 +222,20 @@ export async function saveReportToDatabase(
     const reportId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     const dataToStore: StoredReportData = {
-      ...reportData, // Results from analyzing the (potentially isolated) sermon
+      ...reportData, 
       title,
-      originalContent, // The raw input from the user
+      originalContent, 
       analysisType,
       createdAt: new Date(),
-      calvinismDeepDiveAnalysis: undefined, // Initialize this
+      // Ensure all new fields from AnalyzeContentOutput are included or defaulted if not present in reportData
+      // (though they should be if the AI flow populates them)
+      moralisticFramingAnalysis: reportData.moralisticFramingAnalysis || defaultMoralisticFraming,
+      virtueSignallingAnalysis: reportData.virtueSignallingAnalysis || defaultVirtueSignalling,
+      biblicalRemonstrance: reportData.biblicalRemonstrance || defaultBiblicalRemonstrance,
+      potentialManipulativeSpeakerProfile: reportData.potentialManipulativeSpeakerProfile || "Not assessed.",
+      guidanceOnWiseConfrontation: reportData.guidanceOnWiseConfrontation || "General biblical principles apply.",
+      calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis, // This might be undefined initially
+      aiChatTranscript: [], // Initialize as empty
     };
 
     if (analysisType !== 'text' && fileName) {
@@ -235,10 +277,15 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       exposure: data.exposure,
       fallacies: data.fallacies,
       manipulativeTactics: data.manipulativeTactics,
-      biblicalRemonstrance: data.biblicalRemonstrance,
+      moralisticFramingAnalysis: data.moralisticFramingAnalysis || defaultMoralisticFraming,
+      virtueSignallingAnalysis: data.virtueSignallingAnalysis || defaultVirtueSignalling,
       identifiedIsms: data.identifiedIsms,
       calvinismAnalysis: data.calvinismAnalysis,
+      biblicalRemonstrance: data.biblicalRemonstrance || defaultBiblicalRemonstrance,
+      potentialManipulativeSpeakerProfile: data.potentialManipulativeSpeakerProfile || "Not assessed.",
+      guidanceOnWiseConfrontation: data.guidanceOnWiseConfrontation || "General biblical principles apply.",
       calvinismDeepDiveAnalysis: data.calvinismDeepDiveAnalysis,
+      aiChatTranscript: data.aiChatTranscript || [],
     };
   }
   
@@ -257,4 +304,3 @@ export async function chatWithReportAction(
     return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat with report." };
   }
 }
-    
