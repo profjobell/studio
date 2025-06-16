@@ -3,11 +3,11 @@
 
 import { useEffect, useState, ChangeEvent } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button"; // Imported buttonVariants
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input"; // Added for file input
-import { Label } from "@/components/ui/label"; // Added for file input
+import { Input } from "@/components/ui/input"; 
+import { Label } from "@/components/ui/label"; 
 import { ProfileUpdateForm } from "./components/profile-update-form";
 import { DeleteAccountSection } from "./components/delete-account-section";
 import { DashboardPreferenceForm } from "./components/dashboard-preference-form";
@@ -16,6 +16,7 @@ import { fetchConceptuallyAddedUserProfiles, type ConceptuallyAddedUserProfile }
 import { ShieldAlert, Loader2, ArrowLeft, Upload, Trash2, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils"; // Imported cn
 
 export default function ProfilePage() {
   const [conceptuallyAddedUsers, setConceptuallyAddedUsers] = useState<ConceptuallyAddedUserProfile[]>([]);
@@ -212,7 +213,7 @@ export default function ProfilePage() {
               <CardTitle className="text-2xl">{currentUserDetails.name}</CardTitle>
               <CardDescription>Joined on {format(currentUserDetails.joinedDate, 'MM/dd/yyyy')}</CardDescription>
                <div className="mt-3 flex flex-col sm:flex-row gap-2 items-center sm:items-start justify-center sm:justify-start">
-                <Label htmlFor="avatarUpload" className={Button({variant: "outline", size:"sm"}).className + " cursor-pointer"}>
+                <Label htmlFor="avatarUpload" className={cn(buttonVariants({variant: "outline", size:"sm"}), "cursor-pointer")}>
                   <Upload className="mr-2 h-4 w-4" /> Upload New
                 </Label>
                 <Input id="avatarUpload" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
