@@ -8,10 +8,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import Link from "next/link";
 import { slugify } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { Bot, User } from "lucide-react"; // Import icons for chat display
+import { Bot, User, ClipboardCopy, BrainCircuit } from "lucide-react"; // Import icons for chat display and actions
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { AiChatDialog } from "./ai-chat-dialog"; // Import AiChatDialog
+import type { chatWithReportAction } from "../../analyze/actions"; // Type import for the action
 
 interface ReportDisplayProps {
   reportData: AnalysisReport;
+  reportId: string; // Added reportId prop
+  chatAction: typeof chatWithReportAction; // Added chatAction prop
 }
 
 // Define a type for section items to include the new chat type
@@ -67,8 +73,37 @@ function ReportTable({ title, headers, data, columns }: { title: string, headers
   );
 }
 
+function getSectionTextContent(section: ReportSectionItem): string {
+  switch (section.type) {
+    case "paragraph":
+      return section.content;
+    case "table":
+      if (!section.data || section.data.length === 0) return "No data available for this section.";
+      let tableText = `${section.title}\n\n`;
+      tableText += section.headers.join("\t") + "\n";
+      section.data.forEach(row => {
+        tableText += section.columns.map(colKey => row[colKey] !== undefined && row[colKey] !== null ? String(row[colKey]) : 'N/A').join("\t") + "\n";
+      });
+      return tableText;
+    case "chat":
+      if (!section.messages || section.messages.length === 0) return "No chat messages in this section.";
+      let chatText = `Chat Discussion: ${section.title}\n\n`;
+      section.messages.forEach(msg => {
+        chatText += `${msg.sender === 'user' ? 'User' : 'AI'}: ${msg.text}\n`;
+        if (msg.sources && msg.sources.length > 0) {
+          chatText += `  Sources: ${msg.sources.join(', ')}\n`;
+        }
+      });
+      return chatText;
+    default:
+      return "Section content not available in text format.";
+  }
+}
 
-export function ReportDisplay({ reportData }: ReportDisplayProps) {
+
+export function ReportDisplay({ reportData, reportId, chatAction }: ReportDisplayProps) {
+  const { toast } = useToast();
+
   const baseSectionsData: Array<Omit<ReportSectionItem, 'id' | 'type'> & { type?: ReportSectionItem['type'] }> = [
     { title: "Original Content Submitted", content: reportData.originalContent },
     { title: "Summary", content: reportData.summary },
@@ -196,6 +231,24 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
   // reportData changes will trigger re-evaluation
   }, [reportData]);
 
+  const handleCopySection = async (section: ReportSectionItem) => {
+    const textToCopy = getSectionTextContent(section);
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast({
+        title: "Section Copied",
+        description: `Content of "${section.title}" copied to clipboard.`,
+      });
+    } catch (err) {
+      console.error("Failed to copy section: ", err);
+      toast({
+        title: "Copy Failed",
+        description: "Could not copy section content to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   return (
     <Accordion
@@ -247,6 +300,19 @@ export function ReportDisplay({ reportData }: ReportDisplayProps) {
                   ))}
                 </div>
               )}
+              <div className="mt-4 pt-4 border-t border-dashed flex flex-wrap items-center gap-2 print:hidden">
+                <Button variant="outline" size="sm" onClick={() => handleCopySection(section)}>
+                  <ClipboardCopy className="mr-2 h-4 w-4" /> Copy Section
+                </Button>
+                <AiChatDialog
+                  reportIdOrContextKey={`${reportId}-${section.id}`}
+                  dialogTitle={`Chat about: ${section.title}`}
+                  initialContextOrPrompt={getSectionTextContent(section)}
+                  triggerButtonText="Discuss Section with AI"
+                  onSendMessageAction={chatAction}
+                  isReportContext={true}
+                />
+              </div>
             </AccordionContent>
           </AccordionItem>
         ) : null

@@ -59,7 +59,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
         </div>
 
         <CardContent className="print:p-0">
-          <ReportDisplay reportData={report} />
+          <ReportDisplay reportData={report} reportId={report.id} chatAction={chatWithReportAction} />
         </CardContent>
         <CardFooter className="print:hidden">
           <div className="text-xs text-muted-foreground">
