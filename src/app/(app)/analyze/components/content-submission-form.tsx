@@ -54,7 +54,8 @@ const formSchema = z.object({
   }),
   submissionType: z.enum(["text", "file", "youtubeLink"]),
   textContent: z.string().optional(),
-  file: z.instanceof(FileList).optional(),
+  // Conditionally define 'file' schema based on environment
+  file: typeof window !== 'undefined' ? z.instanceof(FileList).optional() : z.any().optional(),
   youtubeUrl: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.submissionType === "text") {
@@ -73,21 +74,24 @@ const formSchema = z.object({
         path: ["file"],
       });
     } else {
-      for (let i = 0; i < data.file.length; i++) {
-        const file = data.file[i];
-        if (file.size > MAX_FILE_SIZE) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `File "${file.name}" size must be less than ${MAX_FILE_SIZE / (1024*1024)}MB.`,
-            path: ["file", i.toString(), "size"], 
-          });
-        }
-        if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `File "${file.name}" has an unsupported type. Please upload MP3, WAV, MP4, AVI, PDF, TXT, or DOCX.`,
-            path: ["file", i.toString(), "type"],
-          });
+      // This validation will only run effectively on the client where data.file is a FileList
+      if (typeof FileList !== 'undefined' && data.file instanceof FileList) {
+        for (let i = 0; i < data.file.length; i++) {
+          const file = data.file[i];
+          if (file.size > MAX_FILE_SIZE) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `File "${file.name}" size must be less than ${MAX_FILE_SIZE / (1024*1024)}MB.`,
+              path: ["file", i.toString(), "size"], 
+            });
+          }
+          if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `File "${file.name}" has an unsupported type. Please upload MP3, WAV, MP4, AVI, PDF, TXT, or DOCX.`,
+              path: ["file", i.toString(), "type"],
+            });
+          }
         }
       }
     }
@@ -170,7 +174,7 @@ export function ContentSubmissionForm() {
       if (text) {
         form.setValue("textContent", text, { shouldValidate: true, shouldDirty: true });
         const suggestedTitle = generateSuggestedTitle(text);
-        if (suggestedTitle) {
+        if (suggestedTitle && !form.getValues("analysisTitle")) { // Only suggest if title is empty
           form.setValue("analysisTitle", suggestedTitle, { shouldValidate: true, shouldDirty: true });
            toast({
             title: "Pasted from Clipboard",
@@ -284,7 +288,7 @@ export function ContentSubmissionForm() {
           if (hasAudio) analysisTypeString = "file_audio";
           else if (hasVideo) analysisTypeString = "file_video";
           else if (hasDocument) analysisTypeString = "file_document";
-          else analysisTypeString = "file_document";
+          else analysisTypeString = "file_document"; // Fallback, though one should be true
         } else {
           toast({ title: "Error", description: "No content provided for analysis.", variant: "destructive" });
           return;
@@ -318,7 +322,7 @@ export function ContentSubmissionForm() {
           values.analysisTitle,
           rawAnalysisInput, 
           analysisTypeString,
-          submittedFileNames.join(", ")
+          submittedFileNames.join(", ") || undefined // Pass undefined if no files
         );
 
         if (typeof saveResult === 'string') {
