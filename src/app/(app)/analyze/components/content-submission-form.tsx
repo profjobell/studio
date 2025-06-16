@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
-import { Loader2, List, XCircle, ClipboardPaste } from "lucide-react"; // Added ClipboardPaste
+import { Loader2, List, XCircle, ClipboardPaste } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport, TranscribeYouTubeOutput } from "@/types";
 import {
@@ -147,6 +147,15 @@ export function ContentSubmissionForm() {
     }
   };
 
+  const generateSuggestedTitle = (text: string): string => {
+    if (!text) return "";
+    const words = text.trim().split(/\s+/);
+    const titleWords = words.slice(0, 5).map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    );
+    return titleWords.join(" ");
+  };
+
   const handlePasteFromClipboard = async () => {
     if (!navigator.clipboard?.readText) {
       toast({
@@ -160,10 +169,19 @@ export function ContentSubmissionForm() {
       const text = await navigator.clipboard.readText();
       if (text) {
         form.setValue("textContent", text, { shouldValidate: true, shouldDirty: true });
-        toast({
-          title: "Pasted from Clipboard",
-          description: "Content has been pasted into the text area.",
-        });
+        const suggestedTitle = generateSuggestedTitle(text);
+        if (suggestedTitle) {
+          form.setValue("analysisTitle", suggestedTitle, { shouldValidate: true, shouldDirty: true });
+           toast({
+            title: "Pasted from Clipboard",
+            description: "Content pasted and a title has been suggested.",
+          });
+        } else {
+           toast({
+            title: "Pasted from Clipboard",
+            description: "Content has been pasted into the text area.",
+          });
+        }
       } else {
         toast({
           title: "Clipboard Empty",
