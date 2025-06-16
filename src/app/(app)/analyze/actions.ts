@@ -5,6 +5,7 @@ import { analyzeContent, type AnalyzeContentInput, type AnalyzeContentOutput } f
 import { calvinismDeepDive, type CalvinismDeepDiveInput, type CalvinismDeepDiveOutput } from "@/ai/flows/calvinism-deep-dive";
 import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory as GenkitChatMessageHistory } from "@/ai/flows/chat-with-report-flow"; // Renamed import to avoid conflict
 import { transcribeYouTubeVideoFlow, type TranscribeYouTubeInput, type TranscribeYouTubeOutput } from "@/ai/flows/transcribe-youtube-flow"; // Import new flow
+import { isolateSermonAI } from "@/ai/flows/isolateSermonAI"; // Import the sermon isolation flow
 import type { AnalysisReport } from "@/types";
 import { z } from "zod";
 
@@ -97,19 +98,53 @@ export async function transcribeYouTubeVideoAction(
 
 
 export async function analyzeSubmittedContent(
-  input: AnalyzeContentInput
+  submission: { content: string; analysisType: AnalysisReport['analysisType']; }
 ): Promise<AnalyzeContentOutput | { error: string }> {
-  const validatedInput = analyzeContentSchema.safeParse(input);
-  if (!validatedInput.success) {
-    return { error: validatedInput.error.errors.map(e => e.message).join(", ") };
+  
+  let contentToActuallyAnalyze = submission.content;
+  let isolationWarningMessage: string | undefined = undefined;
+
+  if (submission.analysisType === "text") {
+    const validatedInputForIsolation = z.string().min(1, "Content for sermon isolation cannot be empty.").safeParse(submission.content);
+    if (!validatedInputForIsolation.success) {
+      return { error: validatedInputForIsolation.error.errors.map(e => e.message).join(", ") };
+    }
+    
+    try {
+      const isolationResult = await isolateSermonAI({ transcript: validatedInputForIsolation.data });
+      if (isolationResult.sermon && isolationResult.sermon.trim() !== "" && isolationResult.sermon !== "No sermon or lecture content found.") {
+        contentToActuallyAnalyze = isolationResult.sermon;
+        if (isolationResult.warning) {
+          isolationWarningMessage = `Sermon/Lecture Isolation Warning: ${isolationResult.warning}`;
+        }
+      } else {
+        // If sermon is "No sermon or lecture content found." or empty after trim.
+        return { error: "No sermon or lecture content could be identified in the provided text. Analysis cannot proceed." };
+      }
+    } catch (error) {
+      console.error("Error during sermon isolation step:", error);
+      return { error: error instanceof Error ? error.message : "An unexpected error occurred during sermon/lecture isolation." };
+    }
+  }
+
+  const validatedInputForAnalysis = analyzeContentSchema.safeParse({ content: contentToActuallyAnalyze });
+  if (!validatedInputForAnalysis.success) {
+    // This might happen if isolated content is somehow invalid for the main analysis schema, though less likely if it's just text.
+    return { error: validatedInputForAnalysis.error.errors.map(e => e.message).join(", ") };
   }
 
   try {
-    const result = await analyzeContent(validatedInput.data);
-    return result;
+    const analysisResult = await analyzeContent(validatedInputForAnalysis.data);
+    
+    // Prepend isolation warning to the summary if it exists and analysis was successful
+    if (isolationWarningMessage && analysisResult && !('error' in analysisResult)) {
+      analysisResult.summary = `${isolationWarningMessage}\n\n${analysisResult.summary}`;
+    }
+    
+    return analysisResult;
   } catch (error) {
-    console.error("Error in analyzeSubmittedContent:", error);
-    return { error: error instanceof Error ? error.message : "An unexpected error occurred during analysis." };
+    console.error("Error in analyzeContent (after potential isolation):", error);
+    return { error: error instanceof Error ? error.message : "An unexpected error occurred during the main content analysis." };
   }
 }
 
@@ -144,7 +179,7 @@ export async function initiateCalvinismDeepDive(
 export async function saveReportToDatabase(
   reportData: AnalyzeContentOutput,
   title: string,
-  originalContent: string,
+  originalContent: string, // This should be the raw user input
   analysisType: AnalysisReport['analysisType'],
   fileName?: string
 ): Promise<string | { error: string }> {
@@ -153,12 +188,12 @@ export async function saveReportToDatabase(
     const reportId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     const dataToStore: StoredReportData = {
-      ...reportData,
+      ...reportData, // Results from analyzing the (potentially isolated) sermon
       title,
-      originalContent,
+      originalContent, // The raw input from the user
       analysisType,
       createdAt: new Date(),
-      calvinismDeepDiveAnalysis: undefined,
+      calvinismDeepDiveAnalysis: undefined, // Initialize this
     };
 
     if (analysisType !== 'text' && fileName) {

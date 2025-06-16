@@ -61,7 +61,7 @@ const formSchema = z.object({
     if (!data.textContent || data.textContent.trim().length < 20) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Text content must be at least 20 characters.",
+        message: "Text content must be at least 20 characters for analysis (after potential sermon isolation).",
         path: ["textContent"],
       });
     }
@@ -148,13 +148,11 @@ export function ContentSubmissionForm() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    let analysisInput = "";
+    let rawAnalysisInput = ""; // This will hold the raw text from textarea or file placeholders
     let analysisTypeString: AnalysisReport['analysisType'] = "text";
     let submittedFileNames: string[] = []; 
 
     if (values.submissionType === "youtubeLink") {
-        // Form validation (Zod) would have caught invalid URL patterns.
-        // This submission now just triggers the dialog.
         setShowYoutubeInstructionsDialog(true);
         return; 
     }
@@ -163,8 +161,13 @@ export function ContentSubmissionForm() {
       setIsTranscribing(false); 
       try {
         if (values.submissionType === "text" && values.textContent) {
-          analysisInput = values.textContent;
+          rawAnalysisInput = values.textContent;
           analysisTypeString = "text";
+          toast({
+            title: "Processing Text",
+            description: "Isolating sermon/lecture content before analysis...",
+            variant: "default",
+          });
         } else if (values.submissionType === "file" && values.file && values.file.length > 0) {
           const fileContents: string[] = [];
           let hasAudio = false;
@@ -181,8 +184,9 @@ export function ContentSubmissionForm() {
                hasDocument = true;
                toast({
                   title: "Text File Processing",
-                  description: `The text content of "${file.name}" is being read and will be used for analysis.`,
+                  description: `The text content of "${file.name}" will be used for analysis. (Sermon isolation will apply if it resembles a transcript).`,
                   variant: "default",
+                  duration: 7000,
                });
             } else if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
               const placeholderText = `File submitted: ${file.name}, Type: ${file.type}. Content extraction is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`;
@@ -190,7 +194,7 @@ export function ContentSubmissionForm() {
               hasDocument = true;
               toast({
                   title: `File Submitted: ${file.name}`,
-                  description: `For PDF/DOCX, content extraction is a simulation. A placeholder description of the file will be analyzed.`,
+                  description: `For PDF/DOCX, content extraction is a simulation. A placeholder description will be analyzed.`,
                   variant: "default",
                   duration: 7000,
               });
@@ -223,24 +227,27 @@ export function ContentSubmissionForm() {
               });
             }
           }
-          analysisInput = fileContents.join("\n\n---\n\n"); 
+          rawAnalysisInput = fileContents.join("\n\n---\n\n"); 
           
           if (hasAudio) analysisTypeString = "file_audio";
           else if (hasVideo) analysisTypeString = "file_video";
           else if (hasDocument) analysisTypeString = "file_document";
-          else analysisTypeString = "file_document"; 
-
+          else analysisTypeString = "file_document"; // Default for mixed/unknown file types
         } else {
           toast({ title: "Error", description: "No content provided for analysis.", variant: "destructive" });
           return;
         }
         
-        const analysisResult = await analyzeSubmittedContent({ content: analysisInput });
+        // Call the server action. Sermon isolation will happen server-side if analysisTypeString is "text".
+        const analysisResult = await analyzeSubmittedContent({ 
+            content: rawAnalysisInput, 
+            analysisType: analysisTypeString 
+        });
 
         if (analysisResult && 'error' in analysisResult) {
           toast({
             title: "Analysis Failed",
-            description: analysisResult.error,
+            description: analysisResult.error, // This might now include "No sermon found"
             variant: "destructive",
           });
           return;
@@ -255,10 +262,12 @@ export function ContentSubmissionForm() {
           return;
         }
         
+        // Save the report. rawAnalysisInput is the original full text.
+        // analysisResult is the analysis of the (potentially isolated) sermon.
         const saveResult = await saveReportToDatabase(
           analysisResult,
           values.analysisTitle,
-          analysisInput, 
+          rawAnalysisInput, 
           analysisTypeString,
           submittedFileNames.join(", ")
         );
@@ -276,7 +285,7 @@ export function ContentSubmissionForm() {
           if (fileInputRef.current) {
             fileInputRef.current.value = ""; 
           }
-          setShowAlternateYoutubeButton(false); // Reset alternate button state
+          setShowAlternateYoutubeButton(false); 
           setYoutubeSubmissionError(null);
         } else {
           toast({
@@ -310,7 +319,6 @@ export function ContentSubmissionForm() {
         } else { // Valid URL pattern by Zod, but no video ID found (e.g. channel URL)
             setYoutubeSubmissionError("Could not extract video ID from this YouTube URL. Try the alternate method or check the URL.");
             setShowAlternateYoutubeButton(true);
-            // Timer to clear error message is handled by useEffect
         }
     }
     setShowYoutubeInstructionsDialog(false);
@@ -383,7 +391,6 @@ export function ContentSubmissionForm() {
                               form.setValue('textContent', '');
                               form.setValue('file', undefined);
                               setDisplayedFileNames([]);
-                              // Do not reset alternate button here, it depends on dialog interaction
                           }}
                       >
                           YouTube Link
@@ -405,13 +412,13 @@ export function ContentSubmissionForm() {
                   <FormLabel>Text Content</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Paste or type your religious content here for analysis... If transcribing from YouTube, paste the transcript here."
+                      placeholder="Paste or type your religious content here for analysis (e.g., a sermon transcript). The AI will attempt to isolate the main sermon/lecture before analysis."
                       className="resize-y min-h-[200px]"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    Directly input the text you want to analyze. If using a YouTube video, paste the transcript here after obtaining it from an external site.
+                    Provide the full text. The system will first try to extract the sermon/lecture content before theological analysis.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -452,7 +459,7 @@ export function ContentSubmissionForm() {
                     />
                   </FormControl>
                   <FormDescription>
-                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB per file. (.txt content is read; others use placeholder descriptions). You can select multiple files.
+                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB per file. (.txt content will undergo sermon/lecture isolation if applicable; other files use placeholder descriptions).
                   </FormDescription>
                   <FormMessage />
                   {displayedFileNames.length > 0 && (
