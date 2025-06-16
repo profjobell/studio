@@ -38,20 +38,13 @@ export default function LandingPage() {
             
             <Button
               variant="ghost"
-              size="icon"
-              className="rounded-full h-9 w-9" // Ensure circular and size consistency
+              size="sm" // Adjusted size slightly for text
+              className="rounded-full h-9 w-auto px-3" // Auto width, maintain height, add padding
               onClick={handleBtfKvnGuestLogin}
               title="BTF-KVN Guest Access"
               aria-label="BTF-KVN Guest Access"
             >
-              <Image 
-                src="/images/btf-kvn-logo.png" 
-                alt="BTF-KVN Logo" 
-                width={28}  // Adjust size as needed to fit well within the button
-                height={28} 
-                className="rounded-full" // if the image itself isn't perfectly circular
-                data-ai-hint="logo symbol"
-              />
+              <span className="font-semibold text-xs">BTF</span> {/* Using text instead of image */}
             </Button>
 
             <Button asChild variant="ghost">
