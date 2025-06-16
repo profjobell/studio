@@ -23,7 +23,7 @@ interface CombinedUserProfile {
   id: string;
   name: string;
   email: string;
-  avatar: string;
+  avatar: string; // Base generated avatar URL
   isBaseUser: boolean; 
   isAdmin?: boolean; 
   type: string; 
@@ -56,17 +56,24 @@ const baseConceptualUsers: Record<string, Omit<CombinedUserProfile, 'id' | 'isBa
   }
 };
 
+const getGeneratedAvatarUrlForUser = (name: string) => {
+  const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U';
+  return `https://placehold.co/100x100/78716c/ffffff?text=${initials}`;
+};
+
 export function UserNav() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
   const [allUsers, setAllUsers] = useState<CombinedUserProfile[]>([]);
   const [currentUser, setCurrentUser] = useState<CombinedUserProfile | null>(null);
   const [isLoadingUsers, startLoadingUsersTransition] = useTransition();
+  const [displayAvatarSrc, setDisplayAvatarSrc] = useState<string | undefined>(undefined);
+
 
   useEffect(() => {
     setIsClient(true);
 
-    const loadUsers = async () => {
+    const loadUsersAndAvatar = async () => {
       startLoadingUsersTransition(async () => {
         const baseUsersArray: CombinedUserProfile[] = Object.entries(baseConceptualUsers).map(([key, val]) => ({
           id: key,
@@ -82,7 +89,7 @@ export function UserNav() {
             id: du.id,
             name: du.newDisplayName,
             email: du.newUserEmail,
-            avatar: `https://placehold.co/100x100/78716c/ffffff?text=${du.newDisplayName.charAt(0).toUpperCase()}`,
+            avatar: getGeneratedAvatarUrlForUser(du.newDisplayName), // Use generated for dynamic by default
             isBaseUser: false,
             isAdmin: du.isAdmin,
             type: du.id, 
@@ -94,7 +101,6 @@ export function UserNav() {
         const combinedUsers = [...baseUsersArray, ...dynamicUsersArray];
         setAllUsers(combinedUsers);
 
-        // Determine current user from localStorage
         const storedUserType = localStorage.getItem('conceptualUserType');
         const adminBypassActive = localStorage.getItem('adminBypassActive') === 'true';
         let activeUser: CombinedUserProfile | undefined;
@@ -105,18 +111,59 @@ export function UserNav() {
           activeUser = combinedUsers.find(u => u.type === storedUserType);
         }
         
-        setCurrentUser(activeUser || combinedUsers.find(u => u.type === 'default' && u.isBaseUser) || baseUsersArray[0]);
+        const resolvedCurrentUser = activeUser || combinedUsers.find(u => u.type === 'default' && u.isBaseUser) || baseUsersArray[0];
+        setCurrentUser(resolvedCurrentUser);
+
+        // Load custom avatar for the resolvedCurrentUser
+        if (resolvedCurrentUser && resolvedCurrentUser.id) {
+          const storedAvatarSrc = localStorage.getItem(`avatarSrc_${resolvedCurrentUser.id}`);
+          const storedAvatarType = localStorage.getItem(`avatarType_${resolvedCurrentUser.id}`);
+          if (storedAvatarSrc && storedAvatarType === 'uploaded') {
+            setDisplayAvatarSrc(storedAvatarSrc);
+          } else if (storedAvatarType === 'generated' && storedAvatarSrc) { // If explicitly set to generated
+            setDisplayAvatarSrc(storedAvatarSrc);
+          }
+          else {
+            setDisplayAvatarSrc(resolvedCurrentUser.avatar); // Fallback to base avatar
+          }
+        } else if (resolvedCurrentUser) {
+           setDisplayAvatarSrc(resolvedCurrentUser.avatar); // Fallback if ID is somehow null
+        }
+
       });
     };
     
-    loadUsers();
+    loadUsersAndAvatar();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []); // Run once on mount
+
+
+  // Effect to update displayAvatarSrc when currentUser changes (e.g., after user switch)
+  useEffect(() => {
+    if (currentUser && currentUser.id) {
+      const storedAvatarSrc = localStorage.getItem(`avatarSrc_${currentUser.id}`);
+      const storedAvatarType = localStorage.getItem(`avatarType_${currentUser.id}`);
+      
+      if (storedAvatarSrc && storedAvatarType === 'uploaded') {
+        setDisplayAvatarSrc(storedAvatarSrc);
+      } else if (storedAvatarType === 'generated' && storedAvatarSrc) {
+        setDisplayAvatarSrc(storedAvatarSrc);
+      }
+      else {
+        setDisplayAvatarSrc(currentUser.avatar); // Fallback to base avatar from user object
+      }
+    } else if (currentUser) {
+      setDisplayAvatarSrc(currentUser.avatar);
+    }
+  }, [currentUser]);
+
 
   const handleSwitchUser = (userTypeOrId: string) => {
     const selectedUser = allUsers.find(u => u.type === userTypeOrId);
     if (selectedUser) {
-      setCurrentUser(selectedUser);
+      // Set currentUser state immediately for UI responsiveness
+      setCurrentUser(selectedUser); 
+      
       localStorage.setItem('conceptualUserType', selectedUser.type);
       localStorage.setItem('conceptualUserEmail', selectedUser.email);
       if (selectedUser.isAdmin) {
@@ -125,19 +172,45 @@ export function UserNav() {
         localStorage.removeItem('adminBypassActive');
       }
       
-      // Refresh the page to ensure all components re-evaluate access based on new conceptual user
-      // This is important for things like the Settings page access.
+      // Update avatar display based on new user's preference
+      const storedAvatarSrc = localStorage.getItem(`avatarSrc_${selectedUser.id}`);
+      const storedAvatarType = localStorage.getItem(`avatarType_${selectedUser.id}`);
+      if (storedAvatarSrc && storedAvatarType === 'uploaded') {
+        setDisplayAvatarSrc(storedAvatarSrc);
+      } else if (storedAvatarType === 'generated' && storedAvatarSrc) {
+         setDisplayAvatarSrc(storedAvatarSrc);
+      }
+      else {
+        setDisplayAvatarSrc(selectedUser.avatar); // Fallback to base avatar
+      }
+      
       router.refresh();
-      // Consider a less disruptive update if possible, e.g. via global state/context if implemented
     }
   };
 
   const handleLogout = async () => {
     console.log("Logout action initiated");
+    const defaultUser = allUsers.find(u => u.type === 'default' && u.isBaseUser) || null;
+    
     localStorage.removeItem('conceptualUserType'); 
     localStorage.removeItem('adminBypassActive');
     localStorage.removeItem('conceptualUserEmail');
-    setCurrentUser(allUsers.find(u => u.type === 'default' && u.isBaseUser) || null); // Reset to default conceptually
+    
+    // Clear current user and avatar state related to the logged-out user
+    setCurrentUser(defaultUser); 
+    if (defaultUser) {
+        // Check if default user has a custom avatar set, unlikely but good practice
+        const defaultAvatarSrc = localStorage.getItem(`avatarSrc_${defaultUser.id}`);
+        const defaultAvatarType = localStorage.getItem(`avatarType_${defaultUser.id}`);
+        if(defaultAvatarSrc && defaultAvatarType === 'uploaded') {
+            setDisplayAvatarSrc(defaultAvatarSrc);
+        } else {
+            setDisplayAvatarSrc(defaultUser.avatar);
+        }
+    } else {
+        setDisplayAvatarSrc(undefined); // No user, no avatar
+    }
+    
     router.push('/signin');
   };
 
@@ -150,14 +223,16 @@ export function UserNav() {
       </Button>
     );
   }
+  
+  const avatarInitials = currentUser.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() || 'U';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={currentUser.avatar} alt={currentUser.name} data-ai-hint="profile person placeholder" />
-            <AvatarFallback>{currentUser.name.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={displayAvatarSrc || undefined} alt={currentUser.name} data-ai-hint="profile person custom" />
+            <AvatarFallback>{avatarInitials}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
