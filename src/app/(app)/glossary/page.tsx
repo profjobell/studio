@@ -1,3 +1,4 @@
+
 // src/app/(app)/glossary/page.tsx
 'use client';
 
@@ -65,3 +66,5 @@ export default function GlossaryPage() {
     </div>
   );
 }
+
+    

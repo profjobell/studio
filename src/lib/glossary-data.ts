@@ -157,7 +157,7 @@ export const glossaryTermsArray: GlossaryEntry[] = [
   {
     id: "poisonous-influence-of-augustine",
     term: "The Poisonous Influence of Augustine (Critical Analysis)",
-    htmlDefinition: `
+    htmlDefinition: \`
       <h2>The Poisonous Influence of Augustine</h2>
       <p>Augustine of Hippo (354–430 AD) is often regarded as one of the most important figures in the formation of Western Christianity. However, Jacob Prasch, among other critics, argues that Augustine’s theology introduced a stream of non-biblical, Hellenistic thought into the heart of the Church—an influence so pervasive that it shaped both Roman Catholicism and Reformed Protestantism in deep and counterintuitive ways. This document examines how Augustine "Platonized" the Church, replacing apostolic truth with philosophical abstraction, and how both sides of the Reformation war ironically revere his legacy.</p>
       <h3>Summary: Augustine’s Influencers and Their Theological Impact</h3>
@@ -262,12 +262,12 @@ export const glossaryTermsArray: GlossaryEntry[] = [
           <tr><td>19th-Century Liberalism</td><td>19th Century</td><td>Bible as myth; focus on ethics over doctrine</td><td>Led to theological modernism and moral relativism</td></tr>
         </tbody>
       </table>
-    `,
+    \`,
   },
   {
     id: "exposing-false-teachings-kjv-analysis",
     term: "Exposing False Teachings: Biblical Questions and KJV Passages",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>The following identifies biblical questions or passages that expose the false teachings listed in the previous response requires analyzing each heresy or false teaching to pinpoint specific KJV Bible verses or theological questions that challenge their core claims. False teachings often deviate from orthodox Christian doctrine regarding Christology, the Trinity, salvation, scripture, or ecclesiology, and the KJV, as a reflection of Nicene-Chalcedonian orthodoxy, provides clear passages that contradict these deviations. Below, I provide a concise analysis for each of the 24 false teachings from the 1st century to June 5, 2025, identifying:</p>
       <ul>
         <li><strong>False Teaching:</strong> The heresy or movement.</li>
@@ -889,19 +889,19 @@ export const glossaryTermsArray: GlossaryEntry[] = [
         <li>Top 10 Heresies in the History of Christianity</li>
         <li>What does the Bible say about the prosperity gospel?</li>
       </ul>
-    `
+    \`,
   },
   {
     id: "f-placeholder",
     term: "F Placeholder",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>This is a placeholder for terms starting with 'F'.</p>
-    `,
+    \`,
   },
   {
     id: "gestalt",
     term: "Gestalt",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/ɡəˈSHtält,ɡəˈstält/</p>
       <p><strong>Noun. German origin.</strong> An organized whole that is perceived as more than the sum of its parts. Theory of perception that emphasizes processing of entire patterns.</p>
       <p>This is formed from a bottom-up process, starting with the components and moving toward the gestalt, and it is formed from a top-down process that can employs a model of the whole, despite unclear or disarranged components.</p>
@@ -914,52 +914,52 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <p>A high level volleyball player may be able to serve the volleyball in several different expert ways. However, when asked to break it down to the component steps in order to teach someone else, it's almost like they forget how they even do it. They don't build it from the ground up. They operate at the gestalt level. Then they have to reverse-engineer what they are doing in order to teach someone else how they do it step by step.</p>
       <p>As a side note, if you are ever behind in scoring in a sports competition, you may wanna try complementing one of the opponent players on a very particular component of some process they do well. This might take their mind out of the flow state of the gestalt movement and over focus on a particular component, thus increasing the probability that they might flub on their next attempt.</p>
       <p>Also, this is why critiquing a specific aspect of someone's driving can introduce increased risk and danger because it takes the driver's mind away from the gestalt of their motions into subcomponents, which could result in momentary procedural disorientation. So think twice before dishing advice. Maybe save it for when the ride is over.</p>
-    `,
+    \`,
   },
   {
     id: "goodharts-law",
     term: "Goodhart's Law",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Goodhart's Law states that when a measure becomes a target, it ceases to be a good measure. Formulated by economist Charles Goodhart, this principle observes that once a specific metric is used as the central criterion for policy, then its accuracy as a measure of success tends to falter. Essentially, people start to game the system, focusing on meeting the numerical targets rather than achieving the underlying goals the metrics are supposed to represent.</p>
       <p>Although this "Law" was developed in economics, it also has applications in other domains.</p>
       <p>For example, "9 Marks" is an ecclesiological framework that identifies nine essential marks or traits that define a healthy church. While intended to help churches evaluate and improve their health and function, it risks violating Goodhart's Law. When churches adopt these marks as strict targets, the focus may shift from fostering genuine spiritual growth and community health to merely ticking off compliance with these marks. For instance, emphasizing measurable aspects like a "disciplined membership" or "biblical leadership" can lead to practices that fulfill these criteria superficially without truly nurturing a spiritually thriving community. This shift from the spirit to the letter of the law in church practice can undermine the very health and authenticity these marks aim to promote.</p>
-    `,
+    \`,
   },
   {
     id: "hedonic",
     term: "Hedonic",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/hē-ˈdä-nik/</p>
       <p>Relating to or considered in terms of pleasant (or unpleasant) sensation.</p>
       <p>While many definitions and usages of this word will relate it back to hedonism, we at BTF use it to emphasize particularity of somatic awareness. Being able to identify and locate sensations in the body is a valuable tool with regard to awareness and interpretation of signals that are bodies are communicating to us. This is crucial for developing discernment and for understanding whether or not one's body is going into defensive mode in the middle of a dialogue, as well as countless other applications. Hedonic and somatic awareness is an indispensable skill that must be developed and continually calibrated. Cognition is embodied meaning that cognition is a full body process, not just a function of the brain. Thus, individuals must learn how to incorporate bodily sensations into the sense making process, affording these sensations the benefit of Rule Omega just like any other good-faith interlocutor.</p>
-    `,
+    \`,
   },
   {
     id: "iatrogenic",
     term: "Iatrogenic",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Relating to illness caused by medical examination or treatment: drugs may cause side effects which can lead to iatrogenic disease.</p>
       <p>This has been relevant in BTF's studies and exploration in examining the modern church. The church should be somewhat of a hospital for the wounded. However, the "treatments" offered by today's churches cause more problems than they solve.</p>
-    `,
+    \`,
   },
   {
     id: "j-placeholder",
     term: "J Placeholder",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>This is a placeholder for terms starting with 'J'.</p>
-    `,
+    \`,
   },
   {
     id: "kairos",
     term: "Kairos",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>See "Chronos and Kairos" on this page.</p>
-    `,
+    \`,
   },
   {
     id: "liminal",
     term: "Liminal (adjective) Liminality (noun)",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Liminality is a psychological process that describes the transition between boundaries and borders. The word "liminal" comes from the Latin word limen, which means "threshold". A liminal space is an in-between area that represents a transition, whether it's physical, emotional, or metaphorical. For example, a doorway is a physical liminal space, a divorce is an emotional liminal space, and a decision is a metaphorical liminal space.</p>
       <p>When liminality is encountered, it is typically encountered impromptu and it is a place of uncertainty. In other words, the person does not realize that they are approaching a threshold. Instead, once in the threshold, they start to discover or realize that the previous mechanisms of thought and action no longer seem relevant.</p>
       <p>If someone recognizes that they are in a liminal space, they might be aware that reality operates outside their previous paradigm, but they do not yet have a paradigm for what they have encountered in reality.</p>
@@ -968,19 +968,19 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <p>Liminal spaces can provide insights into the human condition, change, and transformation.</p>
       <p>During liminal periods, social hierarchies may be temporarily dissolved or reversed.</p>
       <p>People are in a liminal space when they a going through what is often called deconstructing or as we prefer to say, "retooling."</p>
-    `,
+    \`,
   },
   {
     id: "melms-brother",
     term: "Melms, Brother",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>See entry for "Brother Melms" in the "B" section.</p>
-    `,
+    \`,
   },
   {
     id: "meme-complex",
     term: "Meme Complex or Memeplex",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>"Meme" is a term coined by Richard Dawkins in 1976. Dawkins invented this word in order to have an 'idea' equivalency for the word "gene" in genetics.</p>
       <p>A meme can be thought of as an idea or an idea pattern. Memes are abstract pattern replicators.</p>
       <p>Just as genes can work together to form co-adapted gene complexes, so groups of memes acting together form co-adapted meme complexes or memeplexes. Memeplexes include (among many other things) languages, traditions, scientific theories, financial institutions, and religions.</p>
@@ -988,28 +988,28 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <p>A meme complex usually has a central meme, or a main idea around which all the other ideas are organized. Meme complexes can have propagation memes that help them spread. Protective memes which are designed to keep adherents from coming to the cognitive level of awareness at which they might down the central meme. They can also have endurance memes, or ideas that encourage people to remain persistent devotes to the meme complex. There are also defensive memes, and other memes or ideas that serve particular functions to the persistence of the meme complex.</p>
       <p>Memetics is very useful as a tool to parse out the differences between religious mindsets and denominations within Christianity.</p>
       <p>BTF has pointed out many times that memetics reveals a system like Calvinism to be a distinct meme complex with its own central meme which is distinct from the central meme of Christianity.</p>
-    `,
+    \`,
   },
   {
     id: "metastasis",
     term: "Metastasis",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Metastasis means that cancer spreads to a different body part from where it started. When this happens, doctors say the cancer has "metastasized." Your doctor may also call it "metastatic cancer," "advanced cancer," or "stage 4 cancer." But these terms can have different meanings.</p>
-    `,
+    \`,
   },
   {
     id: "metcalfes-law",
     term: "Metcalfe’s Law",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Metcalfe's law states the effect of a telecommunications network is proportional to the square of the number of connected users of the system.</p>
       <p>This concept is useful in many other domains. For example, the value of the English language is proportional to the square of the number of people who can use it to communicate.</p>
       <p>The more users or entities who can interact using any protocol (i.e. Rule Omega, Protocol X), the more valuable that protocol or medium becomes.</p>
-    `,
+    \`,
   },
   {
     id: "multi-polar-trap",
     term: "Multi-polar trap or Multi-polar dilemma",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>A multi-polar trap is a situation in competitive systems where multiple actors (such as countries, companies, or individuals) are compelled to make decisions that lead to mutually worse outcomes, driven by the fear of falling behind others who choose not to cooperate or restrain themselves. This concept is akin to a race to the bottom, where all parties are incentivized to degrade resources, standards, or conditions to maintain competitive parity or advantage.</p>
       <p><strong>Example:</strong> If one tribe decides to deplete the forest in order to built weapons to kill the neighboring tribe, the neighboring tribe must do the same in order to protect themselves, despite having no interest in depleting the forest, or even being against the depletion of the forest.</p>
       <p>In competitive economics, depletion of resources may not be desirable, but competition may force a company to believe it is necessary in order to stay competitive or get ahead.</p>
@@ -1019,39 +1019,39 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <p><strong>Example:</strong> Village of several farmers sharing a common pasture -&gt; each farmer wishes to maximize their benefits by adding more grazing animals to increase profit -&gt; as more animals graze, the pasture is overgrazed and unable to sustain the increasing population -&gt; collective interest in maintaining a healthy pasture is compromised due to each farmer’s pursuit of personal gain -&gt; the multipolar trap is the powerful force that drives the farmers to exploit the shared resource, leading to its degradation and harming them all.</p>
       <p><strong>Contemporary Example:</strong> Artificial Intelligence – rapid development of AI poses a multipolar trap due to the competition between organizations and countries. Pursuing AI superiority drives different actors to prioritize progress over safety measures, potentially leading to unintended consequences or the misuse of AI systems. Fear of falling behind in the AI race intensifies the pressure to push boundaries without considering long-term risks.</p>
       <p>Overcoming the multipolar trap requires collaborative efforts, international cooperation, and shared ethical guidelines to ensure responsible development, prioritize safety precautions, and address potentially existential threats associated with AI.</p>
-    `,
+    \`,
   },
   {
     id: "nash-equilibrium",
     term: "Nash Equilibrium",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>A scenario in game theory in which no player in a non-cooperative game has anything to gain by changing only their own strategy.</p>
       <p>When individuals choose the best and most optimal outcome for every party involved.</p>
       <p>This means that there is no incentive to deviate from their current strategy, after taking into consideration the opponent's strategy. There exists no known profitable deviation.</p>
       <p>For example, suppose two friends wish to see a movie together but disagree on which movie. If both would rather see either movie together than see a movie alone, then both friends seeing either movie constitutes a Nash equilibrium, as neither can opt to see the other film without suffering a worse outcome.</p>
       <p>Rock, Paper, Scissors is an example of a game with no Nash equilibrium.</p>
-    `,
+    \`,
   },
   {
     id: "neoteny",
     term: "Neoteny (noun)",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p><strong>Adjectives:</strong> 'neotenous' and 'neotenic' are both considered correct.</p>
       <p>Neoteny is the retention of juvenile characteristics beyond the age where such characteristics are considered normal. The term was coined by Julius Killian in 1885 and typically refers to physiological characteristics of animals and humans.</p>
       <p>Here at Beyond The Fundamentals, we often use the term "neoteny" to refer to someone who is operating from a mindset, paradigm, world view, perspectival capacity, locus of authority, or other modality that should have been grown out of during an earlier stage of life than the one they are in now.</p>
-    `,
+    \`,
   },
   {
     id: "ostend",
     term: "Ostend",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>(third-person singular simple present ostends, present participle ostending, simple past and past participle ostended) (obsolete) To exhibit to manifest. Usually appears as “ostensibly,” meaning, as it appears or manifests.</p>
-    `,
+    \`,
   },
   {
     id: "ontology",
     term: "Ontology",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/änˈtäləjē/</p>
       <ol>
         <li>The branch of metaphysics dealing with the nature of being.</li>
@@ -1060,33 +1060,33 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <p>In metaphysics, ontology is the philosophical study of being. It investigates what types of entities exist, how they are grouped into categories, and how they are related to one another on the most fundamental level.</p>
       <p>This differs from existentialism as simply as the difference between "what" and "how" and "why." Ontology addresses WHAT exists. Existentialism addresses HOW a human should go about existing and WHY.</p>
       <p><strong>Variations:</strong> ontic, ontological.</p>
-    `,
+    \`,
   },
   {
     id: "persiflage",
     term: "Persiflage",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/ˌpʌrsəˈflɑʒ/ Persiflage is a teasing kind of banter. After a softball batter strikes out, she can expect to hear some persiflage from her teammates in the dugout.</p>
-    `,
+    \`,
   },
   {
     id: "piece-de-resistance",
     term: "Pièce de résistance",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>(plural pièces de résistance) A masterpiece the most memorable accomplishment of one's career or lifetime. synonyms ▲ Synonyms: magnum opus, masterpiece. The chief dish at a dinner.</p>
-    `,
+    \`,
   },
   {
     id: "polyandry",
     term: "Polyandry",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Polygamy in which a woman has more than one husband.</p>
-    `,
+    \`,
   },
   {
     id: "prima-facie",
     term: "Prima facie",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p><strong>adverb</strong> pri·ma fa·cie ˌprī-mə-ˈfā-shə -shē, -sē, also -shē-ˌē, -sē-ˌē</p>
       <ol>
         <li>at first view : on the first appearance</li>
@@ -1097,12 +1097,12 @@ export const glossaryTermsArray: GlossaryEntry[] = [
         <li>SELF-EVIDENT</li>
         <li>legally sufficient to establish a fact or a case unless disproved prima facie evidence</li>
       </ol>
-    `,
+    \`,
   },
   {
     id: "prisoners-dilemma",
     term: "Prisoner's Dilemma",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>The Prisoner's Dilemma is a fundamental problem in game theory that demonstrates why two people might not cooperate even if it is in both their best interests to do so. The dilemma is typically presented as a scenario in which two criminals are arrested and interrogated in separate rooms, and neither can communicate with the other. Each prisoner has the option to betray the other by testifying against them, or to cooperate with the other by remaining silent.</p>
       <p>The outcomes are as follows:</p>
       <ol>
@@ -1116,24 +1116,24 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <blockquote>“Common thread: a situation where the incentives faced by each individual decision-maker would induce them each to behave in a way that makes them all collectively worse off, while individually avoiding choices that would make them all collectively better off if all could somehow cooperatively choose.”</blockquote>
       <p>Best for me- worse for us all worse for me- best for us all.</p>
       <blockquote>“Likely outcome for a prisoner’s dilemma is that both players defect (i.e., behave selfishly), leading to suboptimal outcomes for both. This is also the Nash Equilibrium, a decision-making theorem within game theory that states a player can achieve the desired outcome by not deviating from their initial strategy. The Nash equilibrium in this example is for both plays to betray one another, even though mutual cooperation leads to a better outcome for both players however, if one prisoner chooses mutual cooperation and the other does not, one prisoner’s outcome is worse.”</blockquote>
-    `,
+    \`,
   },
   {
     id: "protocol-x",
     term: "Protocol X",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Protocol developed by BTF. This entails interacting with a person or with people in a way that loosens their grip on ideological attachments in order to free them or "unclog" them, so that they can act as a more pure conduit of the logos. This is different from sophistry where a person asks leading questions to pigeon-hole a person to a specific ideology. Protocol X leads to an open-ended release of ideology, and is not directing a person to arrive at another, but to see the futility of ideological capture in any form.</p>
       <p>See Also "Rule Omega" on this page.</p>
       <p><strong>Protocol X YouTube Video:</strong> <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">(Placeholder Link - Rick Astley)</a></p>
       <div class="aspect-video my-2">
         <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Placeholder Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
       </div>
-    `,
+    \`,
   },
   {
     id: "psychotechnology",
     term: "Psychotechnology",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Technology basically means systematic use of a tool. A physical tool fits your biology and enhances it. For example, a bottle fits your hand and enables you to carry water. Psychotechnology refers to tools that fit your mind and enhance how it operates.</p>
       <p>Think of psychotechnology as installing a new program on a computer. The hardware stays the same but new programs enable you to increase the repertoire of processes you can run. Psychotechnologies enable novel kinds of perceptions, emotions, and cognition — new ways of using our minds.</p>
       <p>The most common examples of psychotechnologies are literacy (the ability to read and write in a language) and numeracy (the ability to count and perform mathematical functions).</p>
@@ -1146,34 +1146,34 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       </ul>
       <p>This list is no where near exhaustive.</p>
       <p>Psychotechnologies can be sequenced and combined in new and innovative "recipes."</p>
-    `,
+    \`,
   },
   {
     id: "q-placeholder",
     term: "Q Placeholder",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>This is a placeholder for terms starting with 'Q'.</p>
-    `,
+    \`,
   },
   {
     id: "reify",
     term: "Reify",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Reification is a fallacy of ambiguity, when an abstract belief or hypothetical construct is treated as if it were a concrete real event or physical entity. From Latin res ("thing") and -fication, a suffix related to facere ("to make"). Reification can be loosely translated as "thing-making."</p>
       <p>This happens often when people mistake the map for the territory or when they mistake the model for reality.</p>
-    `,
+    \`,
   },
   {
     id: "rejoinder",
     term: "Rejoinder",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>a reply, especially a sharp or witty one.</p>
-    `,
+    \`,
   },
   {
     id: "rule-omega",
     term: "Rule Omega",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Rule Omega is a very active and intentional attempt to hear something that is trying to be said through a delivery mechanism (a person) employing wrong, cringe-worthy, inarticulate, low resolution communications attempts. There is no judgement, moral or otherwise, because this is an unavoidable aspect of trying to break new ground, which is a hard thing to do. There is no expectation for what it communicated to be in alignment with any moral or ideological formula.</p>
       <p>Rule Omega is a necessary component of exploratory thinking and of breaking new ground.</p>
       <p>This process is like "giving the benefit of the doubt," but on steroids.</p>
@@ -1191,23 +1191,23 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <div class="aspect-video my-2">
         <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Placeholder Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
       </div>
-    `,
+    \`,
   },
   {
     id: "salutary",
     term: "Salutary",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/ˈsæljəˌteri/ Brit /ˈsæljətri/ <strong>adjective</strong> [more salutary most salutary] formal : having a good or helpful result especially after something unpleasant has happened</p>
       <ul>
         <li>The accident should be a salutary lesson to be more careful.</li>
         <li>a salutary effect</li>
       </ul>
-    `,
+    \`,
   },
   {
     id: "salience-landscape",
     term: "Salience Landscape",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Salience Landscaping is a "featurization" function of consciousness. Not everything can be the recipient of one's attention, so the agent (person) must foreground some of it. The agent automatically forms a "gestalt" from what's foregrounded into a figure (we say "figure things out"). From there, problems can be framed.</p>
       <p>These 4 features...</p>
       <p>feature ⟷ foreground ⟷ figure ⟷ frame</p>
@@ -1220,75 +1220,75 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <p>If a person buys a certain model blue Toyota truck, they will start to notice them everywhere. They were there the whole time, but didn't stand out until now.</p>
       <p>If people are constantly told not to look at the opposite gender in a certain way or when they wear certain things, that is what will stand out to them.</p>
       <p>Since "everything" cannot be attended, everyone operates on a system of what is basically cherry-picking. This is both advantageous and adaptive for survival and thriving, but the processes behind cherry-picking can also be self deceptive and Mal-adaptive. Thus, bringing intentionality to this function of human consciousness can ideally help ameliorate the self-deceptive potential and maximize the adaptive capacity of this necessary and indispensable function of consciousness.</p>
-    `,
+    \`,
   },
   {
     id: "scenius",
     term: "Scenius",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>A term often used by Jordan Hall but coined by Brian Eno which is a term for "collective genius."</p>
       <p>Scenius is the communal form of the concept of the genius.</p>
       <p>Jordan Hall uses the term "scenius" to describe the collective intelligence and creative output of a community, network, or scene that nurtures emerging talent and fosters innovative ideas. The concept is a shift from the traditional focus on individual genius to recognizing the power of collaborative environments that contribute to individual and communal creativity. Scenius is about the collective spirit and networked intelligence, where the whole is greater than the sum of its parts, and where community support systems significantly impact individual achievements and innovations. This idea emphasizes how communities, rather than isolated individuals, can drive cultural and technological evolution.</p>
-    `,
+    \`,
   },
   {
     id: "schadenfreude",
     term: "Schadenfreude",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Schadenfreude, the emotional experience of pleasure in response to another’s misfortune. Schadenfreude is a German word that combines Schaden, which means “damage,” and Freude, which means “joy.”</p>
-    `,
+    \`,
   },
   {
     id: "science",
     term: "Science",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>The earnest endeavor to put into order the facts of experience.</p>
       <p>Knowledge gained through observation.</p>
       <p>Science is a process, not a body of knowledge. Ideologies form under the label of "science" just like they do in any other domain. These ideologies should not be confused with the process of science.</p>
       <p>It's common for people to confuse the facts with the interpretation of the facts. This should be maximally avoided. Consensus has also historically been very anti-scientific. It's important to be Asch negative (see Asch Conformity Experiments in this glossary) when dealing in the arena of science, or any other arena for that matter.</p>
-    `,
+    \`,
   },
   {
     id: "s-curve",
     term: "S-Curve",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>The "S-Curve" is a visual graph used to describe how economic, societal, resource, and technological developments typically progress through phases: an initial period of slow growth, followed by rapid acceleration, and finally a leveling off as the system matures or reaches its capacity limits. This model helps to explain and anticipate changes in various domains, indicating how innovations are adopted and integrated over time until they saturate the market or society, necessitating new innovations to start a new S-Curve. This concept is useful for understanding the lifecycle of technologies, businesses, and even cultural trends.</p>
       <p>At Beyond The Fundamentals, we emphasize the reality that human minds constitute "resources" and when ideologies and meme complexes (acting as egregors) attempt to colonize minds, the S-Curve applies to the availability of minds to colonized and the tactics used to do so. This can cause the tactics to soar in their implementation of cleverness toward rivalry, antagonism and moralism.</p>
       <div class="my-2">
         <img src="https://picsum.photos/seed/scurvegraph/400/200" alt="S-Curve Graph illustration" class="rounded-md w-full max-w-md mx-auto" data-ai-hint="s-curve graph" />
       </div>
-    `,
+    \`,
   },
   {
     id: "senescence",
     term: "Senescence",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>The condition or process of deterioration with age.</p>
       <p>The loss of a cell's power of division and growth.</p>
       <p>"Senile" shares a latin root with Senescence, 'senex,' which means "old." Senile/senility is an old fashion term connotatively used to refer to dementia.</p>
       <p>Senescence or biological aging is the gradual deterioration of functional characteristics in living organisms. Whole organism senescence involves an increase in death rates and/or a decrease in fecundity with increasing age, at least in the later part of an organism's life cycle.</p>
       <p>At Beyond The Fundamentals, we often employ the word "senescence" to refer to a societal or institutional state of decay or age in which the entity is less functional and less relevant than it was previously and is in it's proverbial "death throes."</p>
-    `,
+    \`,
   },
   {
     id: "sine-qua-non",
     term: "Sine qua non",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/ˌsinā ˌkwä ˈnōn,ˌsinē ˌkwä ˈnän/An essential condition a thing that is absolutely necessary.</p>
       <p>Something absolutely indispensable or essential.Sine qua non or conditio sine qua non is an indispensable and essential action, condition, or ingredient. It was originally a Latin legal term for "[a condition] without which it could not be", "but for...", or "without which [there is] nothing."</p>
-    `,
+    \`,
   },
   {
     id: "sophrosyne",
     term: "Sophrosyne",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>sophrosyne (uncountable) The Ancient Greek concept of an ideal of excellence of character and soundness of mind, which when combined in one well-balanced individual leads to other qualities, such as temperance, moderation, prudence, and self-control.</p>
-    `,
+    \`,
   },
   {
     id: "syncretism",
     term: "Syncretism",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>The combination of separate concepts into one new, unique idea.</p>
       <p><strong>In Culture:</strong> Cultural syncretism is when an aspect of two or more distinct cultures blend together to create a new custom, idea, practice, or philosophy.</p>
       <p><strong>In Religion:</strong> the amalgamation or attempted amalgamation of different religions, cultures, or schools of thought.</p>
@@ -1298,55 +1298,55 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <p>Religious syncretism involves the harmonious fusion of multiple religious ideologies, rituals, and customs into a distinct, unified belief system. This often transpires as diverse cultures come into contact and adopt aspects from one another.</p>
       <p>Cultural syncretism is present when Americans eat pizza, open a fortune cookie, celebrate Saint Patrick's Day, Celebrate Christmas in December.</p>
       <p>Moralistic propositionally reductive Christians mostly see syncretism as a bad thing where they perceive "truth" to be compromised and diluted with something evil and wicked. We at BTF do not recommend moralistic approaches to such things.</p>
-    `,
+    \`,
   },
   {
     id: "tainter-curve",
     term: "Tainter Curve",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Joseph Tainter's theory of the "collapse of complex societies" postulates that the complexity of societies increases as they solve problems, leading to diminishing returns on complexity investments and ultimately to collapse.</p>
       <p>At Beyond The Fundamentals, we abstract this concept to many different arenas. For example, ideologies need naive neotenous human minds to colonize. However, the more human minds are colonized by an ideology, the fewer naive neotenous minds are available to be colonized, and the returns of meme-complex propagation diminish rapidly. This is exacerbated by the fact that those constituting the constituency of the ideology can only perform simulated thinking instead of actual thinking, thus making the collapse and demise that much more inevitable.</p>
       <div class="my-2">
         <img src="https://picsum.photos/seed/taintercollapsecurve/400/200" alt="Tainter Curve Illustration" class="rounded-md w-full max-w-md mx-auto" data-ai-hint="collapse graph curve" />
       </div>
-    `,
+    \`,
   },
   {
     id: "telos",
     term: "Telos",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/ˈteläs/</p>
       <p>An ultimate object or aim.</p>
       <p>See "teleological" and "teleology."</p>
-    `,
+    \`,
   },
   {
     id: "teleological",
     term: "Teleological",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/ˌtelēəˈläjəkəl/</p>
       <p>The study of ends or purposes.</p>
       <p>A teleologist attempts to understand the purpose of something by looking at its results.</p>
       <p><strong>Philosophy:</strong> relating to or involving the explanation of phenomena in terms of the purpose they serve rather than of the cause by which they arise.</p>
       <p><strong>Theology:</strong> relating to the design and purpose of the material world.</p>
       <p>See "telos" and "teleology."</p>
-    `,
+    \`,
   },
   {
     id: "teleology",
     term: "Teleology",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>/ˌtelēˈäləjē,ˌtēlēˈäləjē/ (from τέλος, telos, 'end', 'aim', or 'goal', and λόγος, logos, 'explanation' or 'reason')</p>
       <p>Teleology or finality is a branch of causality giving the reason or an explanation for something as a function of its end, its purpose, or its goal, as opposed to as a function of its cause.</p>
       <p><strong>Extrinsic Teleology:</strong> a purpose that tis imposed by human use, such as the purpose of a fork to hold food.</p>
       <p><strong>Natural Teleology:</strong> contends that natural entities have intrinsic purposes regardless of human use or opinion, such as an acorn's intrinsic telos to become a fully grown oak tree.</p>
       <p>See "telos" and "teleological."</p>
-    `,
+    \`,
   },
   {
     id: "tropophilia",
     term: "Tropophilia (noun) Tropophilic (adjective)",
-    htmlDefinition: `
+    htmlDefinition: \`
       <p>Two key concepts here are measurements of fragility and peoples' need for certainty.</p>
       <p>Fragility can be tiered as:</p>
       <p>Fragility &gt; Robust &gt; Resilient &gt; Antifragile &gt; Tropophilic</p>
@@ -1356,9 +1356,9 @@ export const glossaryTermsArray: GlossaryEntry[] = [
       <p><strong>Antifragile</strong> describes entities that can exercise "hormesis." That is, when you stress an adaptive system, it weakens temporarily but then recovers with more strength than it previously had. This is the process that occurs when a person works out to build strength. They actually tear down the muscles slightly, but they recover in a stronger state.</p>
       <p><strong>Tropophilia</strong> is a step beyond antifragile. It is when an entity is adaptive enough to thrive on uncertainty, novelty, and "shocks." This is the ideal condition.</p>
       <p>During the covid lockdowns and the aftermath, the economy demonstrated that it was perhaps robust and resilient, but it is not antifragile or tropophilic, as the scarcity of workers and inflation are novelties from which the economy has yet to fully recover. Additional time may tell a different story, but for now the example suffices as an illustration.</p>
-    `,
+    \`,
   },
 ];
-
+    
 
     
