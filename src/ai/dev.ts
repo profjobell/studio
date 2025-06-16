@@ -13,6 +13,7 @@ import '@/ai/flows/transcribe-youtube-flow.ts';
 import '@/ai/flows/isolateSermonAI.ts'; // Added new flow for AI sermon isolation
 import '@/ai/flows/analyze-prayer-flow.ts'; // Added new flow for prayer analysis
 import '@/ai/flows/alternate-prayer-analysis-flow.ts'; // Added new flow for alternate prayer analysis
+import '@/ai/flows/in-depth-calvinism-report-flow.ts'; // Added new flow for IDCR
 
     
 

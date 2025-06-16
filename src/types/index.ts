@@ -5,6 +5,7 @@ import type { z } from "zod";
 import type { AnalyzeTeachingInputSchema, AnalyzeTeachingOutputSchema } from "@/ai/flows/analyze-teaching-flow";
 import type { PrayerAnalysisInput as FullPrayerAnalysisInput, PrayerAnalysisOutput as FullPrayerAnalysisOutput, SinglePrayerAnalysis as FullSinglePrayerAnalysis } from "@/ai/flows/analyze-prayer-flow";
 import type { AlternatePrayerAnalysisInput as FullAlternatePrayerAnalysisInput, AlternatePrayerAnalysisOutput as FullAlternatePrayerAnalysisOutput } from "@/ai/flows/alternate-prayer-analysis-flow";
+import type { InDepthCalvinismReportInput as FullInDepthCalvinismReportInput, InDepthCalvinismReportOutput as FullInDepthCalvinismReportOutput } from "@/ai/flows/in-depth-calvinism-report-flow";
 
 
 export type NavItem = {
@@ -53,6 +54,7 @@ export type AnalysisReport = FullAnalyzeContentOutput & {
   createdAt: Date; // Or string if you store as ISO string
   updatedAt: Date; // Or string
   originalContent?: string; // For text submissions
+  preparedContent?: string; // Content after sermon isolation, used for analysis
   calvinismDeepDiveAnalysis?: string; 
   aiChatTranscript?: ClientChatMessage[]; 
   prayerAnalyses?: FullPrayerAnalysisOutput; 
@@ -61,6 +63,7 @@ export type AnalysisReport = FullAnalyzeContentOutput & {
     analysis: FullAlternatePrayerAnalysisOutput;
     analyzedAt: Date;
   }>;
+  inDepthCalvinismReport?: FullInDepthCalvinismReportOutput; // Added for IDCR
 };
 
 export type UserProfile = {
@@ -149,4 +152,8 @@ export type SinglePrayerAnalysis = FullSinglePrayerAnalysis;
 // Types for Alternate Prayer Analysis
 export type AlternatePrayerAnalysisInput = FullAlternatePrayerAnalysisInput;
 export type AlternatePrayerAnalysisOutput = FullAlternatePrayerAnalysisOutput;
+
+// Types for In-Depth Calvinism Report
+export type InDepthCalvinismReportInput = FullInDepthCalvinismReportInput;
+export type InDepthCalvinismReportOutput = FullInDepthCalvinismReportOutput;
     

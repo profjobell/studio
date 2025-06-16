@@ -1,14 +1,14 @@
 
 "use client";
 
-import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput, SinglePrayerAnalysis, AlternatePrayerAnalysisOutput } from "@/types"; 
+import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput, SinglePrayerAnalysis, AlternatePrayerAnalysisOutput, InDepthCalvinismReportOutput } from "@/types"; 
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from "next/link";
 import { slugify } from "@/lib/utils";
 import { useEffect, useState, useTransition } from "react";
-import { Bot, User, ClipboardCopy, BrainCircuit, ShieldQuestion, Loader2, FileSearch } from "lucide-react"; 
+import { Bot, User, ClipboardCopy, BrainCircuit, ShieldQuestion, Loader2, FileSearch, AlertTriangle } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { AiChatDialog } from "./ai-chat-dialog"; 
@@ -30,7 +30,8 @@ type ReportSectionItem =
   | { title: string; id?: string; content: any; type: "nestedObject"; renderer: (data: any) => JSX.Element }
   | { title: string; id: string; messages: ClientChatMessage[]; type: "chat" }
   | { title: string; id: string; prayerAnalyses: PrayerAnalysisOutput; type: "prayerAnalysis" }
-  | { title: string; id: string; alternatePrayerAnalyses: AnalysisReport['alternatePrayerAnalyses']; type: "alternatePrayerAnalysis" };
+  | { title: string; id: string; alternatePrayerAnalyses: AnalysisReport['alternatePrayerAnalyses']; type: "alternatePrayerAnalysis" }
+  | { title: string; id: string; idcrData: InDepthCalvinismReportOutput; type: "idcr" }; // Added IDCR type
 
 
 const tableHeaderStyle = "bg-secondary text-secondary-foreground text-base font-semibold";
@@ -167,7 +168,20 @@ function getSectionTextContent(section: ReportSectionItem): string {
         apaText += `  Overall Spiritual Integrity: ${apa.overallSpiritualIntegrityAssessment}\n\n`;
       });
       return apaText;
-
+    case "idcr":
+        let idcrText = `In-Depth Calvinistic Report (IDCR)\n\n`;
+        const idcr = section.idcrData;
+        idcrText += `1. Overt Calvinism Analysis:\n${idcr.overtCalvinismAnalysis}\n\n`;
+        idcrText += `2. Subtle Communication Analysis:\n${idcr.subtleCommunicationAnalysis}\n\n`;
+        idcrText += `3. Psychological Tactics Analysis:\n${idcr.psychologicalTacticsAnalysis}\n\n`;
+        idcrText += `4. God's Character Representation:\n`;
+        idcrText += `   God the Father: ${idcr.godsCharacterRepresentation.godTheFather}\n`;
+        idcrText += `   Lord Jesus Christ: ${idcr.godsCharacterRepresentation.lordJesusChrist}\n`;
+        idcrText += `   Holy Spirit: ${idcr.godsCharacterRepresentation.holySpirit}\n\n`;
+        idcrText += `5. Cessationism Analysis:\n${idcr.cessationismAnalysis}\n\n`;
+        idcrText += `6. Anti-Semitism Analysis:\n${idcr.antiSemitismAnalysis}\n\n`;
+        idcrText += `7. Further Unearthing Notes:\n${idcr.furtherUnearthingNotes}\n\n`;
+        return idcrText;
     default:
       return "Section content not available in text format.";
   }
@@ -328,9 +342,29 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
     );
   };
 
+  const renderInDepthCalvinismReport = (idcrData: InDepthCalvinismReportOutput) => (
+    <div className="space-y-3 text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed print:text-xs">
+        <p><strong>Overt Calvinism Analysis:</strong> {idcrData.overtCalvinismAnalysis}</p>
+        <p><strong>Subtle Communication Analysis:</strong> {idcrData.subtleCommunicationAnalysis}</p>
+        <p><strong>Psychological Tactics Analysis:</strong> {idcrData.psychologicalTacticsAnalysis}</p>
+        <div>
+            <h4 className="font-semibold mt-1">God&apos;s Character Representation:</h4>
+            <ul className="list-disc list-inside pl-4">
+                <li><strong>God the Father:</strong> {idcrData.godsCharacterRepresentation.godTheFather}</li>
+                <li><strong>Lord Jesus Christ:</strong> {idcrData.godsCharacterRepresentation.lordJesusChrist}</li>
+                <li><strong>Holy Spirit:</strong> {idcrData.godsCharacterRepresentation.holySpirit}</li>
+            </ul>
+        </div>
+        <p><strong>Cessationism Analysis:</strong> {idcrData.cessationismAnalysis}</p>
+        <p><strong>Anti-Semitism Analysis:</strong> {idcrData.antiSemitismAnalysis}</p>
+        <p><strong>Further Unearthing Notes:</strong> {idcrData.furtherUnearthingNotes}</p>
+    </div>
+  );
+
 
   const baseSectionsData: Array<Omit<ReportSectionItem, 'id'>> = [
     { title: "Original Content Submitted", content: reportData.originalContent || "", type: "paragraph" },
+    { title: "Prepared Content (Used for Analysis)", content: reportData.preparedContent || reportData.originalContent || "", type: "paragraph" },
     { title: "Summary", content: reportData.summary, type: "paragraph" },
     {
       title: "Scriptural Analysis (KJV 1611)",
@@ -419,6 +453,15 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
       type: "alternatePrayerAnalysis" as const,
     });
   }
+  
+  if (reportData.inDepthCalvinismReport) {
+    sections.push({
+      title: "In-Depth Calvinistic Report (IDCR)",
+      id: slugify("In-Depth Calvinistic Report (IDCR)"),
+      idcrData: reportData.inDepthCalvinismReport,
+      type: "idcr" as const,
+    });
+  }
 
 
   if (reportData.aiChatTranscript && reportData.aiChatTranscript.length > 0) {
@@ -464,14 +507,20 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
              else if (section.type === "chat" && section.messages && section.messages.length > 0) openValues.push(section.id);
              else if (section.type === "prayerAnalysis" && section.prayerAnalyses && section.prayerAnalyses.length > 0) openValues.push(section.id);
              else if (section.type === "alternatePrayerAnalysis" && section.alternatePrayerAnalyses && section.alternatePrayerAnalyses.length > 0) openValues.push(section.id);
+             else if (section.type === "idcr" && section.idcrData) openValues.push(section.id);
         }
     });
-    // Ensure APA results section is open if it exists and has content
     if (reportData.alternatePrayerAnalyses && reportData.alternatePrayerAnalyses.length > 0) {
       const apaSectionId = slugify("Alternate Prayer Analysis Results");
       if (!openValues.includes(apaSectionId)) {
         openValues.push(apaSectionId);
       }
+    }
+    if (reportData.inDepthCalvinismReport) {
+        const idcrSectionId = slugify("In-Depth Calvinistic Report (IDCR)");
+        if(!openValues.includes(idcrSectionId)) {
+            openValues.push(idcrSectionId);
+        }
     }
     return openValues;
   }
@@ -538,11 +587,13 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
         (section.type === "nestedObject" && section.content) ||
         (section.type === "chat" && section.messages && section.messages.length > 0) ||
         (section.type === "prayerAnalysis" && section.prayerAnalyses && section.prayerAnalyses.length > 0) ||
-        (section.type === "alternatePrayerAnalysis" && section.alternatePrayerAnalyses && section.alternatePrayerAnalyses.length > 0) ? (
+        (section.type === "alternatePrayerAnalysis" && section.alternatePrayerAnalyses && section.alternatePrayerAnalyses.length > 0) ||
+        (section.type === "idcr" && section.idcrData) ? ( // Condition for IDCR
           <AccordionItem value={section.id!} key={section.id!} id={section.id!} className="border-b border-border print:border-gray-300">
             <AccordionTrigger className="py-4 text-xl font-semibold hover:no-underline text-left text-primary print:text-lg print:py-2">
               <div className="flex items-center gap-2">
                  {(section.type === "prayerAnalysis" || section.type === "alternatePrayerAnalysis") && <ShieldQuestion className="h-5 w-5 text-primary/80" />}
+                 {section.type === "idcr" && <AlertTriangle className="h-5 w-5 text-destructive" />}
                  {section.title}
               </div>
             </AccordionTrigger>
@@ -559,6 +610,9 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
               )}
               {section.type === "nestedObject" && section.content && section.renderer && (
                 section.renderer(section.content)
+              )}
+              {section.type === "idcr" && section.idcrData && (
+                renderInDepthCalvinismReport(section.idcrData)
               )}
               {section.type === "chat" && section.messages && (
                 <div className="space-y-3 py-2">

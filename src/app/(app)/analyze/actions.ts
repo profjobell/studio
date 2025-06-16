@@ -8,15 +8,19 @@ import { transcribeYouTubeVideoFlow, type TranscribeYouTubeInput, type Transcrib
 import { isolateSermonAI } from "@/ai/flows/isolateSermonAI";
 import { analyzePrayersInText, type PrayerAnalysisInput, type PrayerAnalysisOutput } from "@/ai/flows/analyze-prayer-flow"; 
 import { alternatePrayerAnalysisFlow, type AlternatePrayerAnalysisInput, type AlternatePrayerAnalysisOutput } from "@/ai/flows/alternate-prayer-analysis-flow"; // Import APA flow
+import { generateInDepthCalvinismReport, type InDepthCalvinismReportInput, type InDepthCalvinismReportOutput } from "@/ai/flows/in-depth-calvinism-report-flow"; // Import IDCR flow
 import type { AnalysisReport, ClientChatMessage } from "@/types";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
+// Updated schema to reflect new input structure for analyzeSubmittedContent
 const analyzeContentServerSchema = z.object({
-  content: z.string().min(1, "Content cannot be empty."),
-  referenceMaterial: z.string().optional(),
+  content: z.string().min(1, "Content cannot be empty."), // This will be the "preparedText"
+  originalRawContent: z.string().min(1, "Original raw content cannot be empty."), // The content before preparation
   analysisType: z.enum(["text", "file_audio", "file_video", "file_document", "youtube_video"]),
   analyzePrayers: z.boolean().optional(),
+  requestIDCR: z.boolean().optional(), // New field for IDCR request
+  referenceMaterial: z.string().optional(),
 });
 
 
@@ -27,14 +31,16 @@ const calvinismDeepDiveSchema = z.object({
 // Temporary in-memory store for reports
 interface StoredReportData extends AnalyzeContentOutput {
   title: string;
-  originalContent: string;
+  originalContent: string; // This will store the raw, pre-isolation content
+  preparedContent?: string; // This will store the content post-isolation, used for analysis
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
   fileName?: string;
   calvinismDeepDiveAnalysis?: string; 
   aiChatTranscript?: ClientChatMessage[];
   prayerAnalyses?: PrayerAnalysisOutput; 
-  alternatePrayerAnalyses?: AnalysisReport['alternatePrayerAnalyses']; // Added for APA results
+  alternatePrayerAnalyses?: AnalysisReport['alternatePrayerAnalyses'];
+  inDepthCalvinismReport?: InDepthCalvinismReportOutput; // Added for IDCR results
 }
 
 interface TempReportStore {
@@ -80,6 +86,7 @@ if (process.env.NODE_ENV === 'production') {
     const sampleReportData: StoredReportData = {
       title: "Sample Analysis: Sermon on Divine Sovereignty",
       originalContent: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. This sermon explores the depths of God's sovereignty in salvation, referencing key scriptures and theological arguments. It discusses concepts such as election, predestination, and the irresistible grace of God, aiming to provide a clear understanding from a perspective rooted in the KJV 1611. The implications of these doctrines on Christian life and evangelism are also considered.",
+      preparedContent: "This sermon explores the depths of God's sovereignty in salvation, referencing key scriptures and theological arguments. It discusses concepts such as election, predestination, and the irresistible grace of God, aiming to provide a clear understanding from a perspective rooted in the KJV 1611. The implications of these doctrines on Christian life and evangelism are also considered.",
       analysisType: "text",
       createdAt: new Date("2025-05-22T10:00:00Z"),
       summary: "This is a brief summary of the analyzed content. It highlights key findings and overall theological alignment with KJV 1611. The content shows tendencies towards [Ism Example] and some elements of Calvinistic thought, particularly regarding [Calvinism Example].",
@@ -114,12 +121,42 @@ if (process.env.NODE_ENV === 'production') {
       calvinismDeepDiveAnalysis: undefined,
       aiChatTranscript: [],
       prayerAnalyses: [], 
-      alternatePrayerAnalyses: [], // Initialize APA for sample
+      alternatePrayerAnalyses: [], 
+      inDepthCalvinismReport: undefined, // Initialize IDCR for sample
     };
     global.tempReportDatabaseGlobal[sampleReportId] = sampleReportData;
   }
   tempReportDatabase = global.tempReportDatabaseGlobal;
 }
+
+
+// Server Action for Isolating Sermon/Lecture from text
+export async function isolateSermonOrLectureAction(
+  rawTextContent: string
+): Promise<{ preparedText: string; isolationWarning?: string } | { error: string }> {
+  if (!rawTextContent || typeof rawTextContent !== 'string' || rawTextContent.trim() === "") {
+    return { error: "Text content for preparation cannot be empty." };
+  }
+  try {
+    const isolationResult = await isolateSermonAI({ transcript: rawTextContent });
+    if (isolationResult.sermon && isolationResult.sermon.trim() !== "" && isolationResult.sermon !== "No sermon or lecture content found.") {
+      return { preparedText: isolationResult.sermon, isolationWarning: isolationResult.warning };
+    } else {
+      // If isolation fails to find a distinct sermon, we might return the original text or a specific message.
+      // For now, let's return the original if no sermon is explicitly identified but the input wasn't just "No sermon..."
+      // Or, if it explicitly says "No sermon...", we might want to indicate that.
+      // For this use case, if isolation says "No sermon...", we treat it as such. Otherwise, use original.
+      if (isolationResult.sermon === "No sermon or lecture content found.") {
+        return { error: "No distinct sermon or lecture content could be identified. Analysis might be less effective or use the full text." }; // Or return { preparedText: rawTextContent, isolationWarning: "No sermon/lecture found; using full text." }
+      }
+      return { preparedText: rawTextContent, isolationWarning: "Sermon/lecture isolation did not find distinct content; using original text for analysis." };
+    }
+  } catch (error) {
+    console.error("Error during sermon/lecture isolation action:", error);
+    return { error: error instanceof Error ? error.message : "An unexpected error occurred during text preparation." };
+  }
+}
+
 
 // New Server Action for YouTube Transcription
 export async function transcribeYouTubeVideoAction(
@@ -140,76 +177,62 @@ export async function transcribeYouTubeVideoAction(
 
 export async function analyzeSubmittedContent(
   submission: z.infer<typeof analyzeContentServerSchema>
-): Promise<AnalyzeContentOutput | { error: string }> {
+): Promise<(AnalyzeContentOutput & { prayerAnalyses?: PrayerAnalysisOutput; inDepthCalvinismReport?: InDepthCalvinismReportOutput }) | { error: string }> {
   
   const validatedSubmission = analyzeContentServerSchema.safeParse(submission);
   if (!validatedSubmission.success) {
       return { error: validatedSubmission.error.errors.map(e => e.message).join(", ") };
   }
-  const { content, analysisType, analyzePrayers, referenceMaterial } = validatedSubmission.data;
+  // 'content' here is the preparedText, 'originalRawContent' is the raw input before preparation
+  const { content: preparedContentToAnalyze, analysisType, analyzePrayers, requestIDCR, referenceMaterial } = validatedSubmission.data;
 
-  let contentToActuallyAnalyze = content;
-  let isolationWarningMessage: string | undefined = undefined;
+  let mainAnalysisResult: AnalyzeContentOutput;
+  let prayerAnalysisResults: PrayerAnalysisOutput | undefined = undefined;
+  let idcrResult: InDepthCalvinismReportOutput | undefined = undefined;
+  let isolationWarningMessage: string | undefined = undefined; // This warning is from the preparation step, not this action
 
-  if (analysisType === "text") {
-    const validatedInputForIsolation = z.string().min(1, "Content for sermon isolation cannot be empty.").safeParse(content);
-    if (!validatedInputForIsolation.success) {
-      return { error: validatedInputForIsolation.error.errors.map(e => e.message).join(", ") };
-    }
-    
-    try {
-      const isolationResult = await isolateSermonAI({ transcript: validatedInputForIsolation.data });
-      if (isolationResult.sermon && isolationResult.sermon.trim() !== "" && isolationResult.sermon !== "No sermon or lecture content found.") {
-        contentToActuallyAnalyze = isolationResult.sermon;
-        if (isolationResult.warning) {
-          isolationWarningMessage = `Sermon/Lecture Isolation Warning: ${isolationResult.warning}`;
-        }
-      } else {
-        // If only announcements etc. were found, we might still want to proceed with the original text if it's short,
-        // or treat as no sermon found if isolation result is explicitly "No sermon..."
-        // For now, if isolation says "No sermon...", we error out.
-        // If it's empty but didn't explicitly say "No sermon", we might fall back to original or analyze the (likely non-sermon) isolated text.
-        // Current flow: if isolationResult.sermon is empty or "No sermon...", then it's an error.
-        return { error: "No sermon or lecture content could be identified in the provided text. Analysis cannot proceed." };
-      }
-    } catch (error) {
-      console.error("Error during sermon isolation step:", error);
-      return { error: error instanceof Error ? error.message : "An unexpected error occurred during sermon/lecture isolation." };
-    }
-  }
+  // The 'preparedContentToAnalyze' is already the result of sermon isolation if 'text' type.
+  // So, we don't need to call isolateSermonAI here again.
+  // However, the form might still pass an isolationWarning from its preparation step if needed.
 
   // Prepare input for main content analysis
   const mainAnalysisInput: AnalyzeContentInput = { 
-    content: contentToActuallyAnalyze,
+    content: preparedContentToAnalyze,
     referenceMaterial: referenceMaterial 
   };
 
   try {
     // Perform main content analysis
-    const mainAnalysisResult = await analyzeContent(mainAnalysisInput);
+    mainAnalysisResult = await analyzeContent(mainAnalysisInput);
     if ('error' in mainAnalysisResult) { 
-      return mainAnalysisResult;
+      return mainAnalysisResult; // This error would be from the analyzeContent flow itself
     }
     
-    if (isolationWarningMessage) {
-      mainAnalysisResult.summary = `${isolationWarningMessage}\n\n${mainAnalysisResult.summary}`;
-    }
-
-    // If analyzePrayers is true, perform prayer analysis
-    let prayerAnalysisResults: PrayerAnalysisOutput | undefined = undefined;
+    // If analyzePrayers is true, perform prayer analysis on the PREPARED content
     if (analyzePrayers) {
       try {
-        prayerAnalysisResults = await analyzePrayersInText({ textContent: contentToActuallyAnalyze });
+        prayerAnalysisResults = await analyzePrayersInText({ textContent: preparedContentToAnalyze });
       } catch (prayerError) {
         console.error("Error during prayer analysis step:", prayerError);
         mainAnalysisResult.summary += "\n\nWarning: Prayer analysis encountered an error and could not be completed.";
       }
     }
 
+    // If requestIDCR is true, perform In-Depth Calvinistic Report on PREPARED content
+    if (requestIDCR) {
+      try {
+        idcrResult = await generateInDepthCalvinismReport({ content: preparedContentToAnalyze });
+      } catch (idcrError) {
+        console.error("Error during IDCR generation:", idcrError);
+        mainAnalysisResult.summary += "\n\nWarning: In-Depth Calvinistic Report generation encountered an error and could not be completed.";
+      }
+    }
+
     // Combine results
-    const finalReport: AnalyzeContentOutput & { prayerAnalyses?: PrayerAnalysisOutput } = {
+    const finalReport: AnalyzeContentOutput & { prayerAnalyses?: PrayerAnalysisOutput; inDepthCalvinismReport?: InDepthCalvinismReportOutput } = {
       ...mainAnalysisResult,
       prayerAnalyses: prayerAnalysisResults || [], 
+      inDepthCalvinismReport: idcrResult,
     };
     
     return finalReport;
@@ -249,9 +272,10 @@ export async function initiateCalvinismDeepDive(
 }
 
 export async function saveReportToDatabase(
-  reportData: AnalyzeContentOutput & { prayerAnalyses?: PrayerAnalysisOutput }, 
+  reportData: AnalyzeContentOutput & { prayerAnalyses?: PrayerAnalysisOutput; inDepthCalvinismReport?: InDepthCalvinismReportOutput }, 
   title: string,
-  originalContent: string, 
+  originalContent: string, // This is the raw content before any preparation
+  preparedContent: string, // This is the content used for analysis (after sermon isolation if applicable)
   analysisType: AnalysisReport['analysisType'],
   fileName?: string
 ): Promise<string | { error: string }> {
@@ -263,6 +287,7 @@ export async function saveReportToDatabase(
       ...reportData, 
       title,
       originalContent, 
+      preparedContent,
       analysisType,
       createdAt: new Date(),
       moralisticFramingAnalysis: reportData.moralisticFramingAnalysis || defaultMoralisticFraming,
@@ -273,7 +298,8 @@ export async function saveReportToDatabase(
       calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis, 
       aiChatTranscript: [], 
       prayerAnalyses: reportData.prayerAnalyses || [], 
-      alternatePrayerAnalyses: [], // Initialize APA field
+      alternatePrayerAnalyses: [], 
+      inDepthCalvinismReport: reportData.inDepthCalvinismReport, // Save IDCR
     };
 
     if (analysisType !== 'text' && fileName) {
@@ -308,6 +334,7 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       createdAt: data.createdAt,
       updatedAt: new Date(), 
       originalContent: data.originalContent,
+      preparedContent: data.preparedContent,
       summary: data.summary,
       scripturalAnalysis: data.scripturalAnalysis,
       historicalContext: data.historicalContext,
@@ -325,7 +352,8 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       calvinismDeepDiveAnalysis: data.calvinismDeepDiveAnalysis,
       aiChatTranscript: data.aiChatTranscript || [],
       prayerAnalyses: data.prayerAnalyses || [], 
-      alternatePrayerAnalyses: data.alternatePrayerAnalyses || [], // Fetch APA
+      alternatePrayerAnalyses: data.alternatePrayerAnalyses || [],
+      inDepthCalvinismReport: data.inDepthCalvinismReport, // Fetch IDCR
     };
   }
   

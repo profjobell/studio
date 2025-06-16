@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useTransition, useRef, useEffect } from "react";
-import { analyzeSubmittedContent, saveReportToDatabase } from "../actions";
-import { Loader2, List, XCircle, ClipboardPaste, ShieldQuestion } from "lucide-react";
+import { useState, useTransition, useRef } from "react";
+import { analyzeSubmittedContent, saveReportToDatabase, isolateSermonOrLectureAction } from "../actions";
+import { Loader2, List, XCircle, ClipboardPaste, ShieldQuestion, BookText, SearchCheck, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -50,6 +51,7 @@ const formSchema = z.object({
   file: typeof window !== 'undefined' ? z.instanceof(FileList).optional() : z.any().optional(),
   youtubeUrl: z.string().optional(),
   analyzePrayers: z.boolean().default(false).optional(), 
+  requestIDCR: z.boolean().default(false).optional(), // New checkbox for IDCR
   referenceMaterial: z.string().optional(), 
 }).superRefine((data, ctx) => {
   if (data.submissionType === "text") {
@@ -102,10 +104,16 @@ const formSchema = z.object({
 export function ContentSubmissionForm() {
   const { toast } = useToast();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isSubmittingAnalysis, startSubmittingAnalysisTransition] = useTransition();
+  const [isPreparingText, startPreparingTextTransition] = useTransition();
   const [submissionTypeState, setSubmissionTypeState] = useState<"text" | "file" | "youtubeLink">("text");
   const [displayedFileNames, setDisplayedFileNames] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [preparedText, setPreparedText] = useState<string | null>(null);
+  const [isTextPrepared, setIsTextPrepared] = useState(false);
+  const [isolationWarning, setIsolationWarning] = useState<string | null>(null);
+  const [rawContentForSaving, setRawContentForSaving] = useState<string>("");
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -117,20 +125,17 @@ export function ContentSubmissionForm() {
       file: undefined,
       youtubeUrl: "",
       analyzePrayers: false,
+      requestIDCR: false,
       referenceMaterial: "",
     },
     mode: "onChange", 
   });
 
   const formValues = form.watch();
-  const isFormGenerallyValid = 
-    formValues.analysisTitle.length >= 5 &&
-    (
-      (formValues.submissionType === "text" && (formValues.textContent?.trim() ?? "").length >= 20) ||
-      (formValues.submissionType === "file" && formValues.file && formValues.file.length > 0 && Array.from(formValues.file).every(f => f.size <= MAX_FILE_SIZE && SUPPORTED_FILE_TYPES.includes(f.type))) ||
-      (formValues.submissionType === "youtubeLink" && formValues.youtubeUrl && YOUTUBE_URL_REGEX_COMPREHENSIVE.test(formValues.youtubeUrl))
-    );
-
+  const isTitleValid = formValues.analysisTitle.length >= 5;
+  const isContentValidForPreparation = 
+    (formValues.submissionType === "text" && (formValues.textContent?.trim() ?? "").length >= 20) ||
+    (formValues.submissionType === "file" && formValues.file && formValues.file.length > 0 && Array.from(formValues.file).every(f => f.size <= MAX_FILE_SIZE && SUPPORTED_FILE_TYPES.includes(f.type)));
 
   const handleClearFiles = () => {
     form.setValue('file', undefined, { shouldValidate: true, shouldDirty: true });
@@ -138,6 +143,9 @@ export function ContentSubmissionForm() {
     if (fileInputRef.current) {
         fileInputRef.current.value = ""; 
     }
+    setIsTextPrepared(false);
+    setPreparedText(null);
+    setIsolationWarning(null);
   };
 
   const generateSuggestedTitle = (text: string): string => {
@@ -192,13 +200,17 @@ export function ContentSubmissionForm() {
     }
   };
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const handlePrepareText = async () => {
+    const values = form.getValues();
+    let rawAnalysisInput = "";
+    setRawContentForSaving(""); // Clear previous raw content
+
     if (values.submissionType === "youtubeLink") {
         if (values.youtubeUrl && YOUTUBE_URL_REGEX_COMPREHENSIVE.test(values.youtubeUrl)) {
             window.open('https://kome.ai/tools/youtube-transcript-generator', '_blank');
             toast({
                 title: "Transcription Tool Opened",
-                description: "Kome.ai has been opened in a new tab. Please use it to get the transcript, then paste it into the 'Text Input' tab here for analysis.",
+                description: "Kome.ai has been opened in a new tab. Please use it to get the transcript, then paste it into the 'Text Input' tab here and click 'Prepare Text & View'.",
                 duration: 10000, 
             });
         } else {
@@ -208,97 +220,99 @@ export function ContentSubmissionForm() {
                 variant: "destructive",
             });
         }
-        return; // Stop further processing for YouTube links
+        return; 
+    }
+    
+    startPreparingTextTransition(async () => {
+        setIsolationWarning(null);
+        setPreparedText(null);
+        setIsTextPrepared(false);
+
+        try {
+            if (values.submissionType === "text" && values.textContent) {
+                rawAnalysisInput = values.textContent;
+                setRawContentForSaving(rawAnalysisInput);
+                toast({ title: "Preparing Text", description: "Isolating sermon/lecture content...", variant: "default" });
+                const isolationResult = await isolateSermonOrLectureAction(rawAnalysisInput);
+                if ('error' in isolationResult) {
+                    setPreparedText(rawAnalysisInput); // Fallback to raw text if isolation errors but still allow analysis
+                    setIsolationWarning(`Isolation Error: ${isolationResult.error}. Using full text for analysis.`);
+                    toast({ title: "Preparation Warning", description: `Using full text. ${isolationResult.error}`, variant: "default", duration: 7000 });
+                } else {
+                    setPreparedText(isolationResult.preparedText);
+                    if (isolationResult.isolationWarning) setIsolationWarning(isolationResult.isolationWarning);
+                    toast({ title: "Text Prepared", description: "Sermon/lecture content isolated for analysis.", variant: "default" });
+                }
+            } else if (values.submissionType === "file" && values.file && values.file.length > 0) {
+                const file = values.file[0]; // Assuming single file for simplicity of preparation step for now
+                if (file.type === "text/plain") {
+                    rawAnalysisInput = await file.text();
+                    setRawContentForSaving(rawAnalysisInput);
+                    toast({ title: "Preparing Text File", description: `Reading ${file.name} and isolating sermon/lecture...`, variant: "default" });
+                    const isolationResult = await isolateSermonOrLectureAction(rawAnalysisInput);
+                     if ('error' in isolationResult) {
+                        setPreparedText(rawAnalysisInput);
+                        setIsolationWarning(`Isolation Error: ${isolationResult.error}. Using full text for analysis.`);
+                        toast({ title: "Preparation Warning", description: `Using full text of ${file.name}. ${isolationResult.error}`, variant: "default", duration: 7000 });
+                    } else {
+                        setPreparedText(isolationResult.preparedText);
+                        if (isolationResult.isolationWarning) setIsolationWarning(isolationResult.isolationWarning);
+                        toast({ title: "Text File Prepared", description: `Content from ${file.name} isolated.`, variant: "default" });
+                    }
+                } else {
+                    rawAnalysisInput = `File submitted for analysis: ${file.name}, Type: ${file.type}. Content extraction/transcription is simulated. This placeholder text represents the file's content.`;
+                    setRawContentForSaving(rawAnalysisInput); // Save the placeholder as raw
+                    setPreparedText(rawAnalysisInput); // For non-txt files, prepared text is the placeholder itself
+                    toast({ title: "File Prepared (Simulated)", description: `Placeholder content for ${file.name} is ready for analysis.`, variant: "default" });
+                }
+            } else {
+                toast({ title: "Error", description: "No content provided for preparation.", variant: "destructive" });
+                return;
+            }
+            setIsTextPrepared(true);
+        } catch (error) {
+            console.error("Text preparation error:", error);
+            toast({ title: "Preparation Failed", description: error instanceof Error ? error.message : "An unexpected error occurred during text preparation.", variant: "destructive" });
+            setPreparedText(rawContentForSaving || values.textContent || ""); // Fallback
+            setIsolationWarning("An error occurred during preparation. Using original text.");
+            setIsTextPrepared(true); // Still allow analysis on original if prep fails
+        }
+    });
+  };
+
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!isTextPrepared || !preparedText) {
+        toast({ title: "Error", description: "Please prepare the text using the 'Prepare Text & View' button before running analyses.", variant: "destructive"});
+        return;
     }
 
-    startTransition(async () => {
-      let rawAnalysisInput = ""; 
+    startSubmittingAnalysisTransition(async () => {
       let analysisTypeString: AnalysisReport['analysisType'] = "text";
-      let submittedFileNames: string[] = []; 
+      let submittedFileName: string | undefined = undefined; 
+
+      if (values.submissionType === "file" && values.file && values.file.length > 0) {
+          const file = values.file[0];
+          submittedFileName = file.name;
+          if (file.type.startsWith("audio/")) analysisTypeString = "file_audio";
+          else if (file.type.startsWith("video/")) analysisTypeString = "file_video";
+          else if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "text/plain") {
+             analysisTypeString = "file_document";
+          } else {
+            analysisTypeString = "file_document"; // Default for other mixed types
+          }
+      } else if (values.submissionType === "text") {
+          analysisTypeString = "text";
+      }
+      // YouTube type is handled by Prepare Text button, won't reach here directly for submission
 
       try {
-        if (values.submissionType === "text" && values.textContent) {
-          rawAnalysisInput = values.textContent;
-          analysisTypeString = "text";
-          toast({
-            title: "Processing Text",
-            description: "Isolating sermon/lecture content before analysis...",
-            variant: "default",
-          });
-        } else if (values.submissionType === "file" && values.file && values.file.length > 0) {
-          const fileContents: string[] = [];
-          let hasAudio = false;
-          let hasVideo = false;
-          let hasDocument = false;
-
-          for (let i = 0; i < values.file.length; i++) {
-            const file = values.file[i];
-            submittedFileNames.push(file.name);
-
-            if (file.type === "text/plain") {
-               const text = await file.text();
-               fileContents.push(`Content from ${file.name}:\n${text}`);
-               hasDocument = true;
-               toast({
-                  title: "Text File Processing",
-                  description: `The text content of "${file.name}" will be used for analysis. (Sermon isolation will apply if it resembles a transcript).`,
-                  variant: "default",
-                  duration: 7000,
-               });
-            } else if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-              const placeholderText = `File submitted: ${file.name}, Type: ${file.type}. Content extraction is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`;
-              fileContents.push(placeholderText);
-              hasDocument = true;
-              toast({
-                  title: `File Submitted: ${file.name}`,
-                  description: `For PDF/DOCX, content extraction is a simulation. A placeholder description will be analyzed.`,
-                  variant: "default",
-                  duration: 7000,
-              });
-            } else if (file.type.startsWith("audio/")) {
-              const placeholderText = `File submitted: ${file.name}, Type: ${file.type}. Transcription is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`;
-              fileContents.push(placeholderText);
-              hasAudio = true;
-              toast({
-                title: `File Submitted: ${file.name}`,
-                description: `Audio transcription is simulated. A placeholder description of the file will be analyzed.`,
-                variant: "default",
-                duration: 7000,
-              });
-            } else if (file.type.startsWith("video/")) {
-              const placeholderText = `File submitted: ${file.name}, Type: ${file.type}. Transcription is not performed for this file type in the current system. A description of the file submission will be used for analysis if applicable.`;
-              fileContents.push(placeholderText);
-              hasVideo = true;
-              toast({
-                title: `File Submitted: ${file.name}`,
-                description: `Video transcription is simulated. A placeholder description of the file will be analyzed.`,
-                variant: "default",
-                duration: 7000,
-              });
-            } else {
-              fileContents.push(`Unsupported file type: ${file.name} (type: ${file.type}). A description of the file submission will be used for analysis.`);
-               toast({
-                title: `Unsupported File Type: ${file.name}`,
-                description: `File "${file.name}" has an unsupported type (${file.type}). A placeholder description will be analyzed.`,
-                variant: "destructive",
-              });
-            }
-          }
-          rawAnalysisInput = fileContents.join("\n\n---\n\n"); 
-          
-          if (hasAudio) analysisTypeString = "file_audio";
-          else if (hasVideo) analysisTypeString = "file_video";
-          else if (hasDocument) analysisTypeString = "file_document";
-          else analysisTypeString = "file_document"; // Default for other mixed types
-        } else {
-          toast({ title: "Error", description: "No content provided for analysis.", variant: "destructive" });
-          return;
-        }
-        
         const analysisResult = await analyzeSubmittedContent({ 
-            content: rawAnalysisInput, 
+            content: preparedText, 
+            originalRawContent: rawContentForSaving || values.textContent || "Original content not captured.", // Use state or fallback
             analysisType: analysisTypeString,
             analyzePrayers: values.analyzePrayers || false,
+            requestIDCR: values.requestIDCR || false,
             referenceMaterial: values.referenceMaterial,
         });
 
@@ -323,9 +337,10 @@ export function ContentSubmissionForm() {
         const saveResult = await saveReportToDatabase(
           analysisResult,
           values.analysisTitle,
-          rawAnalysisInput, 
+          rawContentForSaving || values.textContent || "Original content not captured.", // Save original raw content
+          preparedText, // Save prepared content
           analysisTypeString,
-          submittedFileNames.join(", ") || undefined 
+          submittedFileName 
         );
 
         if (typeof saveResult === 'string') {
@@ -341,6 +356,10 @@ export function ContentSubmissionForm() {
           if (fileInputRef.current) {
             fileInputRef.current.value = ""; 
           }
+          setIsTextPrepared(false);
+          setPreparedText(null);
+          setIsolationWarning(null);
+          setRawContentForSaving("");
         } else {
           toast({
             title: "Failed to Save Report",
@@ -399,6 +418,7 @@ export function ContentSubmissionForm() {
                               form.setValue('file', undefined);
                               form.setValue('youtubeUrl', '');
                               setDisplayedFileNames([]);
+                              setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
                           }}
                       >
                           Text Input
@@ -411,6 +431,7 @@ export function ContentSubmissionForm() {
                               field.onChange('file');
                               form.setValue('textContent', '');
                               form.setValue('youtubeUrl', '');
+                              setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
                           }}
                       >
                           File Upload
@@ -424,6 +445,7 @@ export function ContentSubmissionForm() {
                               form.setValue('textContent', '');
                               form.setValue('file', undefined);
                               setDisplayedFileNames([]);
+                              setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
                           }}
                       >
                           YouTube Link
@@ -457,13 +479,14 @@ export function ContentSubmissionForm() {
                   </div>
                   <FormControl>
                     <Textarea
-                      placeholder="Paste or type your religious content here for analysis (e.g., a sermon transcript). The AI will attempt to isolate the main sermon/lecture before analysis."
+                      placeholder="Paste or type your religious content here (e.g., a sermon transcript). Then click 'Prepare Text & View' below."
                       className="resize-y min-h-[200px]"
                       {...field}
+                      onChange={(e) => { field.onChange(e); setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);}}
                     />
                   </FormControl>
                   <FormDescription>
-                    Provide the full text. The system will first try to extract the sermon/lecture content before theological analysis.
+                    Provide the full text. The system will first try to extract the sermon/lecture content.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -485,10 +508,11 @@ export function ContentSubmissionForm() {
                   } else {
                     setDisplayedFileNames([]);
                   }
+                  setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
                 };
                 return (
                 <FormItem>
-                  <FormLabel>Upload File(s)</FormLabel>
+                  <FormLabel>Upload File</FormLabel>
                   <FormControl>
                     <input
                       type="file"
@@ -497,14 +521,13 @@ export function ContentSubmissionForm() {
                       ref={fileInputRef} 
                       onBlur={onBlur}
                       onChange={handleFileChange} 
-                      disabled={disabled || isPending}
+                      disabled={disabled || isSubmittingAnalysis || isPreparingText}
                       accept={SUPPORTED_FILE_TYPES.join(",")}
                       className="p-2 border border-input bg-background rounded-md file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground w-full h-10"
-                      multiple
                     />
                   </FormControl>
                   <FormDescription>
-                    Supported: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB per file. (.txt content will undergo sermon/lecture isolation if applicable; other files use placeholder descriptions).
+                    Single file: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB. (.txt content will undergo sermon/lecture isolation; other files use placeholder descriptions).
                   </FormDescription>
                   <FormMessage />
                   {displayedFileNames.length > 0 && (
@@ -512,7 +535,7 @@ export function ContentSubmissionForm() {
                       <div className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground mb-2">
                         <div className="flex items-center gap-1">
                             <List className="h-4 w-4" />
-                            Selected Files:
+                            Selected File:
                         </div>
                         <Button
                           type="button"
@@ -549,17 +572,44 @@ export function ContentSubmissionForm() {
                     <Input
                       placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
                       {...field}
-                      disabled={isPending}
+                      disabled={isSubmittingAnalysis || isPreparingText}
+                       onChange={(e) => { field.onChange(e); setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);}}
                     />
                   </FormControl>
                   <FormDescription>
-                    Enter the YouTube URL. Clicking &apos;Get Transcript&apos; will open Kome.ai for manual transcription.
+                    Enter the YouTube URL. Clicking &apos;Prepare Text & View&apos; (if YouTube type selected) will open Kome.ai for manual transcription.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
           )}
+
+          <Button
+            type="button"
+            onClick={handlePrepareText}
+            disabled={!isTitleValid || !isContentValidForPreparation || isPreparingText || isSubmittingAnalysis || submissionTypeState === 'youtubeLink'}
+            variant="secondary"
+            className="w-full"
+          >
+            {isPreparingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookText className="mr-2 h-4 w-4" />}
+            {submissionTypeState === 'youtubeLink' ? "Get Transcript via Kome.ai (then paste to Text tab)" : "Prepare Text & View"}
+          </Button>
+          
+          {isTextPrepared && preparedText && (
+            <div className="mt-4 space-y-3 p-4 border rounded-md bg-muted/50">
+              <Label className="text-md font-semibold">Prepared Text for Analysis:</Label>
+              {isolationWarning && (
+                <div className="text-sm text-yellow-700 dark:text-yellow-400 p-2 border border-yellow-500/50 rounded-md bg-yellow-500/10 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4"/> {isolationWarning}
+                </div>
+              )}
+              <ScrollArea className="h-40 w-full rounded-md border bg-background p-3">
+                <p className="text-sm whitespace-pre-wrap">{preparedText}</p>
+              </ScrollArea>
+            </div>
+          )}
+
 
           <FormField
             control={form.control}
@@ -591,17 +641,43 @@ export function ContentSubmissionForm() {
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
-                    disabled={!isFormGenerallyValid || isPending}
+                    disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
                     id="analyzePrayers"
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel htmlFor="analyzePrayers" className="flex items-center cursor-pointer">
+                  <FormLabel htmlFor="analyzePrayers" className={`flex items-center ${(!isTextPrepared || isSubmittingAnalysis) ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                      <ShieldQuestion className="mr-2 h-4 w-4 text-primary" />
                     Analyze Prayers within Content
                   </FormLabel>
                   <FormDescription>
-                    Enable to perform specific KJV alignment and manipulative language analysis on prayers found in the submitted text. (Requires valid main submission).
+                    Enable to perform specific KJV alignment and manipulative language analysis on prayers found in the prepared text.
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="requestIDCR"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/50">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
+                    id="requestIDCR"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel htmlFor="requestIDCR" className={`flex items-center ${(!isTextPrepared || isSubmittingAnalysis) ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+                     <SearchCheck className="mr-2 h-4 w-4 text-primary" />
+                    Request In-Depth Calvinistic Report (IDCR)
+                  </FormLabel>
+                  <FormDescription>
+                    Enable for a comprehensive report on Calvinistic elements, psychological tactics, God&apos;s character representation, Cessationism, and Anti-Semitism.
                   </FormDescription>
                 </div>
               </FormItem>
@@ -610,18 +686,16 @@ export function ContentSubmissionForm() {
           
             <Button
               type="submit"
-              disabled={!isFormGenerallyValid || (submissionTypeState !== 'youtubeLink' && isPending)}
+              disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
               className="w-full"
             >
-              {submissionTypeState === 'youtubeLink' ? (
-                "Get Transcript (Kome.ai)"
-              ) : isPending ? (
+              {isSubmittingAnalysis ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Submitting for Analysis...
                 </>
               ) : (
-                "Submit for Analysis"
+                "Run Analyses"
               )}
             </Button>
         </form>

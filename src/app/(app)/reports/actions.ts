@@ -1,7 +1,7 @@
 
 "use server";
 
-import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput, AlternatePrayerAnalysisOutput } from "@/types";
+import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput, AlternatePrayerAnalysisOutput, InDepthCalvinismReportOutput } from "@/types";
 import { revalidatePath } from "next/cache";
 import { fetchReportFromDatabase as fetchReportData } from "../analyze/actions"; 
 import { calvinismDeepDive } from "@/ai/flows/calvinism-deep-dive";
@@ -14,14 +14,16 @@ import type { AnalyzeContentOutput } from "@/ai/flows/analyze-content";
 // Define the structure of the StoredReportData including all new fields.
 type StoredReportData = AnalyzeContentOutput & {
   title: string;
-  originalContent: string;
+  originalContent: string; // Raw content before any preparation
+  preparedContent?: string; // Content used for analysis (e.g., after sermon isolation)
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
   fileName?: string;
   calvinismDeepDiveAnalysis?: string; 
   aiChatTranscript?: ClientChatMessage[];
   prayerAnalyses?: PrayerAnalysisOutput; 
-  alternatePrayerAnalyses?: AnalysisReport['alternatePrayerAnalyses']; // Added for APA results
+  alternatePrayerAnalyses?: AnalysisReport['alternatePrayerAnalyses']; 
+  inDepthCalvinismReport?: InDepthCalvinismReportOutput; // Added for IDCR results
 };
 
 declare global {
@@ -74,6 +76,7 @@ export async function fetchReportsList(): Promise<AnalysisReport[]> {
         createdAt: reportData.createdAt,
         updatedAt: reportData.createdAt, 
         originalContent: reportData.originalContent,
+        preparedContent: reportData.preparedContent,
         summary: reportData.summary,
         scripturalAnalysis: reportData.scripturalAnalysis,
         historicalContext: reportData.historicalContext,
@@ -91,7 +94,8 @@ export async function fetchReportsList(): Promise<AnalysisReport[]> {
         calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis,
         aiChatTranscript: reportData.aiChatTranscript || [],
         prayerAnalyses: reportData.prayerAnalyses || [], 
-        alternatePrayerAnalyses: reportData.alternatePrayerAnalyses || [], // Include APA
+        alternatePrayerAnalyses: reportData.alternatePrayerAnalyses || [], 
+        inDepthCalvinismReport: reportData.inDepthCalvinismReport, // Include IDCR
       });
     }
   }
@@ -146,6 +150,10 @@ export async function generateInDepthCalvinismReportAction(reportId: string): Pr
   }
 
   try {
+    // Note: This calls the OLDER, simpler calvinismDeepDive flow, not the new IDCR flow.
+    // The IDCR is now generated during initial submission if requested.
+    // This function might need to be re-evaluated if it's meant to trigger the new IDCR.
+    // For now, it correctly calls the existing `calvinismDeepDive` flow.
     const deepDiveResult = await calvinismDeepDive({ content: report.originalContent });
     if (deepDiveResult && 'error' in deepDiveResult) {
         return { success: false, message: `Deep dive failed: ${deepDiveResult.error}` };
@@ -178,6 +186,9 @@ export async function generateContentReportTxtOutput(reportId: string): Promise<
   output += `Analysis Type: ${report.analysisType.replace(/_/g, " ")}\n\n`;
 
   output += `--- Original Content Submitted ---\n${report.originalContent || 'N/A'}\n\n`;
+  if (report.preparedContent && report.preparedContent !== report.originalContent) {
+    output += `--- Prepared Content (Used for Analysis) ---\n${report.preparedContent}\n\n`;
+  }
   output += `--- Summary ---\n${report.summary || 'N/A'}\n\n`;
 
   output += `--- Scriptural Analysis (KJV 1611) ---\n`;
@@ -252,7 +263,22 @@ export async function generateContentReportTxtOutput(reportId: string): Promise<
   } else { output += `N/A\n\n`; }
   
   if (report.calvinismDeepDiveAnalysis) {
-    output += `--- In-Depth Calvinism Examination ---\n${report.calvinismDeepDiveAnalysis}\n\n`;
+    output += `--- In-Depth Calvinism Examination (Legacy Deep Dive) ---\n${report.calvinismDeepDiveAnalysis}\n\n`;
+  }
+
+  if (report.inDepthCalvinismReport) {
+    const idcr = report.inDepthCalvinismReport;
+    output += `--- In-Depth Calvinistic Report (IDCR) ---\n`;
+    output += `1. Overt Calvinism Analysis:\n${idcr.overtCalvinismAnalysis}\n\n`;
+    output += `2. Subtle Communication Analysis:\n${idcr.subtleCommunicationAnalysis}\n\n`;
+    output += `3. Psychological Tactics Analysis:\n${idcr.psychologicalTacticsAnalysis}\n\n`;
+    output += `4. God's Character Representation:\n`;
+    output += `   God the Father: ${idcr.godsCharacterRepresentation.godTheFather}\n`;
+    output += `   Lord Jesus Christ: ${idcr.godsCharacterRepresentation.lordJesusChrist}\n`;
+    output += `   Holy Spirit: ${idcr.godsCharacterRepresentation.holySpirit}\n\n`;
+    output += `5. Cessationism Analysis:\n${idcr.cessationismAnalysis}\n\n`;
+    output += `6. Anti-Semitism Analysis:\n${idcr.antiSemitismAnalysis}\n\n`;
+    output += `7. Further Unearthing Notes:\n${idcr.furtherUnearthingNotes}\n\n`;
   }
 
   output += `--- Biblical Remonstrance (Detailed Assessment) ---\n`;
