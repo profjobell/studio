@@ -22,12 +22,12 @@ const ManipulativePhrasingItemSchema = z.object({
   type: z.enum(['Gaslighting', 'Manipulative Phrasing']).describe("The type of manipulation."),
 });
 
-export const AlternatePrayerAnalysisInputSchema = z.object({
+const AlternatePrayerAnalysisInputSchema = z.object({
   prayerText: z.string().describe("The prayer text to be analyzed."),
 });
 export type AlternatePrayerAnalysisInput = z.infer<typeof AlternatePrayerAnalysisInputSchema>;
 
-export const AlternatePrayerAnalysisOutputSchema = z.object({
+const AlternatePrayerAnalysisOutputSchema = z.object({
   overallSummary: z.string().describe("A concise summary of the findings."),
   virtueSignalling: z.object({
     items: z.array(VirtueSignallingItemSchema).describe("Specific instances of virtue signalling found."),
