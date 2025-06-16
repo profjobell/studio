@@ -1,18 +1,22 @@
 
 "use client";
 
-import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput, SinglePrayerAnalysis } from "@/types"; // Ensured ClientChatMessage is imported
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput, SinglePrayerAnalysis, AlternatePrayerAnalysisOutput } from "@/types"; 
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from "next/link";
 import { slugify } from "@/lib/utils";
-import { useEffect, useState } from "react";
-import { Bot, User, ClipboardCopy, BrainCircuit, ShieldQuestion } from "lucide-react"; // Import icons for chat display and actions
+import { useEffect, useState, useTransition } from "react";
+import { Bot, User, ClipboardCopy, BrainCircuit, ShieldQuestion, Loader2, FileSearch } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { AiChatDialog } from "./ai-chat-dialog"; // Import AiChatDialog
-import type { chatWithReportAction } from "../../analyze/actions"; // Type import for the action
+import { AiChatDialog } from "./ai-chat-dialog"; 
+import type { chatWithReportAction } from "../../analyze/actions"; 
+import { runAlternatePrayerAnalysisAction } from "../../analyze/actions";
+import { useRouter } from "next/navigation";
+import { format } from 'date-fns';
+
 
 interface ReportDisplayProps {
   reportData: AnalysisReport;
@@ -25,7 +29,8 @@ type ReportSectionItem =
   | { title: string; id?: string; data: any[]; headers: string[]; columns: string[]; type: "table" }
   | { title: string; id?: string; content: any; type: "nestedObject"; renderer: (data: any) => JSX.Element }
   | { title: string; id: string; messages: ClientChatMessage[]; type: "chat" }
-  | { title: string; id: string; prayerAnalyses: PrayerAnalysisOutput; type: "prayerAnalysis" };
+  | { title: string; id: string; prayerAnalyses: PrayerAnalysisOutput; type: "prayerAnalysis" }
+  | { title: string; id: string; alternatePrayerAnalyses: AnalysisReport['alternatePrayerAnalyses']; type: "alternatePrayerAnalysis" };
 
 
 const tableHeaderStyle = "bg-secondary text-secondary-foreground text-base font-semibold";
@@ -91,7 +96,7 @@ function renderNestedObject(data: any, title?: string): string {
     Object.entries(data).forEach(([key, value]) => {
       const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
       if (typeof value === 'object' && value !== null) {
-        text += `${formattedKey}:\n${renderNestedObject(value, '')}`; // Recursive call for deeper objects
+        text += `${formattedKey}:\n${renderNestedObject(value, '')}`; 
       } else {
         text += `${formattedKey}: ${value}\n`;
       }
@@ -127,10 +132,9 @@ function getSectionTextContent(section: ReportSectionItem): string {
       return chatText;
     case "prayerAnalysis":
       if (!section.prayerAnalyses || section.prayerAnalyses.length === 0) return "No prayer analyses available.";
-      let prayerText = `Prayer Analysis\n\n`;
+      let prayerText = `Prayer Analysis (Initial)\n\n`;
       section.prayerAnalyses.forEach((pa, index) => {
-        prayerText += `Prayer ${index + 1}:\n`;
-        prayerText += `  Identified Text: "${pa.identifiedPrayerText}"\n`;
+        prayerText += `Prayer ${index + 1} Text: "${pa.identifiedPrayerText}"\n`;
         prayerText += `  KJV Alignment: ${pa.kjvAlignmentAssessment}\n`;
         prayerText += `  Manipulative Language: ${pa.manipulativeLanguage.hasPotentiallyManipulativeElements ? 'Detected' : 'Not Detected'}\n`;
         if (pa.manipulativeLanguage.hasPotentiallyManipulativeElements) {
@@ -140,14 +144,63 @@ function getSectionTextContent(section: ReportSectionItem): string {
         prayerText += `  Overall Assessment: ${pa.overallAssessment}\n\n`;
       });
       return prayerText;
+    case "alternatePrayerAnalysis":
+      if (!section.alternatePrayerAnalyses || section.alternatePrayerAnalyses.length === 0) return "No alternate prayer analyses available.";
+      let apaText = `Alternate Prayer Analysis Results\n\n`;
+      section.alternatePrayerAnalyses.forEach((apaItem, index) => {
+        const apa = apaItem.analysis;
+        apaText += `APA for Prayer: "${apaItem.originalPrayerText}" (Analyzed: ${new Date(apaItem.analyzedAt).toLocaleString()})\n`;
+        apaText += `  Overall Summary: ${apa.overallSummary}\n`;
+        apaText += `  Virtue Signalling Assessment: ${apa.virtueSignalling.assessment}\n`;
+        apa.virtueSignalling.items.forEach(item => {
+          apaText += `    - Quote: "${item.quote}"\n      Analysis: ${item.analysis}\n`;
+        });
+        apaText += `  Manipulative Phrasing Assessment: ${apa.manipulativePhrasing.assessment}\n`;
+        apa.manipulativePhrasing.items.forEach(item => {
+          apaText += `    - Type: ${item.type}\n      Quote: "${item.quote}"\n      Analysis: ${item.analysis}\n`;
+        });
+        apaText += `  KJV Comparison:\n`;
+        apaText += `    Alignment: ${apa.kjvComparison.alignmentWithScripturalPrinciples}\n`;
+        apaText += `    Warnings Observed: ${apa.kjvComparison.specificWarningsObserved}\n`;
+        apaText += `    Positive Aspects: ${apa.kjvComparison.positiveAspects}\n`;
+        apaText += `    Areas of Concern: ${apa.kjvComparison.areasOfConcern}\n`;
+        apaText += `  Overall Spiritual Integrity: ${apa.overallSpiritualIntegrityAssessment}\n\n`;
+      });
+      return apaText;
+
     default:
       return "Section content not available in text format.";
   }
 }
 
+function AlternatePrayerAnalysisButton({ reportId, prayerText, onComplete }: { reportId: string; prayerText: string; onComplete: () => void }) {
+  const [isApaPending, startApaTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handleRunApa = () => {
+    startApaTransition(async () => {
+      const result = await runAlternatePrayerAnalysisAction(reportId, prayerText);
+      if (result.success) {
+        toast({ title: "Alternate Prayer Analysis Complete", description: "The detailed analysis has been added to the report." });
+      } else {
+        toast({ title: "APA Failed", description: result.error || "An unexpected error occurred.", variant: "destructive" });
+      }
+      onComplete(); // Trigger refresh or update
+    });
+  };
+
+  return (
+    <Button onClick={handleRunApa} disabled={isApaPending} variant="outline" size="sm" className="mt-2">
+      {isApaPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSearch className="mr-2 h-4 w-4" />}
+      APA (Alternate Prayer Analysis)
+    </Button>
+  );
+}
+
 
 export function ReportDisplay({ reportData, reportId, chatAction }: ReportDisplayProps) {
   const { toast } = useToast();
+  const router = useRouter();
 
   const renderMoralisticFraming = (data: AnalysisReport['moralisticFramingAnalysis']) => (
     <div className="space-y-3">
@@ -217,11 +270,63 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
               )}
             </div>
             <p><strong>Overall Assessment:</strong> {pa.overallAssessment}</p>
+            <AlternatePrayerAnalysisButton
+              reportId={reportId}
+              prayerText={pa.identifiedPrayerText}
+              onComplete={() => router.refresh()}
+            />
           </CardContent>
         </Card>
       ))}
     </div>
   );
+
+  const renderAlternatePrayerAnalysisResults = (apaResults: AnalysisReport['alternatePrayerAnalyses']) => {
+    if (!apaResults || apaResults.length === 0) {
+      return <p className="text-sm text-muted-foreground">No alternate prayer analyses have been run for this report.</p>;
+    }
+    return (
+      <div className="space-y-6">
+        {apaResults.map((apaItem, index) => (
+          <Card key={index} className="bg-card border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-primary/90">APA for: &quot;{apaItem.originalPrayerText.substring(0, 50)}...&quot;</CardTitle>
+              <p className="text-xs text-muted-foreground">Analyzed on: {format(new Date(apaItem.analyzedAt), 'PPP p')}</p>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div><strong>Overall Summary:</strong> <p className="whitespace-pre-wrap">{apaItem.analysis.overallSummary}</p></div>
+              
+              <div>
+                <h4 className="font-medium text-md">Virtue Signalling</h4>
+                <p><strong>Assessment:</strong> {apaItem.analysis.virtueSignalling.assessment}</p>
+                {apaItem.analysis.virtueSignalling.items.length > 0 && (
+                  <ReportTable title="" headers={["Quote", "Analysis"]} data={apaItem.analysis.virtueSignalling.items} columns={["quote", "analysis"]} />
+                )}
+              </div>
+
+              <div>
+                <h4 className="font-medium text-md">Gaslighting or Manipulative Phrasing</h4>
+                <p><strong>Assessment:</strong> {apaItem.analysis.manipulativePhrasing.assessment}</p>
+                {apaItem.analysis.manipulativePhrasing.items.length > 0 && (
+                  <ReportTable title="" headers={["Type", "Quote", "Analysis"]} data={apaItem.analysis.manipulativePhrasing.items} columns={["type", "quote", "analysis"]} />
+                )}
+              </div>
+
+              <div>
+                <h4 className="font-medium text-md">KJV Comparison</h4>
+                <p><strong>Alignment with Scriptural Principles:</strong> {apaItem.analysis.kjvComparison.alignmentWithScripturalPrinciples}</p>
+                <p><strong>Specific Warnings Observed (Matt 6:5-8):</strong> {apaItem.analysis.kjvComparison.specificWarningsObserved}</p>
+                <p><strong>Positive Aspects:</strong> {apaItem.analysis.kjvComparison.positiveAspects}</p>
+                <p><strong>Areas of Concern:</strong> {apaItem.analysis.kjvComparison.areasOfConcern}</p>
+              </div>
+              
+              <div><strong>Overall Spiritual Integrity Assessment:</strong> <p className="whitespace-pre-wrap">{apaItem.analysis.overallSpiritualIntegrityAssessment}</p></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
 
 
   const baseSectionsData: Array<Omit<ReportSectionItem, 'id'>> = [
@@ -299,12 +404,22 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
   
   if (reportData.prayerAnalyses && reportData.prayerAnalyses.length > 0) {
     sections.push({
-      title: "Prayer Analysis",
-      id: slugify("Prayer Analysis"),
+      title: "Prayer Analysis (Initial)",
+      id: slugify("Prayer Analysis (Initial)"),
       prayerAnalyses: reportData.prayerAnalyses,
       type: "prayerAnalysis" as const,
     });
   }
+
+  if (reportData.alternatePrayerAnalyses && reportData.alternatePrayerAnalyses.length > 0) {
+    sections.push({
+      title: "Alternate Prayer Analysis Results",
+      id: slugify("Alternate Prayer Analysis Results"),
+      alternatePrayerAnalyses: reportData.alternatePrayerAnalyses,
+      type: "alternatePrayerAnalysis" as const,
+    });
+  }
+
 
   if (reportData.aiChatTranscript && reportData.aiChatTranscript.length > 0) {
     const chatSection: ReportSectionItem = {
@@ -348,8 +463,16 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
              else if (section.type === "nestedObject" && section.content) openValues.push(section.id);
              else if (section.type === "chat" && section.messages && section.messages.length > 0) openValues.push(section.id);
              else if (section.type === "prayerAnalysis" && section.prayerAnalyses && section.prayerAnalyses.length > 0) openValues.push(section.id);
+             else if (section.type === "alternatePrayerAnalysis" && section.alternatePrayerAnalyses && section.alternatePrayerAnalyses.length > 0) openValues.push(section.id);
         }
     });
+    // Ensure APA results section is open if it exists and has content
+    if (reportData.alternatePrayerAnalyses && reportData.alternatePrayerAnalyses.length > 0) {
+      const apaSectionId = slugify("Alternate Prayer Analysis Results");
+      if (!openValues.includes(apaSectionId)) {
+        openValues.push(apaSectionId);
+      }
+    }
     return openValues;
   }
 
@@ -414,11 +537,12 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
         (section.type === "table" && section.data && section.data.length > 0) ||
         (section.type === "nestedObject" && section.content) ||
         (section.type === "chat" && section.messages && section.messages.length > 0) ||
-        (section.type === "prayerAnalysis" && section.prayerAnalyses && section.prayerAnalyses.length > 0) ? (
+        (section.type === "prayerAnalysis" && section.prayerAnalyses && section.prayerAnalyses.length > 0) ||
+        (section.type === "alternatePrayerAnalysis" && section.alternatePrayerAnalyses && section.alternatePrayerAnalyses.length > 0) ? (
           <AccordionItem value={section.id!} key={section.id!} id={section.id!} className="border-b border-border print:border-gray-300">
             <AccordionTrigger className="py-4 text-xl font-semibold hover:no-underline text-left text-primary print:text-lg print:py-2">
               <div className="flex items-center gap-2">
-                 {section.type === "prayerAnalysis" && <ShieldQuestion className="h-5 w-5 text-primary/80" />}
+                 {(section.type === "prayerAnalysis" || section.type === "alternatePrayerAnalysis") && <ShieldQuestion className="h-5 w-5 text-primary/80" />}
                  {section.title}
               </div>
             </AccordionTrigger>
@@ -460,6 +584,8 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
                 </div>
               )}
               {section.type === "prayerAnalysis" && section.prayerAnalyses && renderPrayerAnalysis(section.prayerAnalyses)}
+              {section.type === "alternatePrayerAnalysis" && section.alternatePrayerAnalyses && renderAlternatePrayerAnalysisResults(section.alternatePrayerAnalyses)}
+
               <div className="mt-4 pt-4 border-t border-dashed flex flex-wrap items-center gap-2 print:hidden">
                 <Button variant="outline" size="sm" onClick={() => handleCopySection(section)}>
                   <ClipboardCopy className="mr-2 h-4 w-4" /> Copy Section
@@ -480,3 +606,4 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
     </Accordion>
   );
 }
+    

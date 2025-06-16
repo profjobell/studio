@@ -6,9 +6,11 @@ import { calvinismDeepDive, type CalvinismDeepDiveInput, type CalvinismDeepDiveO
 import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory as GenkitChatMessageHistory } from "@/ai/flows/chat-with-report-flow";
 import { transcribeYouTubeVideoFlow, type TranscribeYouTubeInput, type TranscribeYouTubeOutput } from "@/ai/flows/transcribe-youtube-flow";
 import { isolateSermonAI } from "@/ai/flows/isolateSermonAI";
-import { analyzePrayersInText, type PrayerAnalysisInput, type PrayerAnalysisOutput } from "@/ai/flows/analyze-prayer-flow"; // Import prayer analysis flow
+import { analyzePrayersInText, type PrayerAnalysisInput, type PrayerAnalysisOutput } from "@/ai/flows/analyze-prayer-flow"; 
+import { alternatePrayerAnalysisFlow, type AlternatePrayerAnalysisInput, type AlternatePrayerAnalysisOutput } from "@/ai/flows/alternate-prayer-analysis-flow"; // Import APA flow
 import type { AnalysisReport, ClientChatMessage } from "@/types";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 const analyzeContentServerSchema = z.object({
   content: z.string().min(1, "Content cannot be empty."),
@@ -31,7 +33,8 @@ interface StoredReportData extends AnalyzeContentOutput {
   fileName?: string;
   calvinismDeepDiveAnalysis?: string; 
   aiChatTranscript?: ClientChatMessage[];
-  prayerAnalyses?: PrayerAnalysisOutput; // Added for prayer analysis results
+  prayerAnalyses?: PrayerAnalysisOutput; 
+  alternatePrayerAnalyses?: AnalysisReport['alternatePrayerAnalyses']; // Added for APA results
 }
 
 interface TempReportStore {
@@ -110,7 +113,8 @@ if (process.env.NODE_ENV === 'production') {
       guidanceOnWiseConfrontation: "For this sample, confrontation guidance would focus on ensuring understanding of the original KJV context of cited verses and encouraging dialogue on differing interpretations of sovereignty and election.",
       calvinismDeepDiveAnalysis: undefined,
       aiChatTranscript: [],
-      prayerAnalyses: [], // Initialize prayer analyses for sample
+      prayerAnalyses: [], 
+      alternatePrayerAnalyses: [], // Initialize APA for sample
     };
     global.tempReportDatabaseGlobal[sampleReportId] = sampleReportData;
   }
@@ -161,6 +165,11 @@ export async function analyzeSubmittedContent(
           isolationWarningMessage = `Sermon/Lecture Isolation Warning: ${isolationResult.warning}`;
         }
       } else {
+        // If only announcements etc. were found, we might still want to proceed with the original text if it's short,
+        // or treat as no sermon found if isolation result is explicitly "No sermon..."
+        // For now, if isolation says "No sermon...", we error out.
+        // If it's empty but didn't explicitly say "No sermon", we might fall back to original or analyze the (likely non-sermon) isolated text.
+        // Current flow: if isolationResult.sermon is empty or "No sermon...", then it's an error.
         return { error: "No sermon or lecture content could be identified in the provided text. Analysis cannot proceed." };
       }
     } catch (error) {
@@ -178,7 +187,7 @@ export async function analyzeSubmittedContent(
   try {
     // Perform main content analysis
     const mainAnalysisResult = await analyzeContent(mainAnalysisInput);
-    if ('error' in mainAnalysisResult) { // Check if analyzeContent returned an error object
+    if ('error' in mainAnalysisResult) { 
       return mainAnalysisResult;
     }
     
@@ -190,19 +199,17 @@ export async function analyzeSubmittedContent(
     let prayerAnalysisResults: PrayerAnalysisOutput | undefined = undefined;
     if (analyzePrayers) {
       try {
-        // Pass the *contentToActuallyAnalyze* (isolated sermon or original file content) to prayer analysis
         prayerAnalysisResults = await analyzePrayersInText({ textContent: contentToActuallyAnalyze });
       } catch (prayerError) {
         console.error("Error during prayer analysis step:", prayerError);
-        // Optionally append a warning to the main summary if prayer analysis fails
         mainAnalysisResult.summary += "\n\nWarning: Prayer analysis encountered an error and could not be completed.";
       }
     }
 
     // Combine results
-    const finalReport: AnalyzeContentOutput = {
+    const finalReport: AnalyzeContentOutput & { prayerAnalyses?: PrayerAnalysisOutput } = {
       ...mainAnalysisResult,
-      prayerAnalyses: prayerAnalysisResults || [], // Add prayer analyses if performed
+      prayerAnalyses: prayerAnalysisResults || [], 
     };
     
     return finalReport;
@@ -242,7 +249,7 @@ export async function initiateCalvinismDeepDive(
 }
 
 export async function saveReportToDatabase(
-  reportData: AnalyzeContentOutput, // This now includes prayerAnalyses
+  reportData: AnalyzeContentOutput & { prayerAnalyses?: PrayerAnalysisOutput }, 
   title: string,
   originalContent: string, 
   analysisType: AnalysisReport['analysisType'],
@@ -265,7 +272,8 @@ export async function saveReportToDatabase(
       guidanceOnWiseConfrontation: reportData.guidanceOnWiseConfrontation || "General biblical principles apply.",
       calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis, 
       aiChatTranscript: [], 
-      prayerAnalyses: reportData.prayerAnalyses || [], // Store prayer analyses
+      prayerAnalyses: reportData.prayerAnalyses || [], 
+      alternatePrayerAnalyses: [], // Initialize APA field
     };
 
     if (analysisType !== 'text' && fileName) {
@@ -316,7 +324,8 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       guidanceOnWiseConfrontation: data.guidanceOnWiseConfrontation || "General biblical principles apply.",
       calvinismDeepDiveAnalysis: data.calvinismDeepDiveAnalysis,
       aiChatTranscript: data.aiChatTranscript || [],
-      prayerAnalyses: data.prayerAnalyses || [], // Fetch prayer analyses
+      prayerAnalyses: data.prayerAnalyses || [], 
+      alternatePrayerAnalyses: data.alternatePrayerAnalyses || [], // Fetch APA
     };
   }
   
@@ -335,3 +344,38 @@ export async function chatWithReportAction(
     return { error: error instanceof Error ? error.message : "An unexpected error occurred during AI chat with report." };
   }
 }
+
+export async function runAlternatePrayerAnalysisAction(
+  reportId: string,
+  prayerTextToAnalyze: string
+): Promise<{ success: boolean; analysis?: AlternatePrayerAnalysisOutput; error?: string }> {
+  console.log(`Server Action: Running Alternate Prayer Analysis for report ${reportId}`);
+  if (!tempReportDatabase || !tempReportDatabase[reportId]) {
+    return { success: false, error: "Original report not found to append APA result." };
+  }
+
+  try {
+    const apaInput: AlternatePrayerAnalysisInput = { prayerText: prayerTextToAnalyze };
+    const analysisResult = await alternatePrayerAnalysisFlow(apaInput);
+
+    const newApaEntry = {
+      originalPrayerText: prayerTextToAnalyze,
+      analysis: analysisResult,
+      analyzedAt: new Date(),
+    };
+
+    if (!tempReportDatabase[reportId].alternatePrayerAnalyses) {
+      tempReportDatabase[reportId].alternatePrayerAnalyses = [];
+    }
+    tempReportDatabase[reportId].alternatePrayerAnalyses!.push(newApaEntry);
+    
+    revalidatePath(`/reports/${reportId}`);
+    return { success: true, analysis: analysisResult };
+
+  } catch (error) {
+    console.error("Error in runAlternatePrayerAnalysisAction:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during Alternate Prayer Analysis.";
+    return { success: false, error: errorMessage };
+  }
+}
+    

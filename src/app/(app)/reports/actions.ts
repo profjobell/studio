@@ -1,7 +1,7 @@
 
 "use server";
 
-import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput } from "@/types";
+import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput, AlternatePrayerAnalysisOutput } from "@/types";
 import { revalidatePath } from "next/cache";
 import { fetchReportFromDatabase as fetchReportData } from "../analyze/actions"; 
 import { calvinismDeepDive } from "@/ai/flows/calvinism-deep-dive";
@@ -20,7 +20,8 @@ type StoredReportData = AnalyzeContentOutput & {
   fileName?: string;
   calvinismDeepDiveAnalysis?: string; 
   aiChatTranscript?: ClientChatMessage[];
-  prayerAnalyses?: PrayerAnalysisOutput; // Added for prayer analysis results
+  prayerAnalyses?: PrayerAnalysisOutput; 
+  alternatePrayerAnalyses?: AnalysisReport['alternatePrayerAnalyses']; // Added for APA results
 };
 
 declare global {
@@ -89,7 +90,8 @@ export async function fetchReportsList(): Promise<AnalysisReport[]> {
         guidanceOnWiseConfrontation: reportData.guidanceOnWiseConfrontation || "General biblical principles apply.",
         calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis,
         aiChatTranscript: reportData.aiChatTranscript || [],
-        prayerAnalyses: reportData.prayerAnalyses || [], // Include prayer analyses
+        prayerAnalyses: reportData.prayerAnalyses || [], 
+        alternatePrayerAnalyses: reportData.alternatePrayerAnalyses || [], // Include APA
       });
     }
   }
@@ -269,10 +271,9 @@ export async function generateContentReportTxtOutput(reportId: string): Promise<
   output += `--- Guidance on Wise Confrontation ---\n${report.guidanceOnWiseConfrontation || 'N/A'}\n\n`;
 
   if (report.prayerAnalyses && report.prayerAnalyses.length > 0) {
-    output += `--- Prayer Analysis ---\n`;
+    output += `--- Prayer Analysis (Initial) ---\n`;
     report.prayerAnalyses.forEach((pa, index) => {
-      output += `Prayer ${index + 1}:\n`;
-      output += `  Identified Text: "${pa.identifiedPrayerText}"\n`;
+      output += `Prayer ${index + 1} Text: "${pa.identifiedPrayerText}"\n`;
       output += `  KJV Alignment: ${pa.kjvAlignmentAssessment}\n`;
       output += `  Manipulative Language: ${pa.manipulativeLanguage.hasPotentiallyManipulativeElements ? 'Detected' : 'Not Detected'}\n`;
       if (pa.manipulativeLanguage.hasPotentiallyManipulativeElements) {
@@ -280,6 +281,29 @@ export async function generateContentReportTxtOutput(reportId: string): Promise<
         output += `    Description: ${pa.manipulativeLanguage.description || 'N/A'}\n`;
       }
       output += `  Overall Assessment: ${pa.overallAssessment}\n\n`;
+    });
+  }
+
+  if (report.alternatePrayerAnalyses && report.alternatePrayerAnalyses.length > 0) {
+    output += `--- Alternate Prayer Analysis Results ---\n`;
+    report.alternatePrayerAnalyses.forEach((apaItem, index) => {
+      const apa = apaItem.analysis;
+      output += `APA for Prayer: "${apaItem.originalPrayerText}" (Analyzed: ${new Date(apaItem.analyzedAt).toLocaleString()})\n`;
+      output += `  Overall Summary: ${apa.overallSummary}\n`;
+      output += `  Virtue Signalling Assessment: ${apa.virtueSignalling.assessment}\n`;
+      apa.virtueSignalling.items.forEach(item => {
+        output += `    - Quote: "${item.quote}"\n      Analysis: ${item.analysis}\n`;
+      });
+      output += `  Manipulative Phrasing Assessment: ${apa.manipulativePhrasing.assessment}\n`;
+      apa.manipulativePhrasing.items.forEach(item => {
+        output += `    - Type: ${item.type}\n      Quote: "${item.quote}"\n      Analysis: ${item.analysis}\n`;
+      });
+      output += `  KJV Comparison:\n`;
+      output += `    Alignment: ${apa.kjvComparison.alignmentWithScripturalPrinciples}\n`;
+      output += `    Warnings Observed: ${apa.kjvComparison.specificWarningsObserved}\n`;
+      output += `    Positive Aspects: ${apa.kjvComparison.positiveAspects}\n`;
+      output += `    Areas of Concern: ${apa.kjvComparison.areasOfConcern}\n`;
+      output += `  Overall Spiritual Integrity: ${apa.overallSpiritualIntegrityAssessment}\n\n`;
     });
   }
 
@@ -335,3 +359,4 @@ export async function saveChatToReportAction(
     newReportId: newReportId
   };
 }
+    
