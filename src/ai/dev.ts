@@ -11,6 +11,8 @@ import '@/ai/flows/generate-fallacy-quiz-question-flow.ts';
 import '@/ai/flows/chat-with-internet-kjv-flow.ts';
 import '@/ai/flows/transcribe-youtube-flow.ts';
 import '@/ai/flows/isolateSermonAI.ts'; // Added new flow for AI sermon isolation
+import '@/ai/flows/analyze-prayer-flow.ts'; // Added new flow for prayer analysis
 
     
+
 

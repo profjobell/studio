@@ -1,14 +1,14 @@
 
 "use client";
 
-import type { AnalysisReport, ClientChatMessage } from "@/types"; // Ensured ClientChatMessage is imported
+import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput, SinglePrayerAnalysis } from "@/types"; // Ensured ClientChatMessage is imported
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from "next/link";
 import { slugify } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { Bot, User, ClipboardCopy, BrainCircuit } from "lucide-react"; // Import icons for chat display and actions
+import { Bot, User, ClipboardCopy, BrainCircuit, ShieldQuestion } from "lucide-react"; // Import icons for chat display and actions
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { AiChatDialog } from "./ai-chat-dialog"; // Import AiChatDialog
@@ -24,7 +24,8 @@ type ReportSectionItem =
   | { title: string; id?: string; content: string; type: "paragraph"; isHtml?: boolean }
   | { title: string; id?: string; data: any[]; headers: string[]; columns: string[]; type: "table" }
   | { title: string; id?: string; content: any; type: "nestedObject"; renderer: (data: any) => JSX.Element }
-  | { title: string; id: string; messages: ClientChatMessage[]; type: "chat" };
+  | { title: string; id: string; messages: ClientChatMessage[]; type: "chat" }
+  | { title: string; id: string; prayerAnalyses: PrayerAnalysisOutput; type: "prayerAnalysis" };
 
 
 const tableHeaderStyle = "bg-secondary text-secondary-foreground text-base font-semibold";
@@ -124,6 +125,21 @@ function getSectionTextContent(section: ReportSectionItem): string {
         }
       });
       return chatText;
+    case "prayerAnalysis":
+      if (!section.prayerAnalyses || section.prayerAnalyses.length === 0) return "No prayer analyses available.";
+      let prayerText = `Prayer Analysis\n\n`;
+      section.prayerAnalyses.forEach((pa, index) => {
+        prayerText += `Prayer ${index + 1}:\n`;
+        prayerText += `  Identified Text: "${pa.identifiedPrayerText}"\n`;
+        prayerText += `  KJV Alignment: ${pa.kjvAlignmentAssessment}\n`;
+        prayerText += `  Manipulative Language: ${pa.manipulativeLanguage.hasPotentiallyManipulativeElements ? 'Detected' : 'Not Detected'}\n`;
+        if (pa.manipulativeLanguage.hasPotentiallyManipulativeElements) {
+          prayerText += `    Evidence: ${pa.manipulativeLanguage.evidence?.join('; ') || 'N/A'}\n`;
+          prayerText += `    Description: ${pa.manipulativeLanguage.description || 'N/A'}\n`;
+        }
+        prayerText += `  Overall Assessment: ${pa.overallAssessment}\n\n`;
+      });
+      return prayerText;
     default:
       return "Section content not available in text format.";
   }
@@ -169,6 +185,41 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
       <p><strong>Theological Framework Remarks:</strong> {data.theologicalFrameworkRemarks}</p>
       <p><strong>KJV Scriptural Counterpoints:</strong> {data.kjvScripturalCounterpoints}</p>
       <p><strong>Suggestions For Further Study:</strong> {data.suggestionsForFurtherStudy}</p>
+    </div>
+  );
+  
+  const renderPrayerAnalysis = (prayerAnalyses: PrayerAnalysisOutput) => (
+    <div className="space-y-4">
+      {prayerAnalyses.map((pa, index) => (
+        <Card key={index} className="bg-muted/30 p-4">
+          <CardHeader className="p-0 pb-2">
+            <CardTitle className="text-md font-semibold text-primary/90">Prayer {index + 1} Analysis</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 text-sm space-y-2">
+            <p><strong>Identified Prayer Text:</strong> <em className="block bg-background/50 p-2 rounded text-xs whitespace-pre-wrap">&quot;{pa.identifiedPrayerText}&quot;</em></p>
+            <p><strong>KJV Alignment Assessment:</strong> {pa.kjvAlignmentAssessment}</p>
+            <div>
+              <p><strong>Manipulative Language:</strong> {pa.manipulativeLanguage.hasPotentiallyManipulativeElements ? 
+                <span className="font-semibold text-destructive">Detected</span> : 
+                <span className="font-semibold text-green-600">Not Detected</span>}
+              </p>
+              {pa.manipulativeLanguage.hasPotentiallyManipulativeElements && (
+                <div className="pl-4 text-xs space-y-1 mt-1">
+                  {pa.manipulativeLanguage.description && <p><em>Description:</em> {pa.manipulativeLanguage.description}</p>}
+                  {pa.manipulativeLanguage.evidence && pa.manipulativeLanguage.evidence.length > 0 && (
+                    <div><em>Evidence:</em>
+                      <ul className="list-disc list-inside pl-2">
+                        {pa.manipulativeLanguage.evidence.map((ev, i) => <li key={i}>&quot;{ev}&quot;</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <p><strong>Overall Assessment:</strong> {pa.overallAssessment}</p>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 
@@ -245,7 +296,15 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
     if (s.type === 'nestedObject') return !!s.content;
     return false;
   });
-
+  
+  if (reportData.prayerAnalyses && reportData.prayerAnalyses.length > 0) {
+    sections.push({
+      title: "Prayer Analysis",
+      id: slugify("Prayer Analysis"),
+      prayerAnalyses: reportData.prayerAnalyses,
+      type: "prayerAnalysis" as const,
+    });
+  }
 
   if (reportData.aiChatTranscript && reportData.aiChatTranscript.length > 0) {
     const chatSection: ReportSectionItem = {
@@ -288,6 +347,7 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
              else if (section.type === "table" && section.data && section.data.length > 0) openValues.push(section.id);
              else if (section.type === "nestedObject" && section.content) openValues.push(section.id);
              else if (section.type === "chat" && section.messages && section.messages.length > 0) openValues.push(section.id);
+             else if (section.type === "prayerAnalysis" && section.prayerAnalyses && section.prayerAnalyses.length > 0) openValues.push(section.id);
         }
     });
     return openValues;
@@ -319,7 +379,8 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
     return () => {
       window.removeEventListener('hashchange', handleHashChange, false);
     };
-  }, [reportData]); // dependencies updated
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportData]); 
 
   const handleCopySection = async (section: ReportSectionItem) => {
     const textToCopy = getSectionTextContent(section);
@@ -352,10 +413,14 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
         (section.type === "paragraph" && section.content) ||
         (section.type === "table" && section.data && section.data.length > 0) ||
         (section.type === "nestedObject" && section.content) ||
-        (section.type === "chat" && section.messages && section.messages.length > 0) ? (
+        (section.type === "chat" && section.messages && section.messages.length > 0) ||
+        (section.type === "prayerAnalysis" && section.prayerAnalyses && section.prayerAnalyses.length > 0) ? (
           <AccordionItem value={section.id!} key={section.id!} id={section.id!} className="border-b border-border print:border-gray-300">
             <AccordionTrigger className="py-4 text-xl font-semibold hover:no-underline text-left text-primary print:text-lg print:py-2">
-              {section.title}
+              <div className="flex items-center gap-2">
+                 {section.type === "prayerAnalysis" && <ShieldQuestion className="h-5 w-5 text-primary/80" />}
+                 {section.title}
+              </div>
             </AccordionTrigger>
             <AccordionContent className="pt-1 pb-4 px-1 print:px-0">
               {section.type === "paragraph" && section.content && (
@@ -394,6 +459,7 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
                   ))}
                 </div>
               )}
+              {section.type === "prayerAnalysis" && section.prayerAnalyses && renderPrayerAnalysis(section.prayerAnalyses)}
               <div className="mt-4 pt-4 border-t border-dashed flex flex-wrap items-center gap-2 print:hidden">
                 <Button variant="outline" size="sm" onClick={() => handleCopySection(section)}>
                   <ClipboardCopy className="mr-2 h-4 w-4" /> Copy Section

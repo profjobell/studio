@@ -1,7 +1,7 @@
 
 "use server";
 
-import type { AnalysisReport, ClientChatMessage } from "@/types";
+import type { AnalysisReport, ClientChatMessage, PrayerAnalysisOutput } from "@/types";
 import { revalidatePath } from "next/cache";
 import { fetchReportFromDatabase as fetchReportData } from "../analyze/actions"; 
 import { calvinismDeepDive } from "@/ai/flows/calvinism-deep-dive";
@@ -18,8 +18,9 @@ type StoredReportData = AnalyzeContentOutput & {
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
   fileName?: string;
-  calvinismDeepDiveAnalysis?: string; // This is from AnalyzeContentOutput if schema is updated
+  calvinismDeepDiveAnalysis?: string; 
   aiChatTranscript?: ClientChatMessage[];
+  prayerAnalyses?: PrayerAnalysisOutput; // Added for prayer analysis results
 };
 
 declare global {
@@ -88,6 +89,7 @@ export async function fetchReportsList(): Promise<AnalysisReport[]> {
         guidanceOnWiseConfrontation: reportData.guidanceOnWiseConfrontation || "General biblical principles apply.",
         calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis,
         aiChatTranscript: reportData.aiChatTranscript || [],
+        prayerAnalyses: reportData.prayerAnalyses || [], // Include prayer analyses
       });
     }
   }
@@ -265,6 +267,21 @@ export async function generateContentReportTxtOutput(reportId: string): Promise<
   
   output += `--- Potential Manipulative Speaker Profile ---\n${report.potentialManipulativeSpeakerProfile || 'N/A'}\n\n`;
   output += `--- Guidance on Wise Confrontation ---\n${report.guidanceOnWiseConfrontation || 'N/A'}\n\n`;
+
+  if (report.prayerAnalyses && report.prayerAnalyses.length > 0) {
+    output += `--- Prayer Analysis ---\n`;
+    report.prayerAnalyses.forEach((pa, index) => {
+      output += `Prayer ${index + 1}:\n`;
+      output += `  Identified Text: "${pa.identifiedPrayerText}"\n`;
+      output += `  KJV Alignment: ${pa.kjvAlignmentAssessment}\n`;
+      output += `  Manipulative Language: ${pa.manipulativeLanguage.hasPotentiallyManipulativeElements ? 'Detected' : 'Not Detected'}\n`;
+      if (pa.manipulativeLanguage.hasPotentiallyManipulativeElements) {
+        output += `    Evidence: ${pa.manipulativeLanguage.evidence?.join('; ') || 'N/A'}\n`;
+        output += `    Description: ${pa.manipulativeLanguage.description || 'N/A'}\n`;
+      }
+      output += `  Overall Assessment: ${pa.overallAssessment}\n\n`;
+    });
+  }
 
   if (report.aiChatTranscript && report.aiChatTranscript.length > 0) {
     output += `--- AI Chat Discussion ---\n`;

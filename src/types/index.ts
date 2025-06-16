@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import type { AnalyzeContentOutput as FullAnalyzeContentOutput, AnalyzeContentInput as FullAnalyzeContentInput } from "@/ai/flows/analyze-content"; // Renamed to avoid conflict
 import type { z } from "zod";
 import type { AnalyzeTeachingInputSchema, AnalyzeTeachingOutputSchema } from "@/ai/flows/analyze-teaching-flow";
+import type { PrayerAnalysisInput as FullPrayerAnalysisInput, PrayerAnalysisOutput as FullPrayerAnalysisOutput } from "@/ai/flows/analyze-prayer-flow";
 
 
 export type NavItem = {
@@ -53,6 +54,7 @@ export type AnalysisReport = FullAnalyzeContentOutput & {
   originalContent?: string; // For text submissions
   calvinismDeepDiveAnalysis?: string; 
   aiChatTranscript?: ClientChatMessage[]; 
+  prayerAnalyses?: FullPrayerAnalysisOutput; // Array of prayer analysis results
 };
 
 export type UserProfile = {
@@ -132,3 +134,8 @@ export type UserDashboardPreference = {
   symbolicPlaceholder?: boolean; // If true, imageUrl is ignored, and a default square is shown
   symbolicColor?: string; // e.g., 'black', '#333333'
 };
+
+// Types for Prayer Analysis
+export type PrayerAnalysisInput = FullPrayerAnalysisInput;
+export type PrayerAnalysisOutput = FullPrayerAnalysisOutput; // This is already an array type
+export type SinglePrayerAnalysis = z.infer<typeof SinglePrayerAnalysisSchema>; // If needed for individual items

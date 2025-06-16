@@ -16,10 +16,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
-import { Loader2, List, XCircle, ClipboardPaste } from "lucide-react";
+import { Loader2, List, XCircle, ClipboardPaste, ShieldQuestion } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport, TranscribeYouTubeOutput } from "@/types";
 import {
@@ -54,9 +55,10 @@ const formSchema = z.object({
   }),
   submissionType: z.enum(["text", "file", "youtubeLink"]),
   textContent: z.string().optional(),
-  // Conditionally define 'file' schema based on environment
   file: typeof window !== 'undefined' ? z.instanceof(FileList).optional() : z.any().optional(),
   youtubeUrl: z.string().optional(),
+  analyzePrayers: z.boolean().default(false).optional(), // New field for prayer analysis
+  referenceMaterial: z.string().optional(), // Optional reference material
 }).superRefine((data, ctx) => {
   if (data.submissionType === "text") {
     if (!data.textContent || data.textContent.trim().length < 20) {
@@ -74,7 +76,6 @@ const formSchema = z.object({
         path: ["file"],
       });
     } else {
-      // This validation will only run effectively on the client where data.file is a FileList
       if (typeof FileList !== 'undefined' && data.file instanceof FileList) {
         for (let i = 0; i < data.file.length; i++) {
           const file = data.file[i];
@@ -127,12 +128,21 @@ export function ContentSubmissionForm() {
       textContent: "",
       file: undefined,
       youtubeUrl: "",
+      analyzePrayers: false,
+      referenceMaterial: "",
     },
-    mode: "onChange", // Validate on change to enable/disable submit button
+    mode: "onChange", 
   });
 
-  const analysisTitleValue = form.watch("analysisTitle");
-  const isTitleValid = analysisTitleValue && analysisTitleValue.length >= 5;
+  const formValues = form.watch();
+  const isFormGenerallyValid = 
+    formValues.analysisTitle.length >= 5 &&
+    (
+      (formValues.submissionType === "text" && (formValues.textContent?.trim() ?? "").length >= 20) ||
+      (formValues.submissionType === "file" && formValues.file && formValues.file.length > 0 && Array.from(formValues.file).every(f => f.size <= MAX_FILE_SIZE && SUPPORTED_FILE_TYPES.includes(f.type))) ||
+      (formValues.submissionType === "youtubeLink" && formValues.youtubeUrl && YOUTUBE_URL_REGEX_COMPREHENSIVE.test(formValues.youtubeUrl))
+    );
+
 
   useEffect(() => {
     if (youtubeSubmissionError) {
@@ -174,7 +184,7 @@ export function ContentSubmissionForm() {
       if (text) {
         form.setValue("textContent", text, { shouldValidate: true, shouldDirty: true });
         const suggestedTitle = generateSuggestedTitle(text);
-        if (suggestedTitle && !form.getValues("analysisTitle")) { // Only suggest if title is empty
+        if (suggestedTitle && !form.getValues("analysisTitle")) { 
           form.setValue("analysisTitle", suggestedTitle, { shouldValidate: true, shouldDirty: true });
            toast({
             title: "Pasted from Clipboard",
@@ -288,7 +298,7 @@ export function ContentSubmissionForm() {
           if (hasAudio) analysisTypeString = "file_audio";
           else if (hasVideo) analysisTypeString = "file_video";
           else if (hasDocument) analysisTypeString = "file_document";
-          else analysisTypeString = "file_document"; // Fallback, though one should be true
+          else analysisTypeString = "file_document";
         } else {
           toast({ title: "Error", description: "No content provided for analysis.", variant: "destructive" });
           return;
@@ -296,7 +306,9 @@ export function ContentSubmissionForm() {
         
         const analysisResult = await analyzeSubmittedContent({ 
             content: rawAnalysisInput, 
-            analysisType: analysisTypeString 
+            analysisType: analysisTypeString,
+            analyzePrayers: values.analyzePrayers || false,
+            referenceMaterial: values.referenceMaterial,
         });
 
         if (analysisResult && 'error' in analysisResult) {
@@ -322,7 +334,7 @@ export function ContentSubmissionForm() {
           values.analysisTitle,
           rawAnalysisInput, 
           analysisTypeString,
-          submittedFileNames.join(", ") || undefined // Pass undefined if no files
+          submittedFileNames.join(", ") || undefined 
         );
 
         if (typeof saveResult === 'string') {
@@ -580,6 +592,53 @@ export function ContentSubmissionForm() {
               )}
             />
           )}
+
+          <FormField
+            control={form.control}
+            name="referenceMaterial"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Optional Reference Material</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Paste any additional reference text or KJV scripture passages you want the AI to specifically consider..."
+                    className="resize-y min-h-[100px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  This material will be provided to the AI alongside your main content for analysis.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="analyzePrayers"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/50">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={!isFormGenerallyValid || isPending}
+                    id="analyzePrayers"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel htmlFor="analyzePrayers" className="flex items-center cursor-pointer">
+                     <ShieldQuestion className="mr-2 h-4 w-4 text-primary" />
+                    Analyze Prayers within Content
+                  </FormLabel>
+                  <FormDescription>
+                    Enable to perform specific KJV alignment and manipulative language analysis on prayers found in the submitted text. (Requires valid main submission).
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
           
           {youtubeSubmissionError && submissionTypeState === 'youtubeLink' && (
             <p className="text-sm text-destructive mt-2">{youtubeSubmissionError}</p>
@@ -596,7 +655,7 @@ export function ContentSubmissionForm() {
           ) : (
             <Button 
               type="submit" 
-              disabled={!isTitleValid || isPending || (submissionTypeState === 'youtubeLink' && isTranscribing)} 
+              disabled={!isFormGenerallyValid || isPending || (submissionTypeState === 'youtubeLink' && isTranscribing)} 
               className="w-full"
             >
               {(isPending && submissionTypeState !== 'youtubeLink') ? (

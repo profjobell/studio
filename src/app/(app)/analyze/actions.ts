@@ -3,31 +3,35 @@
 
 import { analyzeContent, type AnalyzeContentInput, type AnalyzeContentOutput } from "@/ai/flows/analyze-content";
 import { calvinismDeepDive, type CalvinismDeepDiveInput, type CalvinismDeepDiveOutput } from "@/ai/flows/calvinism-deep-dive";
-import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory as GenkitChatMessageHistory } from "@/ai/flows/chat-with-report-flow"; // Renamed import to avoid conflict
-import { transcribeYouTubeVideoFlow, type TranscribeYouTubeInput, type TranscribeYouTubeOutput } from "@/ai/flows/transcribe-youtube-flow"; // Import new flow
-import { isolateSermonAI } from "@/ai/flows/isolateSermonAI"; // Import the sermon isolation flow
+import { chatWithReport, type ChatWithReportInput, type ChatWithReportOutput, type ChatMessageHistory as GenkitChatMessageHistory } from "@/ai/flows/chat-with-report-flow";
+import { transcribeYouTubeVideoFlow, type TranscribeYouTubeInput, type TranscribeYouTubeOutput } from "@/ai/flows/transcribe-youtube-flow";
+import { isolateSermonAI } from "@/ai/flows/isolateSermonAI";
+import { analyzePrayersInText, type PrayerAnalysisInput, type PrayerAnalysisOutput } from "@/ai/flows/analyze-prayer-flow"; // Import prayer analysis flow
 import type { AnalysisReport, ClientChatMessage } from "@/types";
 import { z } from "zod";
 
-const analyzeContentSchema = z.object({
+const analyzeContentServerSchema = z.object({
   content: z.string().min(1, "Content cannot be empty."),
   referenceMaterial: z.string().optional(),
+  analysisType: z.enum(["text", "file_audio", "file_video", "file_document", "youtube_video"]),
+  analyzePrayers: z.boolean().optional(),
 });
+
 
 const calvinismDeepDiveSchema = z.object({
   content: z.string().min(1, "Content for deep dive cannot be empty."),
 });
 
 // Temporary in-memory store for reports
-// StoredReportData now directly uses AnalyzeContentOutput and adds report-specific metadata
 interface StoredReportData extends AnalyzeContentOutput {
   title: string;
   originalContent: string;
   analysisType: AnalysisReport['analysisType'];
   createdAt: Date;
   fileName?: string;
-  calvinismDeepDiveAnalysis?: string; // Already part of AnalyzeContentOutput if the schema is updated but good to be explicit for storage
+  calvinismDeepDiveAnalysis?: string; 
   aiChatTranscript?: ClientChatMessage[];
+  prayerAnalyses?: PrayerAnalysisOutput; // Added for prayer analysis results
 }
 
 interface TempReportStore {
@@ -106,6 +110,7 @@ if (process.env.NODE_ENV === 'production') {
       guidanceOnWiseConfrontation: "For this sample, confrontation guidance would focus on ensuring understanding of the original KJV context of cited verses and encouraging dialogue on differing interpretations of sovereignty and election.",
       calvinismDeepDiveAnalysis: undefined,
       aiChatTranscript: [],
+      prayerAnalyses: [], // Initialize prayer analyses for sample
     };
     global.tempReportDatabaseGlobal[sampleReportId] = sampleReportData;
   }
@@ -130,14 +135,20 @@ export async function transcribeYouTubeVideoAction(
 
 
 export async function analyzeSubmittedContent(
-  submission: { content: string; analysisType: AnalysisReport['analysisType']; referenceMaterial?: string; }
+  submission: z.infer<typeof analyzeContentServerSchema>
 ): Promise<AnalyzeContentOutput | { error: string }> {
   
-  let contentToActuallyAnalyze = submission.content;
+  const validatedSubmission = analyzeContentServerSchema.safeParse(submission);
+  if (!validatedSubmission.success) {
+      return { error: validatedSubmission.error.errors.map(e => e.message).join(", ") };
+  }
+  const { content, analysisType, analyzePrayers, referenceMaterial } = validatedSubmission.data;
+
+  let contentToActuallyAnalyze = content;
   let isolationWarningMessage: string | undefined = undefined;
 
-  if (submission.analysisType === "text") {
-    const validatedInputForIsolation = z.string().min(1, "Content for sermon isolation cannot be empty.").safeParse(submission.content);
+  if (analysisType === "text") {
+    const validatedInputForIsolation = z.string().min(1, "Content for sermon isolation cannot be empty.").safeParse(content);
     if (!validatedInputForIsolation.success) {
       return { error: validatedInputForIsolation.error.errors.map(e => e.message).join(", ") };
     }
@@ -150,7 +161,6 @@ export async function analyzeSubmittedContent(
           isolationWarningMessage = `Sermon/Lecture Isolation Warning: ${isolationResult.warning}`;
         }
       } else {
-        // If sermon is "No sermon or lecture content found." or empty after trim.
         return { error: "No sermon or lecture content could be identified in the provided text. Analysis cannot proceed." };
       }
     } catch (error) {
@@ -159,25 +169,46 @@ export async function analyzeSubmittedContent(
     }
   }
 
-  const validatedInputForAnalysis = analyzeContentSchema.safeParse({ 
+  // Prepare input for main content analysis
+  const mainAnalysisInput: AnalyzeContentInput = { 
     content: contentToActuallyAnalyze,
-    referenceMaterial: submission.referenceMaterial // Pass through if provided
-  });
-
-  if (!validatedInputForAnalysis.success) {
-    return { error: validatedInputForAnalysis.error.errors.map(e => e.message).join(", ") };
-  }
+    referenceMaterial: referenceMaterial 
+  };
 
   try {
-    const analysisResult = await analyzeContent(validatedInputForAnalysis.data);
-    
-    if (isolationWarningMessage && analysisResult && !('error' in analysisResult)) {
-      analysisResult.summary = `${isolationWarningMessage}\n\n${analysisResult.summary}`;
+    // Perform main content analysis
+    const mainAnalysisResult = await analyzeContent(mainAnalysisInput);
+    if ('error' in mainAnalysisResult) { // Check if analyzeContent returned an error object
+      return mainAnalysisResult;
     }
     
-    return analysisResult;
+    if (isolationWarningMessage) {
+      mainAnalysisResult.summary = `${isolationWarningMessage}\n\n${mainAnalysisResult.summary}`;
+    }
+
+    // If analyzePrayers is true, perform prayer analysis
+    let prayerAnalysisResults: PrayerAnalysisOutput | undefined = undefined;
+    if (analyzePrayers) {
+      try {
+        // Pass the *contentToActuallyAnalyze* (isolated sermon or original file content) to prayer analysis
+        prayerAnalysisResults = await analyzePrayersInText({ textContent: contentToActuallyAnalyze });
+      } catch (prayerError) {
+        console.error("Error during prayer analysis step:", prayerError);
+        // Optionally append a warning to the main summary if prayer analysis fails
+        mainAnalysisResult.summary += "\n\nWarning: Prayer analysis encountered an error and could not be completed.";
+      }
+    }
+
+    // Combine results
+    const finalReport: AnalyzeContentOutput = {
+      ...mainAnalysisResult,
+      prayerAnalyses: prayerAnalysisResults || [], // Add prayer analyses if performed
+    };
+    
+    return finalReport;
+
   } catch (error) {
-    console.error("Error in analyzeContent (after potential isolation):", error);
+    console.error("Error in main content analysis or prayer analysis integration:", error);
     return { error: error instanceof Error ? error.message : "An unexpected error occurred during the main content analysis." };
   }
 }
@@ -211,7 +242,7 @@ export async function initiateCalvinismDeepDive(
 }
 
 export async function saveReportToDatabase(
-  reportData: AnalyzeContentOutput,
+  reportData: AnalyzeContentOutput, // This now includes prayerAnalyses
   title: string,
   originalContent: string, 
   analysisType: AnalysisReport['analysisType'],
@@ -227,15 +258,14 @@ export async function saveReportToDatabase(
       originalContent, 
       analysisType,
       createdAt: new Date(),
-      // Ensure all new fields from AnalyzeContentOutput are included or defaulted if not present in reportData
-      // (though they should be if the AI flow populates them)
       moralisticFramingAnalysis: reportData.moralisticFramingAnalysis || defaultMoralisticFraming,
       virtueSignallingAnalysis: reportData.virtueSignallingAnalysis || defaultVirtueSignalling,
       biblicalRemonstrance: reportData.biblicalRemonstrance || defaultBiblicalRemonstrance,
       potentialManipulativeSpeakerProfile: reportData.potentialManipulativeSpeakerProfile || "Not assessed.",
       guidanceOnWiseConfrontation: reportData.guidanceOnWiseConfrontation || "General biblical principles apply.",
-      calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis, // This might be undefined initially
-      aiChatTranscript: [], // Initialize as empty
+      calvinismDeepDiveAnalysis: reportData.calvinismDeepDiveAnalysis, 
+      aiChatTranscript: [], 
+      prayerAnalyses: reportData.prayerAnalyses || [], // Store prayer analyses
     };
 
     if (analysisType !== 'text' && fileName) {
@@ -286,6 +316,7 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
       guidanceOnWiseConfrontation: data.guidanceOnWiseConfrontation || "General biblical principles apply.",
       calvinismDeepDiveAnalysis: data.calvinismDeepDiveAnalysis,
       aiChatTranscript: data.aiChatTranscript || [],
+      prayerAnalyses: data.prayerAnalyses || [], // Fetch prayer analyses
     };
   }
   
