@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { analyzeSubmittedContent, saveReportToDatabase, transcribeYouTubeVideoAction } from "../actions";
-import { Loader2, List, XCircle } from "lucide-react";
+import { Loader2, List, XCircle, ClipboardPaste } from "lucide-react"; // Added ClipboardPaste
 import { useRouter } from "next/navigation";
 import type { AnalysisReport, TranscribeYouTubeOutput } from "@/types";
 import {
@@ -147,8 +147,42 @@ export function ContentSubmissionForm() {
     }
   };
 
+  const handlePasteFromClipboard = async () => {
+    if (!navigator.clipboard?.readText) {
+      toast({
+        title: "Clipboard API not supported",
+        description: "Your browser does not support pasting from the clipboard.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        form.setValue("textContent", text, { shouldValidate: true, shouldDirty: true });
+        toast({
+          title: "Pasted from Clipboard",
+          description: "Content has been pasted into the text area.",
+        });
+      } else {
+        toast({
+          title: "Clipboard Empty",
+          description: "There was no text content on your clipboard.",
+          variant: "default",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to read clipboard contents: ", err);
+      toast({
+        title: "Paste Failed",
+        description: "Could not paste from clipboard. Permission might have been denied or an error occurred.",
+        variant: "destructive",
+      });
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    let rawAnalysisInput = ""; // This will hold the raw text from textarea or file placeholders
+    let rawAnalysisInput = ""; 
     let analysisTypeString: AnalysisReport['analysisType'] = "text";
     let submittedFileNames: string[] = []; 
 
@@ -232,13 +266,12 @@ export function ContentSubmissionForm() {
           if (hasAudio) analysisTypeString = "file_audio";
           else if (hasVideo) analysisTypeString = "file_video";
           else if (hasDocument) analysisTypeString = "file_document";
-          else analysisTypeString = "file_document"; // Default for mixed/unknown file types
+          else analysisTypeString = "file_document";
         } else {
           toast({ title: "Error", description: "No content provided for analysis.", variant: "destructive" });
           return;
         }
         
-        // Call the server action. Sermon isolation will happen server-side if analysisTypeString is "text".
         const analysisResult = await analyzeSubmittedContent({ 
             content: rawAnalysisInput, 
             analysisType: analysisTypeString 
@@ -247,7 +280,7 @@ export function ContentSubmissionForm() {
         if (analysisResult && 'error' in analysisResult) {
           toast({
             title: "Analysis Failed",
-            description: analysisResult.error, // This might now include "No sermon found"
+            description: analysisResult.error, 
             variant: "destructive",
           });
           return;
@@ -262,8 +295,6 @@ export function ContentSubmissionForm() {
           return;
         }
         
-        // Save the report. rawAnalysisInput is the original full text.
-        // analysisResult is the analysis of the (potentially isolated) sermon.
         const saveResult = await saveReportToDatabase(
           analysisResult,
           values.analysisTitle,
@@ -312,11 +343,11 @@ export function ContentSubmissionForm() {
     const currentYoutubeUrl = form.getValues("youtubeUrl");
     if (currentYoutubeUrl) {
         const match = YOUTUBE_URL_REGEX_COMPREHENSIVE.exec(currentYoutubeUrl);
-        if (match && match[1]) { // Video ID extracted successfully
+        if (match && match[1]) { 
             window.open(`https://youtubetotranscript.com/?v=${match[1]}`, '_blank');
             setShowAlternateYoutubeButton(false);
             setYoutubeSubmissionError(null);
-        } else { // Valid URL pattern by Zod, but no video ID found (e.g. channel URL)
+        } else { 
             setYoutubeSubmissionError("Could not extract video ID from this YouTube URL. Try the alternate method or check the URL.");
             setShowAlternateYoutubeButton(true);
         }
@@ -409,7 +440,19 @@ export function ContentSubmissionForm() {
               name="textContent"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Text Content</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Text Content</FormLabel>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePasteFromClipboard}
+                      className="ml-auto"
+                    >
+                      <ClipboardPaste className="mr-2 h-4 w-4" />
+                      Paste
+                    </Button>
+                  </div>
                   <FormControl>
                     <Textarea
                       placeholder="Paste or type your religious content here for analysis (e.g., a sermon transcript). The AI will attempt to isolate the main sermon/lecture before analysis."
