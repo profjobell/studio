@@ -193,7 +193,7 @@ export const glossaryTermsArray: GlossaryEntry[] = [
           <tr><td>Ecclesiology</td><td>Hierarchical, sacramental priesthood</td><td>Spirit-led, elder-guided body of believers</td></tr>
           <tr><td>Eschatology</td><td>Amillennial: no literal kingdom; heaven is timeless state</td><td>Premillennial: Christ returns to reign physically (Rev. 20)</td></tr>
           <tr><td>Israel &amp; the Church</td><td>Supersessionism: Church replaces Israel</td><td>Israel and Church distinct in covenantal role (Rom. 11:25–29)</td></tr>
-          <tr><td>Religious Coercion</td><td>Justified—"Compel them to come in" used to support Inquisition</td><td>Faith is voluntary; evangelism persuades, not coerces (2 Cor. 5:11)</td></tr>
+          <tr><td>Religious Coercion</td><td>Justified—“Compel them to come in” used to support Inquisition</td><td>Faith is voluntary; evangelism persuades, not coerces (2 Cor. 5:11)</td></tr>
           <tr><td>Philosophical Influence</td><td>Strong: Plato, Plotinus, Stoicism, Manichaean dualism</td><td>Minimal: Jewish prophets, teachings of Jesus and apostles</td></tr>
         </tbody>
       </table>
