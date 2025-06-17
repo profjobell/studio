@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalyzeTeachingForm } from "./components/analyze-teaching-form";
 
@@ -34,7 +35,8 @@ export default function AnalyzeTeachingPage() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p><strong>Process:</strong> Your submitted teaching will be analyzed by our AI, focusing on KJV 1611 alignment.</p>
-          <p><strong>Output Sections:</strong> The report will include:
+          <div> {/* Changed p to div to allow ul as child, or close p before ul */}
+            <p><strong>Output Sections:</strong> The report will include:</p>
             <ul className="list-disc list-inside pl-4">
                 <li>Church History Context</li>
                 <li>Promoters and Demonstrators</li>
@@ -42,7 +44,7 @@ export default function AnalyzeTeachingPage() {
                 <li>A Letter of Clarification/Caution (tailored to your specified recipient and tone)</li>
                 <li>Biblical Warnings Regarding False Teachers</li>
             </ul>
-          </p>
+          </div>
           <p><strong>Output Formats:</strong> You can select various output formats like PDF, TXT, etc. Email and Share options require your email address.</p>
           <p><strong>Note:</strong> Complex analyses may take some time. You will be redirected to the report upon completion.</p>
         </CardContent>
