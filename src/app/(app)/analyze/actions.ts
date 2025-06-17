@@ -256,7 +256,6 @@ export async function initiateCalvinismDeepDive(
 
     if ('analysis' in result && tempReportDatabase[input.reportId]) {
       tempReportDatabase[input.reportId].calvinismDeepDiveAnalysis = result.analysis;
-      console.log(`Updated report ${input.reportId} with Calvinism deep dive analysis.`);
     } else if ('error' in result) {
       console.error("Error in initiateCalvinismDeepDive flow call:", result.error);
       return result;
@@ -280,7 +279,6 @@ export async function saveReportToDatabase(
   fileName?: string
 ): Promise<string | { error: string }> {
   try {
-    console.log("Saving report to temporary database (simulated):", title);
     const reportId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     const dataToStore: StoredReportData = {
@@ -307,8 +305,6 @@ export async function saveReportToDatabase(
     }
     
     tempReportDatabase[reportId] = dataToStore;
-
-    console.log(`Saved report with ID: ${reportId} to tempDB. Current DB size: ${Object.keys(tempReportDatabase).length}`);
     return reportId;
   } catch (e) {
     console.error("Error saving report to temp DB:", e);
@@ -318,12 +314,8 @@ export async function saveReportToDatabase(
 }
 
 export async function fetchReportFromDatabase(reportId: string): Promise<AnalysisReport | null> {
-  console.log(`Attempting to fetch report from database for ID: ${reportId}`);
-  console.log('Current tempReportDatabase keys at fetch:', Object.keys(tempReportDatabase));
-
   if (tempReportDatabase[reportId]) {
     const data = tempReportDatabase[reportId];
-    console.log(`Found report in tempDB for ID: ${reportId}`);
     return {
       id: reportId,
       userId: "user-123", 
@@ -357,7 +349,6 @@ export async function fetchReportFromDatabase(reportId: string): Promise<Analysi
     };
   }
   
-  console.log(`Report not found in tempDB for ID: ${reportId}`);
   return null;
 }
 
@@ -377,7 +368,6 @@ export async function runAlternatePrayerAnalysisAction(
   reportId: string,
   prayerTextToAnalyze: string
 ): Promise<{ success: boolean; analysis?: AlternatePrayerAnalysisOutput; error?: string }> {
-  console.log(`Server Action: Running Alternate Prayer Analysis for report ${reportId}`);
   if (!tempReportDatabase || !tempReportDatabase[reportId]) {
     return { success: false, error: "Original report not found to append APA result." };
   }

@@ -108,8 +108,6 @@ export async function submitTeachingAnalysisAction(
     };
 
     tempTeachingAnalysisDatabase[newAnalysisId] = newReport;
-    console.log(`Teaching analysis ${newAnalysisId} saved to temp DB. DB size: ${Object.keys(tempTeachingAnalysisDatabase).length}`);
-
     return { success: true, message: 'Teaching analysis submitted successfully.', analysisId: newAnalysisId };
   } catch (error) {
     console.error('Error in submitTeachingAnalysisAction:', error);
@@ -119,7 +117,6 @@ export async function submitTeachingAnalysisAction(
 }
 
 export async function fetchTeachingAnalysisFromDatabase(id: string): Promise<TeachingAnalysisReport | null> {
-  console.log(`Fetching teaching analysis report from temp DB for ID: ${id}`);
   if (tempTeachingAnalysisDatabase[id]) {
     return tempTeachingAnalysisDatabase[id];
   }
@@ -127,12 +124,10 @@ export async function fetchTeachingAnalysisFromDatabase(id: string): Promise<Tea
 }
 
 export async function fetchTeachingAnalysesListFromDatabase(): Promise<TeachingAnalysisReport[]> {
-  console.log("Fetching list of teaching analyses from temp DB");
   return Object.values(tempTeachingAnalysisDatabase).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export async function deleteTeachingAnalysisAction(id: string): Promise<{ success: boolean; message: string }> {
-  console.log(`Attempting to delete teaching analysis report: ${id} from temp DB`);
   if (tempTeachingAnalysisDatabase[id]) {
     delete tempTeachingAnalysisDatabase[id];
     return { success: true, message: `Teaching analysis ${id} deleted.` };
@@ -170,8 +165,6 @@ export async function generatePodcastAction(
   treatmentType: string,
   contentScope: string[]
 ): Promise<{ success: boolean; message: string; audioUrl?: string; podcastData?: PodcastData }> {
-  console.log(`Server Action: Generating podcast for analysis ID: ${analysisId}`);
-  console.log(`Treatment Type: ${treatmentType}, Content Scope: ${contentScope.join(', ')}`);
 
   if (!tempTeachingAnalysisDatabase[analysisId]) {
     return { success: false, message: `Analysis report ${analysisId} not found.` };
@@ -212,7 +205,6 @@ export async function exportPodcastAction(
   exportOptions: Array<'Email' | 'Google Drive'>,
   email?: string
 ): Promise<{ success: boolean; message: string, podcastData?: PodcastData }> {
-  console.log(`Server Action: Exporting podcast for analysis ID: ${analysisId}`);
 
   if (!tempTeachingAnalysisDatabase[analysisId]) {
     return { success: false, message: `Analysis report ${analysisId} not found.` };
@@ -224,10 +216,10 @@ export async function exportPodcastAction(
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   if (exportOptions.includes('Email') && email) {
-    console.log(`Simulating email to: ${email} with attachment: ${audioUrl}`);
+    // Simulate email sending
   }
   if (exportOptions.includes('Google Drive')) {
-    console.log(`Simulating upload to Google Drive: ${audioUrl}`);
+    // Simulate Google Drive upload
   }
   
   tempTeachingAnalysisDatabase[analysisId].podcast!.exportStatus = 'completed';
@@ -263,9 +255,7 @@ export async function transcribeAudioAction(
   try {
     const simulatedFileName = `recording-${Date.now()}-${Math.random().toString(16).substring(2,6)}.webm`; 
     const audioStoragePath = `/simulated-user-recordings/${simulatedFileName}`;
-    console.log(`Simulating "upload" of audio data to (virtual path): ${audioStoragePath}`);
 
-    console.log("Simulating transcription...");
     await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000)); 
 
     const phrases = [
@@ -278,8 +268,6 @@ export async function transcribeAudioAction(
       "Concerns were expressed about certain modern teachings deviating from traditional KJV 1611 interpretations."
     ];
     const transcription = phrases[Math.floor(Math.random() * phrases.length)] + ` (Audio path: ${audioStoragePath})`;
-    
-    console.log(`Simulated transcription: "${transcription}"`);
     
     return { 
       success: true, 

@@ -38,8 +38,6 @@ if (process.env.NODE_ENV === 'production') {
 
 
 export async function fetchLibraryDocuments(): Promise<DocumentReference[]> {
-  // Simulate fetching documents
-  console.log("Server Action: Fetching library documents (simulated from tempLibraryDB)");
   // Ensure tempLibraryDB is always an array, even if global somehow fails (defensive programming)
   return Promise.resolve(Array.isArray(tempLibraryDB) ? [...tempLibraryDB].sort((a,b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()) : []);
 }
@@ -58,8 +56,6 @@ export async function uploadDocumentAction(formData: FormData): Promise<{ succes
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
     return { success: false, message: "Invalid file type. Allowed: PDF, TXT, DOCX." };
   }
-
-  console.log(`Server Action: Uploading document: ${file.name}, Size: ${file.size}, Type: ${file.type} (simulated)`);
   
   const newDocId = `doc-${Date.now()}-${Math.random().toString(36).substring(2,7)}`;
   const newDocument: DocumentReference = {
@@ -83,8 +79,6 @@ export async function uploadDocumentAction(formData: FormData): Promise<{ succes
 }
 
 export async function deleteDocumentAction(docId: string): Promise<{ success: boolean; message: string }> {
-  console.log(`Server Action: Attempting to delete document: ${docId} (simulated)`);
-  
   if (!Array.isArray(tempLibraryDB)) {
     return { success: false, message: `Document ${docId} not found or internal error.` };
   }
@@ -102,8 +96,6 @@ export async function deleteDocumentAction(docId: string): Promise<{ success: bo
 }
 
 export async function deleteAllDocumentsAction(): Promise<{ success: boolean; message: string }> {
-  console.log("Server Action: Attempting to delete all documents (simulated)");
-  
   if (!Array.isArray(tempLibraryDB)) {
     tempLibraryDB = []; // Ensure it's an array
   }
@@ -119,3 +111,4 @@ export async function deleteAllDocumentsAction(): Promise<{ success: boolean; me
   revalidatePath("/dashboard");
   return { success: true, message: `Successfully deleted ${numDeleted} document(s).` };
 }
+

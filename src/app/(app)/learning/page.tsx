@@ -88,7 +88,7 @@ export default async function LearningPage() {
                   width={400}
                   height={200}
                   className="w-full h-40 object-cover rounded-md mb-4"
-                  data-ai-hint={module.imageHint} 
+                  data-ai-hint={module.imageHint}
                 />
                 <CardDescription>{module.description}</CardDescription>
               </CardContent>
@@ -138,3 +138,4 @@ export default async function LearningPage() {
     </div>
   );
 }
+
