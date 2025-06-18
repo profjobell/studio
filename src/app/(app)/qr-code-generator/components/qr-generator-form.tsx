@@ -81,16 +81,24 @@ export function QrGeneratorForm() {
       imageHeight: 40,
       imageExcavate: true,
     },
-    mode: "onChange",
+    mode: "onChange", // Can be "onChange" or "onSubmit" or "onBlur"
   });
 
-  const watchAllFields = form.watch(); 
+  // const watchAllFields = form.watch(); // Removed this line
 
+  // Removed useEffect that depended on watchAllFields
+  // useEffect(() => {
+  //   const currentValues = form.getValues();
+  //   constructAndSetQrValue(currentValues);
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [watchAllFields]); 
+
+  // Initialize QR code preview on mount with default values
   useEffect(() => {
-    const currentValues = form.getValues();
-    constructAndSetQrValue(currentValues);
+    constructAndSetQrValue(form.getValues());
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchAllFields]); 
+  }, []);
+
 
   const constructAndSetQrValue = (data: QrFormValues) => {
     let url = new URL(data.baseInviteUrl || "https://example.com"); 
