@@ -47,7 +47,7 @@ const initialSettings: AppSettings = {
     podcastGeneration: true,
     personalizedFallacyQuiz: true,
     scriptureMemoryTool: true,
-    ismAwarenessQuiz: false,
+    ismAwarenessQuiz: true, // Changed from false to true
   },
 };
 
@@ -64,7 +64,6 @@ declare global {
 // Function to ensure the global settings store is initialized
 function ensureSettingsStore(): AppSettings {
   if (!global.tempAppSettingsStoreGlobal) {
-    console.log("Initializing global.tempAppSettingsStoreGlobal with initialSettings.");
     global.tempAppSettingsStoreGlobal = JSON.parse(JSON.stringify(initialSettings));
   }
   return global.tempAppSettingsStoreGlobal;
@@ -73,7 +72,6 @@ function ensureSettingsStore(): AppSettings {
 // Function to ensure the global user profiles store is initialized
 function ensureUserProfilesStore(): ConceptuallyAddedUserProfile[] {
   if (!global.tempUserProfilesStoreGlobal) {
-    console.log("Initializing global.tempUserProfilesStoreGlobal as empty array.");
     global.tempUserProfilesStoreGlobal = [];
   }
   return global.tempUserProfilesStoreGlobal;
@@ -81,7 +79,6 @@ function ensureUserProfilesStore(): ConceptuallyAddedUserProfile[] {
 
 export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: string]: UserDashboardPreference }> {
   if (!global.userDashboardPreferencesStoreGlobal) {
-    console.log("Initializing global.userDashboardPreferencesStoreGlobal.");
     global.userDashboardPreferencesStoreGlobal = {
       'default': { enabled: true, notes: "Default user dashboard message. Edit this on your profile.", symbolicPlaceholder: true, symbolicColor: "hsl(var(--foreground))" },
       'admin': { enabled: true, notes: "Admin User: The image provided appeared all black. This square is a symbolic placement.", symbolicPlaceholder: true, symbolicColor: "black" },
@@ -102,7 +99,6 @@ ensureUserDashboardPreferencesStore();
 // --- Server Actions ---
 
 export async function fetchAppSettings(): Promise<AppSettings> {
-  console.log("Server Action: Fetching app settings");
   const store = ensureSettingsStore(); 
   return JSON.parse(JSON.stringify(store)); 
 }
@@ -130,7 +126,6 @@ export async function saveGeneralSettings(
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
 
-  console.log("Server Action: Saving General App Settings:", validation.data);
   const store = ensureSettingsStore(); 
   store.general = validation.data;
   
@@ -167,7 +162,6 @@ export async function saveAiSettings(
         return { success: false, message: "Validation failed.", errors: validation.error.issues };
     }
     
-  console.log("Server Action: Saving AI Configuration:", validation.data);
   const store = ensureSettingsStore(); 
   store.ai = {
       defaultModel: validation.data.defaultModel,
@@ -206,20 +200,18 @@ export async function saveFeatureFlags(
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
 
-  console.log("Server Action: Saving Feature Flags:", validation.data);
   const store = ensureSettingsStore(); 
   store.featureFlags = validation.data;
   revalidatePath("/settings");
+  revalidatePath("/learning"); // To reflect updated learning tools
   return { success: true, message: "Feature flags saved successfully." };
 }
 
 export async function manageGlossaryAction() {
-  console.log("Server Action: Manage Glossary Terms (placeholder)");
   return { success: true, message: "Navigating to glossary management (placeholder)." };
 }
 
 export async function editLearnMoreAction() {
-  console.log("Server Action: Edit 'Learn More' Guide Content (placeholder)");
   return { success: true, message: "Navigating to guide editor (placeholder)." };
 }
 
@@ -256,7 +248,6 @@ export async function addUserProfileAction(
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
   
-  console.log("Server Action: Adding New Conceptual User Profile:", validation.data);
   const userProfilesStore = ensureUserProfilesStore(); 
   const newUser: ConceptuallyAddedUserProfile = {
     id: `user-${Date.now()}`,
@@ -265,7 +256,7 @@ export async function addUserProfileAction(
   userProfilesStore.push(newUser);
 
   // Initialize dashboard preference for the new user
-  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); // Added await
+  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); 
   dashboardPrefsStore[newUser.id] = {
     enabled: false, // Default to disabled
     notes: `Welcome, ${validation.data.newDisplayName}! Customize your dashboard message on your profile.`,
@@ -279,21 +270,18 @@ export async function addUserProfileAction(
 }
 
 export async function fetchConceptuallyAddedUserProfiles(): Promise<ConceptuallyAddedUserProfile[]> {
-  console.log("Server Action: Fetching conceptually added user profiles");
   const store = ensureUserProfilesStore(); 
   return JSON.parse(JSON.stringify(store)); 
 }
 
 export async function deleteConceptualUserAction(userId: string): Promise<{ success: boolean; message: string }> {
-  console.log(`Server Action: Deleting conceptual user ID: ${userId}`);
   const userProfilesStore = ensureUserProfilesStore();
   const initialLength = userProfilesStore.length;
   global.tempUserProfilesStoreGlobal = userProfilesStore.filter(user => user.id !== userId);
 
-  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); // Added await
+  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); 
   if (dashboardPrefsStore[userId]) {
     delete dashboardPrefsStore[userId];
-    console.log(`Deleted dashboard preference for conceptual user ID: ${userId}`);
   }
 
   if (global.tempUserProfilesStoreGlobal.length < initialLength) {
@@ -304,10 +292,3 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
     return { success: false, message: `Conceptual user ${userId} not found.` };
   }
 }
-
-// --- User Dashboard Preferences Actions ---
-// fetchUserDashboardPreference and updateUserDashboardPreference are in profile/actions.ts
-// and correctly import the (now exported) ensureUserDashboardPreferencesStore.
-// No changes needed for them here.
-
-
