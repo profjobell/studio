@@ -310,8 +310,8 @@ export function QrGeneratorForm() {
                 )}
               </CardContent>
             </Card>
-             <Button type="submit" className="w-full" variant="secondary" onClick={() => onSubmit(form.getValues())}>
-                <ScanLine className="mr-2 h-4 w-4" /> Update QR Preview (or submit form)
+             <Button type="submit" className="w-full" variant="secondary">
+                <ScanLine className="mr-2 h-4 w-4" /> Submit and Update QR
              </Button>
           </div>
 
