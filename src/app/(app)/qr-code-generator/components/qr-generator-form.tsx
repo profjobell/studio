@@ -81,23 +81,13 @@ export function QrGeneratorForm() {
       imageHeight: 40,
       imageExcavate: true,
     },
-    mode: "onChange", // Can be "onChange" or "onSubmit" or "onBlur"
+    mode: "onChange",
   });
 
-  // const watchAllFields = form.watch(); // Removed this line
-
-  // Removed useEffect that depended on watchAllFields
-  // useEffect(() => {
-  //   const currentValues = form.getValues();
-  //   constructAndSetQrValue(currentValues);
-  // // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [watchAllFields]); 
-
-  // Initialize QR code preview on mount with default values
   useEffect(() => {
     constructAndSetQrValue(form.getValues());
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); 
 
 
   const constructAndSetQrValue = (data: QrFormValues) => {
@@ -318,7 +308,7 @@ export function QrGeneratorForm() {
                 )}
               </CardContent>
             </Card>
-             <Button type="submit" className="w-full" variant="secondary">
+             <Button type="button" onClick={() => form.handleSubmit(onSubmit)()} className="w-full" variant="secondary">
                 <ScanLine className="mr-2 h-4 w-4" /> Submit and Update QR
              </Button>
           </div>
