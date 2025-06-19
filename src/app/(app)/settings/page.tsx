@@ -25,7 +25,7 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
-  AlertDialogContent as DeleteAlertDialogContent, 
+  AlertDialogContent as DeleteAlertDialogContent,
   AlertDialogDescription as DeleteAlertDialogDescription,
   AlertDialogFooter as DeleteAlertDialogFooter,
   AlertDialogHeader as DeleteAlertDialogHeader,
@@ -38,11 +38,11 @@ import {
   saveAiSettings,
   saveFeatureFlags,
   addUserProfileAction,
-  fetchConceptuallyAddedUserProfiles, 
-  deleteConceptualUserAction, 
+  fetchConceptuallyAddedUserProfiles,
+  deleteConceptualUserAction,
   type AppSettings,
   type AddUserFormState,
-  type ConceptuallyAddedUserProfile 
+  type ConceptuallyAddedUserProfile
 } from "./actions";
 import { useRouter } from "next/navigation";
 import type { ZodIssue } from "zod";
@@ -51,9 +51,9 @@ import { FeaturesGuideModal } from "@/components/features-guide";
 
 
 const ADMIN_EMAILS = [
-  "admin@kjvsentinel.com", 
+  "admin@kjvsentinel.com",
   "meta@kjvsentinel.com"
-]; 
+];
 
 const initialAddUserState: AddUserFormState = {
     message: "",
@@ -66,7 +66,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { setTheme } = useTheme();
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true); // Renamed from isLoading
   const [isSavingGeneral, startSavingGeneralTransition] = useTransition();
   const [isSavingAi, startSavingAiTransition] = useTransition();
   const [isSavingFeatures, startSavingFeaturesTransition] = useTransition();
@@ -80,36 +80,42 @@ export default function SettingsPage() {
   const [isDeletingUser, startDeletingUserTransition] = useTransition();
   const [userToDelete, setUserToDelete] = useState<ConceptuallyAddedUserProfile | null>(null);
 
+  // State for client-side rendering and auth status
+  const [isClientRender, setIsClientRender] = useState(false);
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [authCheckCompleted, setAuthCheckCompleted] = useState(false);
 
-
   useEffect(() => {
-    // This effect runs once after the component mounts.
-    // It checks localStorage to determine if the current user is an admin.
+    setIsClientRender(true); // Indicates component has mounted on client
+  }, []);
+
+  // Calculate admin status on every render after client mount
+  let determinedIsAdminOnRender = false;
+  let authReallyCheckedOnRender = false;
+
+  if (isClientRender) {
     const activeUserEmail = localStorage.getItem('conceptualUserEmail');
     const bypassIsActive = localStorage.getItem('adminBypassActive') === 'true';
 
-    // For debugging:
-    // console.log(`[SettingsPage Effect] conceptualUserEmail: "${activeUserEmail}"`);
-    // console.log(`[SettingsPage Effect] adminBypassActive from localStorage: "${localStorage.getItem('adminBypassActive')}", is 'true'?: ${bypassIsActive}`);
-
     if (bypassIsActive) {
-      setIsUserAdmin(true);
-      // console.log("[SettingsPage Effect] Admin access GRANTED via bypass flag.");
+      determinedIsAdminOnRender = true;
     } else if (activeUserEmail && ADMIN_EMAILS.includes(activeUserEmail.toLowerCase())) {
-      setIsUserAdmin(true);
-      // console.log("[SettingsPage Effect] Admin access GRANTED via email match.");
-    } else {
-      setIsUserAdmin(false);
-      // console.log("[SettingsPage Effect] Admin access DENIED.");
+      determinedIsAdminOnRender = true;
     }
-    setAuthCheckCompleted(true); // Mark that the check has been performed
-  }, []); // Empty dependency array ensures this runs only once on mount.
+    authReallyCheckedOnRender = true;
+  }
+
+  // Effect to update state based on values calculated during render
+  useEffect(() => {
+    if (authReallyCheckedOnRender) {
+      setIsUserAdmin(determinedIsAdminOnRender);
+      setAuthCheckCompleted(true);
+    }
+  }, [determinedIsAdminOnRender, authReallyCheckedOnRender]);
 
 
   const loadInitialData = async () => {
-    setIsLoading(true);
+    setIsLoadingInitialData(true);
     try {
       const fetchedSettings = await fetchAppSettings();
       setSettings(fetchedSettings);
@@ -122,30 +128,31 @@ export default function SettingsPage() {
         description: "Could not fetch initial application data.",
         variant: "destructive",
       });
-      setSettings(null); 
+      setSettings(null);
       setConceptuallyAddedUsers([]);
     } finally {
-      setIsLoading(false);
+      setIsLoadingInitialData(false);
     }
   };
 
   useEffect(() => {
-    if (authCheckCompleted) {
-        if (isUserAdmin) {
+    if (authCheckCompleted) { // Only load data if auth check is done
+        if (isUserAdmin) { // And if user is admin
             loadInitialData();
         } else {
-            setIsLoading(false); 
+            setIsLoadingInitialData(false); // If not admin, no need to load admin data
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isUserAdmin, authCheckCompleted]);
+  }, [isUserAdmin, authCheckCompleted]); // Depend on isUserAdmin and authCheckCompleted
+
 
   useEffect(() => {
-    if (addUserFormState.message && (addUserFormState.success || addUserFormState.errors)) { 
+    if (addUserFormState.message && (addUserFormState.success || addUserFormState.errors)) {
         if (addUserFormState.success) {
             toast({ title: "User Action", description: addUserFormState.message });
-            setIsAddUserDialogOpen(false); 
-            addUserFormRef.current?.reset(); 
+            setIsAddUserDialogOpen(false);
+            addUserFormRef.current?.reset();
             startLoadingUsersTransition(async () => {
                 const fetchedUsers = await fetchConceptuallyAddedUserProfiles();
                 setConceptuallyAddedUsers(fetchedUsers);
@@ -174,7 +181,7 @@ export default function SettingsPage() {
       const result = await saveAction(formData);
       if (result.success) {
         toast({ title: "Settings Saved", description: result.message });
-        const fetchedSettings = await fetchAppSettings(); 
+        const fetchedSettings = await fetchAppSettings();
         setSettings(fetchedSettings);
         if (actionType === "general" && fetchedSettings) {
             setTheme(fetchedSettings.general.defaultTheme);
@@ -200,19 +207,19 @@ export default function SettingsPage() {
       } else {
         toast({ title: "Delete Failed", description: result.message, variant: "destructive" });
       }
-      setUserToDelete(null); 
+      setUserToDelete(null);
     });
   };
-  
-  if (!authCheckCompleted) {
+
+  if (!authCheckCompleted && !isClientRender) { // Initial server render or before client hydration
     return (
          <div className="flex items-center justify-center min-h-[60vh]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="ml-3 text-muted-foreground">Authenticating...</p>
          </div>
     );
   }
-
-  if (!isUserAdmin) { 
+  if (authCheckCompleted && !isUserAdmin) { // Auth check done, user is not admin
     return (
       <div className="container mx-auto py-8 px-4 md:px-6 flex flex-col items-center justify-center min-h-[60vh]">
         <Card className="w-full max-w-md text-center p-8">
@@ -235,8 +242,7 @@ export default function SettingsPage() {
     );
   }
 
-
-  if (isLoading) {
+  if (isLoadingInitialData && isUserAdmin) { // User is admin, but data is still loading
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -245,7 +251,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (!settings && !isLoading) { 
+  if (!settings && isUserAdmin && !isLoadingInitialData) { // Admin, data loading failed
     return (
        <div className="flex items-center justify-center min-h-[60vh] flex-col gap-4">
             <AlertTriangle className="h-12 w-12 text-destructive" />
@@ -254,8 +260,8 @@ export default function SettingsPage() {
         </div>
     );
   }
-  
-  if (!settings) return null;
+
+  if (!settings) return null; // Should be covered by above, but as a fallback
 
 
   return (
@@ -346,7 +352,7 @@ export default function SettingsPage() {
                     </Select>
                  </div>
             ))}
-            
+
             <div className="space-y-2">
                 <Label>AI API Keys (Placeholder)</Label>
                 <Input type="password" placeholder="Enter Google AI API Key (Handled via .env)" disabled />
@@ -387,7 +393,7 @@ export default function SettingsPage() {
           </form>
         </CardContent>
       </Card>
-      
+
       <Separator />
 
       <Card>
@@ -413,9 +419,9 @@ export default function SettingsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {user.isAdmin && <ShieldCheck className="h-5 w-5 text-primary" title="Admin Privileges"/>}
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setUserToDelete(user)}
                           disabled={isDeletingUser}
                           className="text-destructive hover:text-destructive/80"
@@ -435,13 +441,13 @@ export default function SettingsPage() {
             <Button variant="outline" onClick={() => router.push('/glossary')}>
                 <BookOpen className="mr-2 h-4 w-4" /> Manage Glossary Terms
             </Button>
-            
+
             <FeaturesGuideModal>
                 <Button variant="outline">
                     <Edit3 className="mr-2 h-4 w-4" /> View/Edit 'Learn More' Guide
                 </Button>
             </FeaturesGuideModal>
-            
+
             <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -499,7 +505,7 @@ export default function SettingsPage() {
       </Card>
 
       {userToDelete && (
-        <DeleteAlertDialogContent> 
+        <DeleteAlertDialogContent>
           <DeleteAlertDialogHeader>
             <DeleteAlertDialogTitle>Are you sure?</DeleteAlertDialogTitle>
             <DeleteAlertDialogDescription>
@@ -508,8 +514,8 @@ export default function SettingsPage() {
           </DeleteAlertDialogHeader>
           <DeleteAlertDialogFooter>
             <AlertDialogCancel onClick={() => setUserToDelete(null)} disabled={isDeletingUser}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConceptualUser} 
+            <AlertDialogAction
+              onClick={handleDeleteConceptualUser}
               disabled={isDeletingUser}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
@@ -520,10 +526,12 @@ export default function SettingsPage() {
         </DeleteAlertDialogContent>
       )}
     </div>
-    <FeaturesGuideModal> 
+    <FeaturesGuideModal>
         <span className="hidden">Hidden Trigger for Programmatic Features Guide Modal</span>
     </FeaturesGuideModal>
     </>
   );
 }
 
+    
+    
