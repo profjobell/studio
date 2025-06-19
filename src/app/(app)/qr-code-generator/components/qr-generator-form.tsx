@@ -108,10 +108,12 @@ export function QrGeneratorForm() {
     });
   };
   
-  useEffect(() => {
+ useEffect(() => {
+    // Generate QR with default values on mount
     constructAndSetQrValue(form.getValues());
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once on mount
+
 
   const onSubmit = (data: QrFormValues) => {
     constructAndSetQrValue(data); 
@@ -220,7 +222,7 @@ export function QrGeneratorForm() {
                 </CardHeader>
                 <CardContent className="space-y-4 p-4">
                     <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : (isNaN(parseInt(e.target.value,10)) ? undefined : parseInt(e.target.value,10)))} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value,10) || undefined)} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     <FormField control={form.control} name="level" render={({ field }) => ( <FormItem> <FormLabel>Error Correction</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger> </FormControl> <SelectContent> <SelectItem value="L">Low (L)</SelectItem> <SelectItem value="M">Medium (M)</SelectItem> <SelectItem value="Q">Quartile (Q)</SelectItem> <SelectItem value="H">High (H)</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -245,13 +247,14 @@ export function QrGeneratorForm() {
                     />
                     {form.watch('includeMargin') && (
                       <FormField
+                        key="marginSizeField"
                         control={form.control}
                         name="marginSize"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Margin Size (px)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : (isNaN(parseInt(e.target.value,10)) ? undefined : parseInt(e.target.value,10)))} placeholder="e.g., 10" />
+                              <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value,10) || undefined)} placeholder="e.g., 10" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -283,12 +286,13 @@ export function QrGeneratorForm() {
                 />
                 {form.watch('enableImageOverlay') && (
                   <>
-                    <FormField control={form.control} name="imageSrc" render={({ field }) => ( <FormItem> <FormLabel>Image URL</FormLabel> <FormControl> <Input placeholder="https://example.com/logo.png" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField key="imageSrcField" control={form.control} name="imageSrc" render={({ field }) => ( <FormItem> <FormLabel>Image URL</FormLabel> <FormControl> <Input placeholder="https://example.com/logo.png" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField control={form.control} name="imageWidth" render={({ field }) => ( <FormItem> <FormLabel>Image Width (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : (isNaN(parseInt(e.target.value,10)) ? undefined : parseInt(e.target.value,10)))} /> </FormControl> <FormMessage /> </FormItem> )}/>
-                      <FormField control={form.control} name="imageHeight" render={({ field }) => ( <FormItem> <FormLabel>Image Height (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : (isNaN(parseInt(e.target.value,10)) ? undefined : parseInt(e.target.value,10)))} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                      <FormField key="imageWidthField" control={form.control} name="imageWidth" render={({ field }) => ( <FormItem> <FormLabel>Image Width (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value,10) || undefined)} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                      <FormField key="imageHeightField" control={form.control} name="imageHeight" render={({ field }) => ( <FormItem> <FormLabel>Image Height (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value,10) || undefined)} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     </div>
                     <FormField
+                      key="imageExcavateField"
                       control={form.control}
                       name="imageExcavate"
                       render={({ field }) => (
