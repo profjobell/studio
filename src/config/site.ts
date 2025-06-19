@@ -1,6 +1,6 @@
 
 import type { NavItem, SidebarNavItem } from "@/types";
-import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info, ShieldAlert, Youtube, QrCode } from 'lucide-react'; 
+import { Home, FileText, BarChart3, Library, GraduationCap, UserCircle, Settings, Search, ShieldCheck, FileSignature, History, MessageSquareWarning, ScrollText, ClipboardList, BookOpen, Info, ShieldAlert, Youtube } from 'lucide-react'; 
 
 export type SiteConfig = {
   name: string;
@@ -155,17 +155,6 @@ export const siteConfig: SiteConfig = {
           href: "/learning",
           icon: GraduationCap,
           description: "Interactive quizzes and study aids.",
-        },
-      ],
-    },
-    {
-      title: "Utilities", // New Group
-      items: [
-        {
-          title: "Invite QR Generator",
-          href: "/qr-code-generator",
-          icon: QrCode, 
-          description: "Generate app invite QR codes.",
         },
       ],
     },
