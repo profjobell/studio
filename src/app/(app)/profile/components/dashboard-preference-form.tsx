@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { FormDescription } from "@/components/ui/form"; // Added import
 import { useToast } from "@/hooks/use-toast";
 import { fetchUserDashboardPreference, updateUserDashboardPreference } from "../actions";
 import type { UserDashboardPreference } from "@/types";
