@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { FormDescription } from "@/components/ui/form"; // Added import
 import { useToast } from "@/hooks/use-toast";
 import { fetchUserDashboardPreference, updateUserDashboardPreference } from "../actions";
 import type { UserDashboardPreference } from "@/types";
@@ -187,7 +186,7 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
                             onChange={handleInputChange}
                             className="w-24 h-10 p-1"
                         />
-                        <p className="text-xs text-muted-foreground">Choose a color for the symbolic square.</p>
+                        <p className="text-xs text-muted-foreground mt-1">Choose a color for the symbolic square.</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -201,7 +200,7 @@ export function DashboardPreferenceForm({ userId }: DashboardPreferenceFormProps
                                 placeholder="https://example.com/your-image.png"
                                 disabled={!!uploadedFileName} 
                             />
-                            <FormDescription className="text-xs mt-1">Paste an external image URL, or use the upload option below.</FormDescription>
+                            <p className="text-xs text-muted-foreground mt-1">Paste an external image URL, or use the upload option below.</p>
                         </div>
                         <div className="relative p-4 border-2 border-dashed rounded-md hover:border-primary transition-colors">
                             <Label htmlFor="imageUpload" className="block text-sm font-medium text-center cursor-pointer">
