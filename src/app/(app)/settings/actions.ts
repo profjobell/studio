@@ -47,7 +47,7 @@ const initialSettings: AppSettings = {
     podcastGeneration: true,
     personalizedFallacyQuiz: true,
     scriptureMemoryTool: true,
-    ismAwarenessQuiz: true, 
+    ismAwarenessQuiz: true,
   },
 };
 
@@ -80,20 +80,20 @@ function ensureUserProfilesStore(): ConceptuallyAddedUserProfile[] {
 export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: string]: UserDashboardPreference }> {
   if (!global.userDashboardPreferencesStoreGlobal) {
     global.userDashboardPreferencesStoreGlobal = {
-      'default': { 
-        enabled: true, 
-        notes: "Default user dashboard message. Edit this on your profile.", 
-        symbolicPlaceholder: false, 
-        imageUrl: "https://storage.googleapis.com/project-images-public/kjv_sentinel_dashboard_default.png" 
+      'default': {
+        enabled: true,
+        notes: "Default user dashboard message. Edit this on your profile.",
+        symbolicPlaceholder: false,
+        imageUrl: "https://storage.googleapis.com/project-images-public/kjv_sentinel_dashboard_default.png"
       },
       'admin': { enabled: true, notes: "Admin User: The image provided appeared all black. This square is a symbolic placement.", symbolicPlaceholder: true, symbolicColor: "black" },
       'richard': { enabled: true, notes: "Richard's custom dashboard message. Welcome back!", imageUrl: "https://placehold.co/200x100.png" },
       'meta': { enabled: true, notes: "Meta Admin: Dashboard ready for configuration.", symbolicPlaceholder: true, symbolicColor: "hsl(var(--primary))" },
-      'jide': { // Added Jide's default preference
+      'jide': {
         enabled: true,
         notes: "Welcome, Jide! Your admin dashboard is ready.",
         symbolicPlaceholder: false,
-        imageUrl: "https://placehold.co/300x200/8b5cf6/ffffff.png?text=Jide's+Dashboard", // Purple placeholder
+        imageUrl: "https://placehold.co/300x200/8b5cf6/ffffff.png?text=Jide's+Dashboard",
         symbolicColor: "#8b5cf6"
       },
     };
@@ -111,8 +111,8 @@ ensureUserDashboardPreferencesStore();
 // --- Server Actions ---
 
 export async function fetchAppSettings(): Promise<AppSettings> {
-  const store = ensureSettingsStore(); 
-  return JSON.parse(JSON.stringify(store)); 
+  const store = ensureSettingsStore();
+  return JSON.parse(JSON.stringify(store));
 }
 
 const generalSettingsSchema = z.object({
@@ -138,9 +138,9 @@ export async function saveGeneralSettings(
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
 
-  const store = ensureSettingsStore(); 
+  const store = ensureSettingsStore();
   store.general = validation.data;
-  
+
   revalidatePath("/settings");
   return { success: true, message: "General settings saved successfully." };
 }
@@ -173,8 +173,8 @@ export async function saveAiSettings(
     if (!validation.success) {
         return { success: false, message: "Validation failed.", errors: validation.error.issues };
     }
-    
-  const store = ensureSettingsStore(); 
+
+  const store = ensureSettingsStore();
   store.ai = {
       defaultModel: validation.data.defaultModel,
       safetyFilters: {
@@ -198,7 +198,7 @@ const featureFlagsSchema = z.object({
 export async function saveFeatureFlags(
   formData: FormData
 ): Promise<{ success: boolean; message: string; errors?: z.ZodIssue[] }> {
-  
+
   const dataToValidate = {
     podcastGeneration: formData.get("podcastGeneration") === "on",
     personalizedFallacyQuiz: formData.get("personalizedFallacyQuiz") === "on",
@@ -212,7 +212,7 @@ export async function saveFeatureFlags(
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
 
-  const store = ensureSettingsStore(); 
+  const store = ensureSettingsStore();
   store.featureFlags = validation.data;
   revalidatePath("/settings");
   revalidatePath("/learning"); // To reflect updated learning tools
@@ -259,31 +259,31 @@ export async function addUserProfileAction(
   if (!validation.success) {
     return { success: false, message: "Validation failed.", errors: validation.error.issues };
   }
-  
-  const userProfilesStore = ensureUserProfilesStore(); 
+
+  const userProfilesStore = ensureUserProfilesStore();
   const newUser: ConceptuallyAddedUserProfile = {
-    id: \`user-\${Date.now()}\`,
+    id: `user-${Date.now()}`, // Corrected line
     ...validation.data
   };
   userProfilesStore.push(newUser);
 
   // Initialize dashboard preference for the new user
-  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); 
+  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore();
   dashboardPrefsStore[newUser.id] = {
     enabled: false, // Default to disabled
-    notes: \`Welcome, \${validation.data.newDisplayName}! Customize your dashboard message on your profile.\`,
+    notes: `Welcome, ${validation.data.newDisplayName}! Customize your dashboard message on your profile.`,
     symbolicPlaceholder: true,
     symbolicColor: "hsl(var(--muted-foreground))"
   };
-  
+
   revalidatePath("/settings");
-  revalidatePath("/profile"); 
-  return { success: true, message: \`Conceptual user profile for \${validation.data.newDisplayName} (\${validation.data.newUserEmail}) added.\`, errors: undefined };
+  revalidatePath("/profile");
+  return { success: true, message: `Conceptual user profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added.`, errors: undefined };
 }
 
 export async function fetchConceptuallyAddedUserProfiles(): Promise<ConceptuallyAddedUserProfile[]> {
-  const store = ensureUserProfilesStore(); 
-  return JSON.parse(JSON.stringify(store)); 
+  const store = ensureUserProfilesStore();
+  return JSON.parse(JSON.stringify(store));
 }
 
 export async function deleteConceptualUserAction(userId: string): Promise<{ success: boolean; message: string }> {
@@ -291,7 +291,7 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
   const initialLength = userProfilesStore.length;
   global.tempUserProfilesStoreGlobal = userProfilesStore.filter(user => user.id !== userId);
 
-  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); 
+  const dashboardPrefsStore = await ensureUserDashboardPreferencesStore();
   if (dashboardPrefsStore[userId]) {
     delete dashboardPrefsStore[userId];
   }
@@ -299,8 +299,11 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
   if (global.tempUserProfilesStoreGlobal.length < initialLength) {
     revalidatePath("/settings");
     revalidatePath("/profile");
-    return { success: true, message: \`Conceptual user \${userId} deleted.\` };
+    return { success: true, message: `Conceptual user ${userId} deleted.` };
   } else {
-    return { success: false, message: \`Conceptual user \${userId} not found.\` };
+    return { success: false, message: `Conceptual user ${userId} not found.` };
   }
 }
+
+
+    

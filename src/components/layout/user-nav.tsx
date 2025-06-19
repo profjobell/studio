@@ -128,8 +128,8 @@ export function UserNav() {
         setCurrentUser(resolvedCurrentUser);
 
         if (resolvedCurrentUser && resolvedCurrentUser.id) {
-          const storedAvatarSrc = localStorage.getItem(\`avatarSrc_\${resolvedCurrentUser.id}\`);
-          const storedAvatarType = localStorage.getItem(\`avatarType_\${resolvedCurrentUser.id}\`);
+          const storedAvatarSrc = localStorage.getItem(`avatarSrc_${resolvedCurrentUser.id}`);
+          const storedAvatarType = localStorage.getItem(`avatarType_${resolvedCurrentUser.id}`);
           if (storedAvatarSrc && storedAvatarType === 'uploaded') {
             setDisplayAvatarSrc(storedAvatarSrc);
           } else if (storedAvatarType === 'generated' && storedAvatarSrc) {
@@ -151,8 +151,8 @@ export function UserNav() {
 
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      const storedAvatarSrc = localStorage.getItem(\`avatarSrc_\${currentUser.id}\`);
-      const storedAvatarType = localStorage.getItem(\`avatarType_\${currentUser.id}\`);
+      const storedAvatarSrc = localStorage.getItem(`avatarSrc_${currentUser.id}`);
+      const storedAvatarType = localStorage.getItem(`avatarType_${currentUser.id}`);
       
       if (storedAvatarSrc && storedAvatarType === 'uploaded') {
         setDisplayAvatarSrc(storedAvatarSrc);
@@ -181,8 +181,8 @@ export function UserNav() {
         localStorage.removeItem('adminBypassActive');
       }
       
-      const storedAvatarSrc = localStorage.getItem(\`avatarSrc_\${selectedUser.id}\`);
-      const storedAvatarType = localStorage.getItem(\`avatarType_\${selectedUser.id}\`);
+      const storedAvatarSrc = localStorage.getItem(`avatarSrc_${selectedUser.id}`);
+      const storedAvatarType = localStorage.getItem(`avatarType_${selectedUser.id}`);
       if (storedAvatarSrc && storedAvatarType === 'uploaded') {
         setDisplayAvatarSrc(storedAvatarSrc);
       } else if (storedAvatarType === 'generated' && storedAvatarSrc) {
@@ -206,8 +206,8 @@ export function UserNav() {
     
     setCurrentUser(defaultUser); 
     if (defaultUser) {
-        const defaultAvatarSrc = localStorage.getItem(\`avatarSrc_\${defaultUser.id}\`);
-        const defaultAvatarType = localStorage.getItem(\`avatarType_\${defaultUser.id}\`);
+        const defaultAvatarSrc = localStorage.getItem(`avatarSrc_${defaultUser.id}`);
+        const defaultAvatarType = localStorage.getItem(`avatarType_${defaultUser.id}`);
         if(defaultAvatarSrc && defaultAvatarType === 'uploaded') {
             setDisplayAvatarSrc(defaultAvatarSrc);
         } else {
