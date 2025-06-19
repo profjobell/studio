@@ -83,8 +83,8 @@ export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: 
       'default': { 
         enabled: true, 
         notes: "Default user dashboard message. Edit this on your profile.", 
-        symbolicPlaceholder: false, 
-        imageUrl: "https://placehold.co/300x200.png"
+        symbolicPlaceholder: false, // Changed to false to show image
+        imageUrl: "https://storage.googleapis.com/project-images-public/kjv_sentinel_dashboard_default.png" // New default image
       },
       'admin': { enabled: true, notes: "Admin User: The image provided appeared all black. This square is a symbolic placement.", symbolicPlaceholder: true, symbolicColor: "black" },
       'richard': { enabled: true, notes: "Richard's custom dashboard message. Welcome back!", imageUrl: "https://placehold.co/200x100.png" },

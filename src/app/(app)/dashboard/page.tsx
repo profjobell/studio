@@ -88,6 +88,14 @@ export default function DashboardPage() {
     if (dashboardPreference?.enabled) {
       let imageDisplayElement;
       const shouldUseSymbolic = dashboardPreference.symbolicPlaceholder || !dashboardPreference.imageUrl || imageError;
+      
+      let aiHint = "abstract geometric shape"; // Default for symbolic
+      if (dashboardPreference.imageUrl === "https://storage.googleapis.com/project-images-public/kjv_sentinel_dashboard_default.png") {
+        aiHint = "scripture study";
+      } else if (dashboardPreference.imageUrl) {
+        aiHint = "scripture books"; // For other custom images
+      }
+
 
       if (shouldUseSymbolic) {
         imageDisplayElement = (
@@ -100,7 +108,7 @@ export default function DashboardPage() {
                 margin: '10px auto'
             }} 
             title={imageError && dashboardPreference.imageUrl ? "Symbolic placeholder (image failed to load)" : "Symbolic placeholder"}
-            data-ai-hint="abstract geometric shape"
+            data-ai-hint={aiHint}
           ></div>
         );
       } else {
@@ -116,7 +124,7 @@ export default function DashboardPage() {
                 console.warn(`Failed to load custom dashboard image: ${dashboardPreference.imageUrl}`);
                 setImageError(true);
               }}
-              data-ai-hint="scripture books"
+              data-ai-hint={aiHint}
             />
           </div>
         );
