@@ -116,7 +116,7 @@ export default function DashboardPage() {
                 console.warn(`Failed to load custom dashboard image: ${dashboardPreference.imageUrl}`);
                 setImageError(true);
               }}
-              data-ai-hint="user provided image"
+              data-ai-hint="scripture books"
             />
           </div>
         );

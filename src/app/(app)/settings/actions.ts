@@ -47,7 +47,7 @@ const initialSettings: AppSettings = {
     podcastGeneration: true,
     personalizedFallacyQuiz: true,
     scriptureMemoryTool: true,
-    ismAwarenessQuiz: true, // Changed from false to true
+    ismAwarenessQuiz: true, 
   },
 };
 
@@ -80,7 +80,12 @@ function ensureUserProfilesStore(): ConceptuallyAddedUserProfile[] {
 export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: string]: UserDashboardPreference }> {
   if (!global.userDashboardPreferencesStoreGlobal) {
     global.userDashboardPreferencesStoreGlobal = {
-      'default': { enabled: true, notes: "Default user dashboard message. Edit this on your profile.", symbolicPlaceholder: true, symbolicColor: "hsl(var(--foreground))" },
+      'default': { 
+        enabled: true, 
+        notes: "Default user dashboard message. Edit this on your profile.", 
+        symbolicPlaceholder: false, 
+        imageUrl: "https://placehold.co/300x200.png"
+      },
       'admin': { enabled: true, notes: "Admin User: The image provided appeared all black. This square is a symbolic placement.", symbolicPlaceholder: true, symbolicColor: "black" },
       'richard': { enabled: true, notes: "Richard's custom dashboard message. Welcome back!", imageUrl: "https://placehold.co/200x100.png" },
       'meta': { enabled: true, notes: "Meta Admin: Dashboard ready for configuration.", symbolicPlaceholder: true, symbolicColor: "hsl(var(--primary))" },
@@ -292,3 +297,4 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
     return { success: false, message: `Conceptual user ${userId} not found.` };
   }
 }
+
