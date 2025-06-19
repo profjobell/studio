@@ -32,12 +32,12 @@ const qrFormSchema = z.object({
   assignedRole: z.enum(["User", "Editor (Conceptual)", "Admin (Conceptual)"]).default("User"),
   definedPrivileges: z.string().optional().describe("Comma-separated conceptual privileges, e.g., view_reports,edit_settings"),
   
-  size: z.number().min(50).max(1000).default(256),
+  size: z.number().min(50, "Size must be at least 50").max(1000, "Size must be at most 1000").default(256),
   level: z.enum(["L", "M", "Q", "H"]).default("M"),
   bgColor: z.string().regex(hexColorRegex, "Invalid HEX color (e.g., #RRGGBB or #RGB).").default("#FFFFFF"),
   fgColor: z.string().regex(hexColorRegex, "Invalid HEX color (e.g., #RRGGBB or #RGB).").default("#000000"),
   includeMargin: z.boolean().default(true),
-  marginSize: z.number().min(0).max(50).optional(),
+  marginSize: z.number().min(0,"Margin must be 0 or more").max(50, "Margin must be 50 or less").optional(),
   
   enableImageOverlay: z.boolean().default(false),
   imageSrc: z.string().url("Must be a valid URL for the image source.").optional().or(z.literal('')),
@@ -46,9 +46,9 @@ const qrFormSchema = z.object({
   imageExcavate: z.boolean().default(true),
 }).superRefine((data, ctx) => {
   if (data.enableImageOverlay) {
-    if (!data.imageSrc) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image URL required.", path: ["imageSrc"] });
-    if (!data.imageWidth) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image width required.", path: ["imageWidth"] });
-    if (!data.imageHeight) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image height required.", path: ["imageHeight"] });
+    if (!data.imageSrc) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image URL required when overlay is enabled.", path: ["imageSrc"] });
+    if (!data.imageWidth) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image width required when overlay is enabled.", path: ["imageWidth"] });
+    if (!data.imageHeight) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Image height required when overlay is enabled.", path: ["imageHeight"] });
   }
   if (data.includeMargin && typeof data.marginSize !== 'number') {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Margin size is required when 'Quiet Zone' is enabled.", path: ["marginSize"] });
@@ -81,14 +81,8 @@ export function QrGeneratorForm() {
       imageHeight: 40,
       imageExcavate: true,
     },
-    mode: "onChange",
+    mode: "onChange", // Validation on change can help catch issues earlier
   });
-
-  useEffect(() => {
-    constructAndSetQrValue(form.getValues());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
-
 
   const constructAndSetQrValue = (data: QrFormValues) => {
     let url = new URL(data.baseInviteUrl || "https://example.com"); 
@@ -113,6 +107,11 @@ export function QrGeneratorForm() {
         imageExcavate: data.imageExcavate,
     });
   };
+  
+  useEffect(() => {
+    constructAndSetQrValue(form.getValues());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Runs once on mount
 
   const onSubmit = (data: QrFormValues) => {
     constructAndSetQrValue(data); 
@@ -140,6 +139,16 @@ export function QrGeneratorForm() {
       toast({ title: "Download Failed", description: "Could not find QR code to download. Please ensure parameters are set.", variant: "destructive" });
     }
   };
+
+  const handleNumericChange = (value: string, onChange: (val: number | undefined) => void) => {
+    if (value === '') {
+      onChange(undefined);
+    } else {
+      const num = parseInt(value, 10);
+      onChange(isNaN(num) ? undefined : num);
+    }
+  };
+
 
   return (
     <Form {...form}>
@@ -221,7 +230,7 @@ export function QrGeneratorForm() {
                 </CardHeader>
                 <CardContent className="space-y-4 p-4">
                     <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : parseInt(e.target.value, 10))} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} onChange={e => handleNumericChange(e.target.value, field.onChange)} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     <FormField control={form.control} name="level" render={({ field }) => ( <FormItem> <FormLabel>Error Correction</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger> </FormControl> <SelectContent> <SelectItem value="L">Low (L)</SelectItem> <SelectItem value="M">Medium (M)</SelectItem> <SelectItem value="Q">Quartile (Q)</SelectItem> <SelectItem value="H">High (H)</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -252,7 +261,7 @@ export function QrGeneratorForm() {
                           <FormItem>
                             <FormLabel>Margin Size (px)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} placeholder="e.g., 10" />
+                              <Input type="number" {...field} onChange={e => handleNumericChange(e.target.value, field.onChange)} placeholder="e.g., 10" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -286,8 +295,8 @@ export function QrGeneratorForm() {
                   <>
                     <FormField control={form.control} name="imageSrc" render={({ field }) => ( <FormItem> <FormLabel>Image URL</FormLabel> <FormControl> <Input placeholder="https://example.com/logo.png" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField control={form.control} name="imageWidth" render={({ field }) => ( <FormItem> <FormLabel>Image Width (px)</FormLabel> <FormControl> <Input type="number" {...field}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /> </FormControl> <FormMessage /> </FormItem> )}/>
-                      <FormField control={form.control} name="imageHeight" render={({ field }) => ( <FormItem> <FormLabel>Image Height (px)</FormLabel> <FormControl> <Input type="number" {...field}  onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                      <FormField control={form.control} name="imageWidth" render={({ field }) => ( <FormItem> <FormLabel>Image Width (px)</FormLabel> <FormControl> <Input type="number" {...field}  onChange={e => handleNumericChange(e.target.value, field.onChange)} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                      <FormField control={form.control} name="imageHeight" render={({ field }) => ( <FormItem> <FormLabel>Image Height (px)</FormLabel> <FormControl> <Input type="number" {...field}  onChange={e => handleNumericChange(e.target.value, field.onChange)} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     </div>
                     <FormField
                       control={form.control}
@@ -308,7 +317,7 @@ export function QrGeneratorForm() {
                 )}
               </CardContent>
             </Card>
-             <Button type="button" onClick={() => form.handleSubmit(onSubmit)()} className="w-full" variant="secondary">
+             <Button type="submit" className="w-full" variant="secondary">
                 <ScanLine className="mr-2 h-4 w-4" /> Submit and Update QR
              </Button>
           </div>
