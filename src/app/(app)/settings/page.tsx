@@ -85,15 +85,27 @@ export default function SettingsPage() {
 
 
   useEffect(() => {
+    // This effect runs once after the component mounts.
+    // It checks localStorage to determine if the current user is an admin.
     const activeUserEmail = localStorage.getItem('conceptualUserEmail');
-    const bypassActive = localStorage.getItem('adminBypassActive') === 'true';
-    if (bypassActive || (activeUserEmail && ADMIN_EMAILS.includes(activeUserEmail.toLowerCase())) ) {
+    const bypassIsActive = localStorage.getItem('adminBypassActive') === 'true';
+
+    // For debugging:
+    // console.log(`[SettingsPage Effect] conceptualUserEmail: "${activeUserEmail}"`);
+    // console.log(`[SettingsPage Effect] adminBypassActive from localStorage: "${localStorage.getItem('adminBypassActive')}", is 'true'?: ${bypassIsActive}`);
+
+    if (bypassIsActive) {
       setIsUserAdmin(true);
+      // console.log("[SettingsPage Effect] Admin access GRANTED via bypass flag.");
+    } else if (activeUserEmail && ADMIN_EMAILS.includes(activeUserEmail.toLowerCase())) {
+      setIsUserAdmin(true);
+      // console.log("[SettingsPage Effect] Admin access GRANTED via email match.");
     } else {
       setIsUserAdmin(false);
+      // console.log("[SettingsPage Effect] Admin access DENIED.");
     }
-    setAuthCheckCompleted(true);
-  }, []);
+    setAuthCheckCompleted(true); // Mark that the check has been performed
+  }, []); // Empty dependency array ensures this runs only once on mount.
 
 
   const loadInitialData = async () => {
