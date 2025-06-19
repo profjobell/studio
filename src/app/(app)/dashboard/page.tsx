@@ -111,21 +111,32 @@ export default function DashboardPage() {
             data-ai-hint={aiHint}
           ></div>
         );
-      } else {
+      } else if (dashboardPreference.imageUrl) { // Added conditional check
         imageDisplayElement = (
           <div className="relative w-full max-w-xs h-40 mx-auto mb-3">
             <Image 
-              src={dashboardPreference.imageUrl!} 
+              src={dashboardPreference.imageUrl} 
               alt="User defined image" 
               fill
               style={{ objectFit: 'contain' }}
               className="rounded-md"
               onError={() => {
-                console.warn(`Failed to load custom dashboard image: ${dashboardPreference.imageUrl}`);
+                console.warn(\`Failed to load custom dashboard image: \${dashboardPreference.imageUrl}\`);
                 setImageError(true);
               }}
               data-ai-hint={aiHint}
             />
+          </div>
+        );
+      } else {
+        // Fallback if imageUrl is not available but symbolic is also false (should not happen with current logic but good for safety)
+        imageDisplayElement = (
+          <div 
+            className="relative w-full max-w-xs h-40 mx-auto mb-3 bg-muted flex items-center justify-center rounded-md"
+            title="No image configured"
+            data-ai-hint="placeholder image"
+          >
+            <ImageIconLucide className="h-16 w-16 text-muted-foreground" />
           </div>
         );
       }
@@ -317,4 +328,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
