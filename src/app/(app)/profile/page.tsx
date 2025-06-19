@@ -6,8 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button"; // Imported buttonVariants
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input"; 
-import { Label } from "@/components/ui/label"; 
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ProfileUpdateForm } from "./components/profile-update-form";
 import { DeleteAccountSection } from "./components/delete-account-section";
 import { DashboardPreferenceForm } from "./components/dashboard-preference-form";
@@ -66,7 +66,13 @@ export default function ProfilePage() {
             email = "rich@home.com";
             baseAvatar = "https://placehold.co/100x100/2563eb/ffffff?text=R";
             userIdToSet = currentUserId;
-        } else if (currentUserId && currentUserEmailFromStorage) {
+        } else if (currentUserId === 'btf-kvn-guest') {
+            name = "BTF-KVN Guest";
+            email = "btf-kvn@guest.com";
+            baseAvatar = "https://placehold.co/100x100/64748b/ffffff?text=BG";
+            userIdToSet = currentUserId;
+        }
+         else if (currentUserId && currentUserEmailFromStorage) {
             const dynamicUser = fetchedDynamicUsers.find(du => du.id === currentUserId || du.newUserEmail === currentUserEmailFromStorage);
             if (dynamicUser) {
                 name = dynamicUser.newDisplayName;
@@ -77,7 +83,7 @@ export default function ProfilePage() {
                  name = currentUserEmailFromStorage.split('@')[0];
                  email = currentUserEmailFromStorage;
                  baseAvatar = getGeneratedAvatarUrl(name);
-                 userIdToSet = currentUserId || `guest-${Date.now()}`; 
+                 userIdToSet = currentUserId || `guest-${Date.now()}`;
             }
         }
 
@@ -134,12 +140,7 @@ export default function ProfilePage() {
         localStorage.setItem(`avatarSrc_${currentUserDetails.id}`, dataUri);
         localStorage.setItem(`avatarType_${currentUserDetails.id}`, 'uploaded');
         toast({ title: "Avatar Updated", description: "Your new avatar has been set." });
-        // Force UserNav to re-read from local storage by briefly changing userType
-        // This is a workaround for conceptual state management
-        const originalUserType = localStorage.getItem('conceptualUserType');
-        localStorage.setItem('conceptualUserType', 'temp_refresh');
-        if (originalUserType) localStorage.setItem('conceptualUserType', originalUserType);
-        router.refresh(); // May not be enough for UserNav, but good for page
+        router.refresh();
       };
       reader.readAsDataURL(file);
     }
@@ -153,14 +154,10 @@ export default function ProfilePage() {
       localStorage.removeItem(`avatarSrc_${currentUserDetails.id}`);
       localStorage.setItem(`avatarType_${currentUserDetails.id}`, 'generated');
       toast({ title: "Custom Avatar Removed", description: "Reverted to generated avatar." });
-       // Force UserNav refresh
-      const originalUserType = localStorage.getItem('conceptualUserType');
-      localStorage.setItem('conceptualUserType', 'temp_refresh');
-      if (originalUserType) localStorage.setItem('conceptualUserType', originalUserType);
       router.refresh();
     }
   };
-  
+
   const handleUseGeneratedAvatar = () => {
     if (currentUserDetails?.id) {
       const generatedUrl = getGeneratedAvatarUrl(currentUserDetails.name);
@@ -169,10 +166,6 @@ export default function ProfilePage() {
       localStorage.setItem(`avatarSrc_${currentUserDetails.id}`, generatedUrl); // Store generated as well
       localStorage.setItem(`avatarType_${currentUserDetails.id}`, 'generated');
       toast({ title: "Avatar Changed", description: "Switched to generated avatar." });
-       // Force UserNav refresh
-      const originalUserType = localStorage.getItem('conceptualUserType');
-      localStorage.setItem('conceptualUserType', 'temp_refresh');
-      if (originalUserType) localStorage.setItem('conceptualUserType', originalUserType);
       router.refresh();
     }
   };
@@ -186,7 +179,7 @@ export default function ProfilePage() {
       </div>
     );
   }
-  
+
   const avatarInitials = currentUserDetails.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() || 'U';
 
   return (
@@ -217,7 +210,7 @@ export default function ProfilePage() {
                   <Upload className="mr-2 h-4 w-4" /> Upload New
                 </Label>
                 <Input id="avatarUpload" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                
+
                 <Button variant="outline" size="sm" onClick={handleUseGeneratedAvatar}>
                   <UserIcon className="mr-2 h-4 w-4" /> Use Generated
                 </Button>
