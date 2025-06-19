@@ -89,11 +89,11 @@ export default function DashboardPage() {
       let imageDisplayElement;
       const shouldUseSymbolic = dashboardPreference.symbolicPlaceholder || !dashboardPreference.imageUrl || imageError;
       
-      let aiHint = "abstract geometric shape"; // Default for symbolic
+      let aiHint = "abstract geometric shape"; 
       if (dashboardPreference.imageUrl === "https://storage.googleapis.com/project-images-public/kjv_sentinel_dashboard_default.png") {
         aiHint = "scripture study";
       } else if (dashboardPreference.imageUrl) {
-        aiHint = "scripture books"; // For other custom images
+        aiHint = "scripture books"; 
       }
 
 
@@ -111,7 +111,7 @@ export default function DashboardPage() {
             data-ai-hint={aiHint}
           ></div>
         );
-      } else if (dashboardPreference.imageUrl) { // Added conditional check
+      } else if (dashboardPreference.imageUrl) { 
         imageDisplayElement = (
           <div className="relative w-full max-w-xs h-40 mx-auto mb-3">
             <Image 
@@ -121,7 +121,7 @@ export default function DashboardPage() {
               style={{ objectFit: 'contain' }}
               className="rounded-md"
               onError={() => {
-                console.warn(\`Failed to load custom dashboard image: \${dashboardPreference.imageUrl}\`);
+                console.warn(`Failed to load custom dashboard image: ${dashboardPreference.imageUrl}`);
                 setImageError(true);
               }}
               data-ai-hint={aiHint}
@@ -129,8 +129,7 @@ export default function DashboardPage() {
           </div>
         );
       } else {
-        // Fallback if imageUrl is not available but symbolic is also false (should not happen with current logic but good for safety)
-        imageDisplayElement = (
+         imageDisplayElement = (
           <div 
             className="relative w-full max-w-xs h-40 mx-auto mb-3 bg-muted flex items-center justify-center rounded-md"
             title="No image configured"
@@ -164,7 +163,6 @@ export default function DashboardPage() {
         </Card>
       );
     }
-    // Default if not enabled or no preference
     return (
       <Card className="my-4 p-4 border rounded-md bg-card text-card-foreground">
         <p className="text-sm text-muted-foreground mb-2">Welcome to your dashboard!</p>
