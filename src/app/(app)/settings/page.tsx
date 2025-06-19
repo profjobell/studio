@@ -123,7 +123,7 @@ export default function SettingsPage() {
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isUserAdmin, authCheckCompleted, toast]);
+  }, [isUserAdmin, authCheckCompleted]);
 
   useEffect(() => {
     if (addUserFormState.message && (addUserFormState.success || addUserFormState.errors)) { 
@@ -512,4 +512,3 @@ export default function SettingsPage() {
   );
 }
 
-    
