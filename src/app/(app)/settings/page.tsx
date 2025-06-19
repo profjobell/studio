@@ -50,7 +50,10 @@ import { useTheme } from "next-themes";
 import { FeaturesGuideModal } from "@/components/features-guide";
 
 
-const ADMIN_EMAILS = ["admin@kjvsentinel.com", "meta@kjvsentinel.com"]; 
+const ADMIN_EMAILS = [
+  "admin@kjvsentinel.com", 
+  "meta@kjvsentinel.com"
+]; 
 
 const initialAddUserState: AddUserFormState = {
     message: "",
