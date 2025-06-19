@@ -81,7 +81,7 @@ export function QrGeneratorForm() {
       imageHeight: 40,
       imageExcavate: true,
     },
-    mode: "onChange",
+    mode: "onChange", 
   });
 
   const constructAndSetQrValue = (data: QrFormValues) => {
@@ -109,7 +109,6 @@ export function QrGeneratorForm() {
   };
   
   useEffect(() => {
-    // Initialize QR preview with default form values on mount
     constructAndSetQrValue(form.getValues());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -140,16 +139,6 @@ export function QrGeneratorForm() {
       toast({ title: "Download Failed", description: "Could not find QR code to download. Please ensure parameters are set.", variant: "destructive" });
     }
   };
-  
-  const handleNumericChange = (value: string, onChange: (val: number | undefined) => void) => {
-    if (value === '') {
-      onChange(undefined);
-    } else {
-      const num = parseInt(value, 10);
-      onChange(isNaN(num) ? undefined : num);
-    }
-  };
-
 
   return (
     <Form {...form}>
@@ -231,7 +220,7 @@ export function QrGeneratorForm() {
                 </CardHeader>
                 <CardContent className="space-y-4 p-4">
                     <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} onChange={e => handleNumericChange(e.target.value, field.onChange as any)} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="size" render={({ field }) => ( <FormItem> <FormLabel>Size (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : (isNaN(parseInt(e.target.value,10)) ? undefined : parseInt(e.target.value,10)))} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     <FormField control={form.control} name="level" render={({ field }) => ( <FormItem> <FormLabel>Error Correction</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger> </FormControl> <SelectContent> <SelectItem value="L">Low (L)</SelectItem> <SelectItem value="M">Medium (M)</SelectItem> <SelectItem value="Q">Quartile (Q)</SelectItem> <SelectItem value="H">High (H)</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -262,7 +251,7 @@ export function QrGeneratorForm() {
                           <FormItem>
                             <FormLabel>Margin Size (px)</FormLabel>
                             <FormControl>
-                              <Input type="number" {...field} onChange={e => handleNumericChange(e.target.value, field.onChange as any)} placeholder="e.g., 10" />
+                              <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : (isNaN(parseInt(e.target.value,10)) ? undefined : parseInt(e.target.value,10)))} placeholder="e.g., 10" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -296,8 +285,8 @@ export function QrGeneratorForm() {
                   <>
                     <FormField control={form.control} name="imageSrc" render={({ field }) => ( <FormItem> <FormLabel>Image URL</FormLabel> <FormControl> <Input placeholder="https://example.com/logo.png" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField control={form.control} name="imageWidth" render={({ field }) => ( <FormItem> <FormLabel>Image Width (px)</FormLabel> <FormControl> <Input type="number" {...field}  onChange={e => handleNumericChange(e.target.value, field.onChange as any)} /> </FormControl> <FormMessage /> </FormItem> )}/>
-                      <FormField control={form.control} name="imageHeight" render={({ field }) => ( <FormItem> <FormLabel>Image Height (px)</FormLabel> <FormControl> <Input type="number" {...field}  onChange={e => handleNumericChange(e.target.value, field.onChange as any)} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                      <FormField control={form.control} name="imageWidth" render={({ field }) => ( <FormItem> <FormLabel>Image Width (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : (isNaN(parseInt(e.target.value,10)) ? undefined : parseInt(e.target.value,10)))} /> </FormControl> <FormMessage /> </FormItem> )}/>
+                      <FormField control={form.control} name="imageHeight" render={({ field }) => ( <FormItem> <FormLabel>Image Height (px)</FormLabel> <FormControl> <Input type="number" {...field} value={field.value === undefined ? '' : field.value} onChange={e => field.onChange(e.target.value === '' ? undefined : (isNaN(parseInt(e.target.value,10)) ? undefined : parseInt(e.target.value,10)))} /> </FormControl> <FormMessage /> </FormItem> )}/>
                     </div>
                     <FormField
                       control={form.control}
