@@ -83,12 +83,19 @@ export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: 
       'default': { 
         enabled: true, 
         notes: "Default user dashboard message. Edit this on your profile.", 
-        symbolicPlaceholder: false, // Changed to false to show image
-        imageUrl: "https://storage.googleapis.com/project-images-public/kjv_sentinel_dashboard_default.png" // New default image
+        symbolicPlaceholder: false, 
+        imageUrl: "https://storage.googleapis.com/project-images-public/kjv_sentinel_dashboard_default.png" 
       },
       'admin': { enabled: true, notes: "Admin User: The image provided appeared all black. This square is a symbolic placement.", symbolicPlaceholder: true, symbolicColor: "black" },
       'richard': { enabled: true, notes: "Richard's custom dashboard message. Welcome back!", imageUrl: "https://placehold.co/200x100.png" },
       'meta': { enabled: true, notes: "Meta Admin: Dashboard ready for configuration.", symbolicPlaceholder: true, symbolicColor: "hsl(var(--primary))" },
+      'jide': { // Added Jide's default preference
+        enabled: true,
+        notes: "Welcome, Jide! Your admin dashboard is ready.",
+        symbolicPlaceholder: false,
+        imageUrl: "https://placehold.co/300x200/8b5cf6/ffffff.png?text=Jide's+Dashboard", // Purple placeholder
+        symbolicColor: "#8b5cf6"
+      },
     };
   }
   return global.userDashboardPreferencesStoreGlobal;
@@ -255,7 +262,7 @@ export async function addUserProfileAction(
   
   const userProfilesStore = ensureUserProfilesStore(); 
   const newUser: ConceptuallyAddedUserProfile = {
-    id: `user-${Date.now()}`,
+    id: \`user-\${Date.now()}\`,
     ...validation.data
   };
   userProfilesStore.push(newUser);
@@ -264,14 +271,14 @@ export async function addUserProfileAction(
   const dashboardPrefsStore = await ensureUserDashboardPreferencesStore(); 
   dashboardPrefsStore[newUser.id] = {
     enabled: false, // Default to disabled
-    notes: `Welcome, ${validation.data.newDisplayName}! Customize your dashboard message on your profile.`,
+    notes: \`Welcome, \${validation.data.newDisplayName}! Customize your dashboard message on your profile.\`,
     symbolicPlaceholder: true,
     symbolicColor: "hsl(var(--muted-foreground))"
   };
   
   revalidatePath("/settings");
   revalidatePath("/profile"); 
-  return { success: true, message: `Conceptual user profile for ${validation.data.newDisplayName} (${validation.data.newUserEmail}) added.`, errors: undefined };
+  return { success: true, message: \`Conceptual user profile for \${validation.data.newDisplayName} (\${validation.data.newUserEmail}) added.\`, errors: undefined };
 }
 
 export async function fetchConceptuallyAddedUserProfiles(): Promise<ConceptuallyAddedUserProfile[]> {
@@ -292,9 +299,8 @@ export async function deleteConceptualUserAction(userId: string): Promise<{ succ
   if (global.tempUserProfilesStoreGlobal.length < initialLength) {
     revalidatePath("/settings");
     revalidatePath("/profile");
-    return { success: true, message: `Conceptual user ${userId} deleted.` };
+    return { success: true, message: \`Conceptual user \${userId} deleted.\` };
   } else {
-    return { success: false, message: `Conceptual user ${userId} not found.` };
+    return { success: false, message: \`Conceptual user \${userId} not found.\` };
   }
 }
-

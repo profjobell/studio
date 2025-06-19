@@ -15,6 +15,8 @@ export async function handleSignIn(formData: FormData) {
     redirect("/dashboard?user=richard"); // Pass conceptual user type
   } else if (email && email.toLowerCase() === "meta@kjvsentinel.com" && password === "N0tjuni0r") {
     redirect("/dashboard?user=meta"); // Pass conceptual user type (new admin)
+  } else if (email && email.toLowerCase() === "jide@kjvsentinel.com" && password === "jide123") {
+    redirect("/dashboard?user=jide"); // New admin user Jide
   }
    else {
     redirect("/signin?error=invalid_credentials");
@@ -27,5 +29,3 @@ export async function handleGoogleSignIn() {
   // For this demo, we'll indicate it's not fully implemented.
   redirect("/signin?error=google_not_implemented");
 }
-
-

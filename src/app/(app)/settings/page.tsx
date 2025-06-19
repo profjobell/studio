@@ -52,7 +52,8 @@ import { FeaturesGuideModal } from "@/components/features-guide";
 
 const ADMIN_EMAILS = [
   "admin@kjvsentinel.com",
-  "meta@kjvsentinel.com"
+  "meta@kjvsentinel.com",
+  "jide@kjvsentinel.com", // Added Jide's email
 ];
 
 const initialAddUserState: AddUserFormState = {
@@ -160,7 +161,7 @@ export default function SettingsPage() {
         } else {
             toast({
                 title: "Failed to Add User",
-                description: addUserFormState.message + (addUserFormState.errors ? ` Errors: ${addUserFormState.errors.map((e: ZodIssue) => `${e.path.join('.')}: ${e.message}`).join('; ')}` : ''),
+                description: addUserFormState.message + (addUserFormState.errors ? \` Errors: \${addUserFormState.errors.map((e: ZodIssue) => \`\${e.path.join('.')}: \${e.message}\`).join('; ')}\` : ''),
                 variant: "destructive",
                 duration: 7000,
             });
@@ -189,7 +190,7 @@ export default function SettingsPage() {
       } else {
         toast({
           title: "Save Failed",
-          description: result.message + (result.errors ? ` Errors: ${result.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ')}` : ''),
+          description: result.message + (result.errors ? \` Errors: \${result.errors.map(e => \`\${e.path.join('.')}: \${e.message}\`).join('; ')}\` : ''),
           variant: "destructive",
           duration: 7000,
         });
@@ -532,6 +533,3 @@ export default function SettingsPage() {
     </>
   );
 }
-
-    
-    
