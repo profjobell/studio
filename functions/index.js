@@ -8,10 +8,28 @@ if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
+// Configuration check at cold start, outside the request handler.
+// This is more efficient as it doesn't run on every single request.
+const nextJsApiUrl = process.env.NEXTJS_APP_URL;
+if (!nextJsApiUrl) {
+  // This error will appear in the Cloud Function logs when it's initialized (cold start)
+  // and will cause subsequent invocations to fail until configuration is fixed.
+  console.error("FATAL: The NEXTJS_APP_URL environment variable is not configured. The Cloud Function cannot call the Next.js API and will not serve requests.");
+}
+
+
 exports.processSermon = functions.https.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*'); // Allow all origins for simplicity, restrict in production
+  // Set CORS headers for all responses
+  res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Check if the configuration was loaded correctly. If not, fail all requests.
+  if (!nextJsApiUrl) {
+    return res.status(500).json({ 
+      error: "AI processing service is critically misconfigured on the server. Please contact the administrator." 
+    });
+  }
 
   if (req.method === 'OPTIONS') {
     // Handle preflight requests for CORS
@@ -22,14 +40,6 @@ exports.processSermon = functions.https.onRequest(async (req, res) => {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // Ensure the NEXTJS_APP_URL environment variable is set.
-  const nextJsApiUrl = process.env.NEXTJS_APP_URL;
-  if (!nextJsApiUrl) {
-    console.error("FATAL: The NEXTJS_APP_URL environment variable is not configured. The Cloud Function cannot call the Next.js API.");
-    return res.status(500).json({ 
-      error: "AI processing service endpoint is not configured on the server. Please check function environment variables." 
-    });
-  }
   const aiProcessingEndpoint = `${nextJsApiUrl}/api/isolate-sermon-by-ai`;
 
 
