@@ -96,7 +96,6 @@ export default function DashboardPage() {
         aiHint = "scripture books"; 
       }
 
-
       if (shouldUseSymbolic) {
         imageDisplayElement = (
           <div 
