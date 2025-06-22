@@ -24,6 +24,7 @@ import { useState, useEffect, useRef } from "react";
 import QRCodeStyling, { type Options as QRCodeStylingOptions, type FileExtension } from "qr-code-styling";
 import { ScanLine, Download, Palette, Settings, Image as ImageIcon, UploadCloud, Trash2, Info } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { slugify } from "@/lib/utils";
 
 const qrGeneratorFormSchema = z.object({
   qrInput: z.string().min(1, "QR code value cannot be empty."),
@@ -598,4 +599,3 @@ export function QrGeneratorForm() {
     </div>
   );
 }
-
