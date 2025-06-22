@@ -66,6 +66,12 @@ const baseConceptualUsers: Record<string, Omit<CombinedUserProfile, 'id' | 'isBa
     avatar: "https://placehold.co/100x100/64748b/ffffff?text=BG", // Placeholder avatar for BTF-KVN Guest
     isAdmin: false,
   },
+  seek: {
+    name: "Seeker",
+    email: "seek@kjvsentinel.com",
+    avatar: "https://placehold.co/100x100/f59e0b/ffffff?text=S", // Amber color for Seeker
+    isAdmin: false,
+  },
 };
 
 const getGeneratedAvatarUrlForUser = (name: string) => {

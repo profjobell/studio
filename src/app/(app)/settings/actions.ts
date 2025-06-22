@@ -96,6 +96,12 @@ export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: 
         imageUrl: "https://placehold.co/300x200/8b5cf6/ffffff.png?text=Jide's+Dashboard",
         symbolicColor: "#8b5cf6"
       },
+      'seek': {
+        enabled: true,
+        notes: "Welcome, Seeker! Your journey of discernment begins here. Use the tools to explore and understand.",
+        symbolicPlaceholder: true,
+        symbolicColor: "#f59e0b" // Amber
+      },
     };
   }
   return global.userDashboardPreferencesStoreGlobal;

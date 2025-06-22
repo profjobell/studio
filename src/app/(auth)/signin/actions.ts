@@ -17,6 +17,8 @@ export async function handleSignIn(formData: FormData) {
     redirect("/dashboard?user=meta"); // Pass conceptual user type (new admin)
   } else if (email && email.toLowerCase() === "jide@kjvsentinel.com" && password === "jide123") {
     redirect("/dashboard?user=jide"); // New admin user Jide
+  } else if (email && email.toLowerCase() === "seek@kjvsentinel.com" && password === "seek2025") {
+    redirect("/dashboard?user=seek"); // New user "seek"
   }
    else {
     redirect("/signin?error=invalid_credentials");

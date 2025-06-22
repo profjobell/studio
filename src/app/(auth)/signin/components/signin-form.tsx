@@ -27,11 +27,17 @@ export function SignInForm() {
     const conceptualUser = searchParams.get('user');
     if (conceptualUser) {
       localStorage.setItem('conceptualUserType', conceptualUser);
-      if (conceptualUser === 'admin' || conceptualUser === 'meta') {
+      if (conceptualUser === 'admin' || conceptualUser === 'meta' || conceptualUser === 'jide') {
         localStorage.setItem('adminBypassActive', 'true');
         localStorage.setItem('conceptualUserEmail', `${conceptualUser}@kjvsentinel.com`); // simplified for demo
       } else if (conceptualUser === 'richard') {
         localStorage.setItem('conceptualUserEmail', 'rich@home.com');
+        localStorage.removeItem('adminBypassActive');
+      } else if (conceptualUser === 'seek') {
+        localStorage.setItem('conceptualUserEmail', 'seek@kjvsentinel.com');
+        localStorage.removeItem('adminBypassActive');
+      } else if (conceptualUser === 'btf-kvn-guest') {
+        localStorage.setItem('conceptualUserEmail', 'btf-kvn@guest.com');
         localStorage.removeItem('adminBypassActive');
       }
       // Remove user param from URL after processing and redirect to dashboard
@@ -83,11 +89,11 @@ export function SignInForm() {
       <form action={handleSignIn} className="grid gap-2">
         <div className="grid gap-1">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" placeholder="admin@kjvsentinel.com or meta@kjvsentinel.com" required />
+          <Input id="email" name="email" type="email" placeholder="e.g., seek@kjvsentinel.com" required />
         </div>
         <div className="grid gap-1">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" defaultValue="N0tjuni0r" required />
+          <Input id="password" name="password" type="password" placeholder="e.g., seek2025" required />
         </div>
         <Button type="submit" className="w-full mt-2">Sign In</Button>
       </form>
