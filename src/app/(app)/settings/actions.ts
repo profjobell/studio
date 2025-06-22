@@ -77,7 +77,7 @@ function ensureUserProfilesStore(): ConceptuallyAddedUserProfile[] {
   return global.tempUserProfilesStoreGlobal;
 }
 
-export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: string]: UserDashboardPreference }> {
+export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId:string]: UserDashboardPreference }> {
   if (!global.userDashboardPreferencesStoreGlobal) {
     global.userDashboardPreferencesStoreGlobal = {
       'default': {
@@ -86,7 +86,12 @@ export async function ensureUserDashboardPreferencesStore(): Promise<{ [userId: 
         symbolicPlaceholder: false,
         imageUrl: "https://storage.googleapis.com/project-images-public/kjv_sentinel_dashboard_default.png"
       },
-      'admin': { enabled: true, notes: "Admin User: The image provided appeared all black. This square is a symbolic placement.", symbolicPlaceholder: true, symbolicColor: "black" },
+      'admin': { 
+        enabled: true, 
+        notes: "Admin dashboard ready. Customize this section on your profile page.", 
+        symbolicPlaceholder: true, 
+        symbolicColor: "hsl(var(--primary))" 
+      },
       'richard': { enabled: true, notes: "Richard's custom dashboard message. Welcome back!", imageUrl: "https://placehold.co/200x100.png" },
       'meta': { enabled: true, notes: "Meta Admin: Dashboard ready for configuration.", symbolicPlaceholder: true, symbolicColor: "hsl(var(--primary))" },
       'jide': {
