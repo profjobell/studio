@@ -31,56 +31,55 @@ const isolateSermonPrompt = ai.definePrompt({
   name: 'isolateSermonAndPrayersPrompt',
   input: {schema: IsolateSermonAIInputSchema},
   output: {schema: IsolateSermonAIOutputSchema},
-  prompt: `Your task is to analyze a transcript of a church service, religious meeting, or lecture. From this transcript, you must extract two types of content:
-1. The main sermon or lecture.
-2. Any distinct prayers.
+  config: {
+    temperature: 0.3,
+    maxOutputTokens: 3000,
+    topP: 0.9,
+  },
+  prompt: `You are an expert assistant for a theological analysis application. You are tasked with extracting the sermon content from a provided transcript of a church service and formatting it into a JSON object. Follow these instructions precisely:
 
-**Sermon/Lecture Extraction Instructions:**
+1.  **Primary Goal**: Identify and extract the main sermon, any prayers directly associated with the sermon, and any scripture passages quoted verbatim.
 
-Extract only the sermon or lecture content. The sermon or lecture is the main teaching or discourse delivered by the primary speaker, including embedded scripture references or quotes directly supporting the teaching.
+2.  **JSON Output Structure**: Your entire response MUST be a valid JSON object adhering to this schema:
+    {
+      "sermon": "string", // This field will contain the formatted, combined text.
+      "prayers": [ {"prayer": "string"} ], // This array will contain ONLY the verbatim text of each prayer.
+      "warning": "string" // Optional: for any issues.
+    }
 
-- **Identify:** The sermon is the speaker’s core message, theological or educational exposition, arguments, or examples, including scripture references within the narrative.
-- **Exclude the following from the sermon:**
-  - Music or songs (e.g., "[Music]", hymn lyrics).
-  - Standalone prayers (these should be extracted separately).
-  - Announcements, introductions, or logistical details (e.g., event schedules, instructions).
-  - Standalone scripture readings that are not part of the sermon's narrative flow.
-  - Audience reactions (e.g., "[Applause]", "[Laughter]").
-  - Non-sermon activities (e.g., "children are going out").
-  - Closing remarks outside the sermon’s teaching, like final prayers or hymns.
-- **Retain:** The sermon’s original structure, including any headings, and embedded scripture quotes, but remove separate scripture sections.
-- **Focus:** If multiple speakers are present, focus on the primary speaker’s main sermon.
-- **If no sermon is detected,** the "sermon" field in your JSON output must be "No sermon or lecture content found."
+3.  **Populating the 'sermon' JSON Field**:
+    *   This field should contain the fully formatted sermon content for display.
+    *   **Structure**: The text in this field must follow this order:
+        1.  **Scripture Reading**: Start with any scripture readings under a markdown heading (e.g., "### Psalm 119:9-24").
+        2.  **Associated Prayer**: Follow with any prayers that are directly part of the sermon context, under a heading (e.g., "### Prayer").
+        3.  **Sermon Text**: Conclude with the main sermon under a heading (e.g., "### Sermon: The Doctrine of the Word of God").
+    *   **Content Rules**:
+        *   The text must be **verbatim** from the transcript. Do not summarize or rephrase.
+        *   **Exclude** all music ([Music]), lyrics, chatter, laughter, applause, preambles, announcements, and any other non-sermon elements (e.g., instructions, transitions, or side comments).
+        *   Do not include any introductions, notices, or organizational details (e.g., event schedules, donation information, or mentions of other activities).
+        *   If no sermon content is identifiable, this field must contain the exact string: "No sermon or lecture content found."
 
-**Prayer Extraction Instructions:**
+4.  **Populating the 'prayers' JSON Field**:
+    *   This is a separate requirement from the 'sermon' field.
+    *   Identify **all distinct prayers** in the transcript.
+    *   Place the verbatim text of each prayer into its own object within the 'prayers' array (e.g., \`{ "prayer": "Father, we thank you..." }\`).
+    *   If no prayers are found, this must be an empty array: \`[]\`.
 
-- **Identify and extract** each distinct prayer as a separate verbatim item. Prayers may begin with phrases like “Let us pray…”, “Father in Heaven…”, or any invocation, and usually end with “Amen”.
-- **Exclude** all non-prayer elements (like music or announcements) from the prayer text.
-- **If no prayers are detected,** the "prayers" field in your JSON output must be an empty array.
+5.  **Example Task**:
+    *   **Input Transcript**: "[Music] Announcements: Pizza tonight. Prayer: Father, we thank you... Psalm 15: O Lord, who shall... Sermon: We’re in a series on maturity... [Applause] Closing Prayer: Lord, bless us..."
+    *   **Required JSON Output**:
+        \`\`\`json
+        {
+          "sermon": "### Psalm 15: O Lord, who shall...\\n\\n### Prayer\\nFather, we thank you...\\n\\n### Sermon: We’re in a series on maturity...\\nWe’re in a series on maturity...",
+          "prayers": [
+            { "prayer": "Prayer: Father, we thank you..." },
+            { "prayer": "Closing Prayer: Lord, bless us..." }
+          ],
+          "warning": ""
+        }
+        \`\`\`
 
-**Output Format:**
-
-Your entire response MUST be a single, valid JSON object that strictly adheres to the IsolateSermonAIOutputSchema. The JSON output must have the following structure:
-{
-  "sermon": "Full verbatim text of the main sermon/lecture...",
-  "prayers": [
-    {"prayer": "Full verbatim text of Prayer 1."},
-    {"prayer": "Full verbatim text of Prayer 2."}
-  ],
-  "warning": "Optional warning message if applicable, for instance if the transcript seems incomplete."
-}
-
-Do not include any commentary or summary or metadata outside of this JSON structure.
-
-**Example Input:** "[Music] Announcements: Pizza tonight. Prayer: Father, we thank you... Psalm 15: O Lord, who shall... Sermon: We’re in a series on maturity... [Applause] Closing Prayer: Lord, bless us..."
-**Example JSON Output from that Input:**
-{
-  "sermon": "Sermon: We’re in a series on maturity...",
-  "prayers": [
-    {"prayer": "Prayer: Father, we thank you..."},
-    {"prayer": "Closing Prayer: Lord, bless us..."}
-  ]
-}
+Now, process the following transcript and generate the JSON output.
 
 **Transcript to process:**
 {{{transcript}}}
