@@ -106,7 +106,7 @@ export default function DashboardPage() {
                 border: '1px solid hsl(var(--border))',
                 margin: '10px auto'
             }} 
-            title={imageError && dashboardPreference.imageUrl ? "Symbolic placeholder (image failed to load)" : "Symbolic placeholder"}
+            title={imageError && dashboardPreference.imageUrl ? `Symbolic placeholder (image failed to load)` : "Symbolic placeholder"}
             data-ai-hint={aiHint}
           ></div>
         );
