@@ -385,4 +385,3 @@ export async function saveChatToReportAction(
     newReportId: newReportId
   };
 }
-    

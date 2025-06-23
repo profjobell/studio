@@ -25,6 +25,7 @@ import QRCodeStyling, { type Options as QRCodeStylingOptions, type FileExtension
 import { ScanLine, Download, Palette, Settings, Image as ImageIcon, UploadCloud, Trash2, Info } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { slugify } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const qrGeneratorFormSchema = z.object({
   qrInput: z.string().min(1, "QR code value cannot be empty."),
@@ -589,7 +590,7 @@ export function QrGeneratorForm() {
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-1">
                 <p><strong>QR Value:</strong> This is the data your QR code will contain (e.g., a URL, text, contact info).</p>
-                <p><strong>Role Embedding:</strong> If using for app invites, the 'Assigned Role' will be added as a URL parameter to the QR value if it&apos;s a valid URL.</p>
+                <p><strong>Role Embedding:</strong> If using for app invites, the 'Assigned Role' will be added as a URL parameter to the QR value if it's a valid URL.</p>
                 <p><strong>Styling:</strong> Adjust size, colors, and error correction. Higher error correction allows the QR to be read even if partially obscured, but makes dots smaller.</p>
                 <p><strong>Embedded Image:</strong> Use a clear, simple image for best results. Test readability after embedding.</p>
                 <p><strong>Download:</strong> SVG is recommended for scalability. PNG/JPEG are good for web use.</p>
