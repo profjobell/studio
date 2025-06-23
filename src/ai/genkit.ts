@@ -7,7 +7,7 @@ import {googleAI} from '@genkit-ai/googleai';
 // it can be specified in the `ai.generate()` call or `ai.definePrompt()`'s `config` option,
 // or by setting a default in the plugin configuration if available, e.g., googleAI({defaultModel: 'gemini-pro'})
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [googleAI({ defaultModel: 'gemini-1.5-flash-latest' })],
   // The 'model' option is not a standard top-level parameter for the genkit() constructor.
   // It's typically handled by the plugin's defaults or specified per-call.
 });
