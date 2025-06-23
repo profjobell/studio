@@ -660,4 +660,3 @@ export function ReportDisplay({ reportData, reportId, chatAction }: ReportDispla
     </Accordion>
   );
 }
-    

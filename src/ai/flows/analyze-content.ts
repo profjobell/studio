@@ -119,24 +119,24 @@ Produce a structured theological assessment by populating all fields in the outp
 8.  **Moralistic Framing Analysis**:
     *   description: Assess if the content presents teachings primarily via rules, duties, or human moral effort, potentially underemphasizing grace or divine agency. Note appeals to moral superiority or condemnation.
     *   advantagesForSpeakerObedience: How might this framing afford the speaker advantages in securing listener/congregational obedience?
-    *   linkedLogicalFallacies: Identify specific logical fallacies employed *within this moralistic framing* and provide textual evidence. (Return as an array of objects, each with 'fallacy' and 'evidence' strings).
-    *   historicalParallels: Describe up to two general historical examples where figures/movements used *similar* moralistic framing tactics (focus on method similarity, e.g., emphasis on strict adherence to specific codes for acceptance/status). (Return as an array of objects, each with 'example' and 'description' strings).
+    *   linkedLogicalFallacies: Identify specific logical fallacies employed *within this moralistic framing* and provide textual evidence.
+    *   historicalParallels: Describe up to two general historical examples where figures/movements used *similar* moralistic framing tactics (focus on method similarity, e.g., emphasis on strict adherence to specific codes for acceptance/status).
 9.  **Virtue Signalling Analysis**:
     *   description: Identify if the speaker employs language primarily to signal their own (or group's) moral uprightness, piety, or adherence to certain values, possibly for social validation or authority, rather than purely for edification.
     *   advantagesForSpeakerObedience: How might this framing afford the speaker advantages in securing listener/congregational obedience or admiration?
-    *   linkedLogicalFallacies: Identify specific logical fallacies employed *within this virtue signalling* and provide textual evidence. (Return as an array of objects, each with 'fallacy' and 'evidence' strings).
-    *   historicalParallels: Describe up to two general historical examples where figures/movements used *similar* virtue signalling tactics (e.g., public displays of piety to consolidate power or influence). (Return as an array of objects, each with 'example' and 'description' strings).
+    *   linkedLogicalFallacies: Identify specific logical fallacies employed *within this virtue signalling* and provide textual evidence.
+    *   historicalParallels: Describe up to two general historical examples where figures/movements used *similar* virtue signalling tactics (e.g., public displays of piety to consolidate power or influence).
 10. **Identified Theological 'Isms'**: Identify specific "isms" and provide evidence.
 11. **Calvinism Analysis (KJV 1611)**: Analyze Calvinistic influences.
 12. **Biblical Remonstrance (Detailed Assessment)**: Critical section.
-    *   scripturalFoundationAssessment: (string)
-    *   historicalTheologicalContextualization: (string)
-    *   rhetoricalAndHomileticalObservations: (string)
-    *   theologicalFrameworkRemarks: (string)
-    *   kjvScripturalCounterpoints: (string - may include multiple points)
-    *   suggestionsForFurtherStudy: (string)
+    *   scripturalFoundationAssessment: Assessment of the content's scriptural foundation based on KJV 1611.
+    *   historicalTheologicalContextualization: Contextualization of the content within historical theology from a KJV 1611 perspective.
+    *   rhetoricalAndHomileticalObservations: Observations on the content's rhetoric and homiletics.
+    *   theologicalFrameworkRemarks: Remarks on the overarching theological framework of the content compared to KJV 1611 orthodoxy.
+    *   kjvScripturalCounterpoints: Specific KJV 1611 scriptural counterpoints to problematic assertions in the content.
+    *   suggestionsForFurtherStudy: Suggestions for further KJV 1611-based study related to the content.
 13. **Potential Manipulative Speaker Profile**: Based on the tactics and framing identified, provide a general profile of the personality type or characteristics that might be at work. Focus on patterns discernable from the text.
-14. **Guidance on Wise Confrontation**: Offer general, biblically-informed principles for wisely confronting and exposing such actions or teachings, emphasizing truth, love, and discernment. (The KJV is the final authority on all matters scriptural, theological and is the reference for all that is being examined.)
+14. **Guidance on Wise Confrontation**: Offer general, biblically-informed principles for wisely confronting and exposing such actions or teachings, emphasizing truth, love, and discernment.
 
 Be thorough, objective, and base your entire analysis on the KJV 1611 Bible as the standard. For historical parallels, focus on *similarity of method or tactic* rather than making direct moral equivalencies of the figures themselves, especially if they are controversial. Ensure all fields in the output schema are populated as applicable. Your response MUST be a valid JSON object that conforms to the AnalyzeContentOutputSchema.
 `,

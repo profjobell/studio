@@ -156,4 +156,3 @@ export type AlternatePrayerAnalysisOutput = FullAlternatePrayerAnalysisOutput;
 // Types for In-Depth Calvinism Report
 export type InDepthCalvinismReportInput = FullInDepthCalvinismReportInput;
 export type InDepthCalvinismReportOutput = FullInDepthCalvinismReportOutput;
-    
