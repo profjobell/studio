@@ -85,7 +85,7 @@ if (process.env.NODE_ENV === 'production') {
     const sampleReportId = "report-001";
     const sampleReportData: StoredReportData = {
       title: "Sample Analysis: Sermon on Divine Sovereignty",
-      originalContent: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. This sermon explores the depths of God's sovereignty in salvation, referencing key scriptures and theological arguments. It discusses concepts such as election, predestination, and the irresistible grace of God, aiming to provide a clear understanding from a perspective rooted in the KJV 1611. The implications of these doctrines on Christian life and evangelism are also considered.",
+      originalContent: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life. This sermon explores the depths of God's sovereignty in salvation, referencing key scriptures and theological arguments. It discusses concepts such as election, predestination, and the irresistible grace of God, aiming to provide a clear understanding from a perspective rooted in the KJV 1611. The implications of these doctrines on Christian life and evangelism are also considered. A sample prayer: Lord, we thank you for your sovereign choice.",
       preparedContent: "This sermon explores the depths of God's sovereignty in salvation, referencing key scriptures and theological arguments. It discusses concepts such as election, predestination, and the irresistible grace of God, aiming to provide a clear understanding from a perspective rooted in the KJV 1611. The implications of these doctrines on Christian life and evangelism are also considered.",
       analysisType: "text",
       createdAt: new Date("2025-05-22T10:00:00Z"),
@@ -120,7 +120,7 @@ if (process.env.NODE_ENV === 'production') {
       guidanceOnWiseConfrontation: "For this sample, confrontation guidance would focus on ensuring understanding of the original KJV context of cited verses and encouraging dialogue on differing interpretations of sovereignty and election.",
       calvinismDeepDiveAnalysis: undefined,
       aiChatTranscript: [],
-      prayerAnalyses: [], 
+      prayerAnalyses: [{ identifiedPrayerText: "Lord, we thank you for your sovereign choice.", kjvAlignmentAssessment: "Acknowledges God's sovereignty, which is a KJV principle. However, the phrasing 'sovereign choice' can be a loaded term often associated with Calvinistic election, which may warrant deeper examination depending on the sermon's context.", manipulativeLanguage: { hasPotentiallyManipulativeElements: false }, overallAssessment: "The prayer is concise and appears doctrinally sound on the surface, but the term 'sovereign choice' could be a subtle indicator of underlying Calvinistic theology." }], 
       alternatePrayerAnalyses: [], 
       inDepthCalvinismReport: undefined, // Initialize IDCR for sample
     };
@@ -184,7 +184,7 @@ export async function analyzeSubmittedContent(
       return { error: validatedSubmission.error.errors.map(e => e.message).join(", ") };
   }
   // 'content' here is the preparedText, 'originalRawContent' is the raw input before preparation
-  const { content: preparedContentToAnalyze, analysisType, analyzePrayers, requestIDCR, referenceMaterial } = validatedSubmission.data;
+  const { content: preparedContentToAnalyze, originalRawContent, analysisType, analyzePrayers, requestIDCR, referenceMaterial } = validatedSubmission.data;
 
   let mainAnalysisResult: AnalyzeContentOutput;
   let prayerAnalysisResults: PrayerAnalysisOutput | undefined = undefined;
@@ -208,10 +208,10 @@ export async function analyzeSubmittedContent(
       return mainAnalysisResult; // This error would be from the analyzeContent flow itself
     }
     
-    // If analyzePrayers is true, perform prayer analysis on the PREPARED content
+    // If analyzePrayers is true, perform prayer analysis on the ORIGINAL content
     if (analyzePrayers) {
       try {
-        prayerAnalysisResults = await analyzePrayersInText({ textContent: preparedContentToAnalyze });
+        prayerAnalysisResults = await analyzePrayersInText({ textContent: originalRawContent });
       } catch (prayerError) {
         console.error("Error during prayer analysis step:", prayerError);
         mainAnalysisResult.summary += "\n\nWarning: Prayer analysis encountered an error and could not be completed.";
