@@ -97,7 +97,7 @@ export function SignInForm() {
         </div>
         <Button type="submit" className="w-full mt-2">Sign In</Button>
       </form>
-      <Button onClick={handleAdminBypass} variant="secondary" size="sm" className="w-full mt-3">
+      <Button onClick={handleAdminBypass} variant="secondary" size="sm" className="w-1/5 mt-3">
         Bye
       </Button>
       <div className="mt-4 text-center text-sm">
