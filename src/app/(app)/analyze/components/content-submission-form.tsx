@@ -451,9 +451,24 @@ export function ContentSubmissionForm() {
                           YouTube Link
                       </Button>
                       <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => window.open('https://kome.ai/tools/youtube-transcript-generator', '_blank')}
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            window.open('https://kome.ai/tools/youtube-transcript-generator', '_blank');
+                            setSubmissionTypeState('text');
+                            field.onChange('text');
+                            form.setValue('file', undefined);
+                            form.setValue('youtubeUrl', '');
+                            setDisplayedFileNames([]);
+                            setIsTextPrepared(false); 
+                            setPreparedText(null); 
+                            setIsolationWarning(null);
+                            toast({
+                                title: "Transcription Tool Opened",
+                                description: "When you have the transcript, please paste it into the 'Text Input' field now shown below.",
+                                duration: 8000,
+                            });
+                        }}
                       >
                          <ExternalLink className="mr-2 h-4 w-4" />
                           Alternate Transcription Resource
