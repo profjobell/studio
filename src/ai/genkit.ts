@@ -2,12 +2,15 @@ import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 
 // Initialize Genkit with plugins.
-// The Google AI plugin will provide default models (e.g., Gemini Flash).
-// If a specific model is needed for a particular flow/prompt,
-// it can be specified in the `ai.generate()` call or `ai.definePrompt()`'s `config` option,
-// or by setting a default in the plugin configuration if available, e.g., googleAI({defaultModel: 'gemini-pro'})
+// To use Meta's Llama models, we configure the googleAI plugin
+// to point to the Vertex AI platform, where these models are hosted.
 export const ai = genkit({
-  plugins: [googleAI({ defaultModel: 'gemini-1.5-flash-latest' })],
-  // The 'model' option is not a standard top-level parameter for the genkit() constructor.
-  // It's typically handled by the plugin's defaults or specified per-call.
+  plugins: [
+    googleAI({
+      // Configure for Vertex AI
+      location: 'us-central1', // A common GCP region
+      // Set the default model to Llama 3.1 405B Instruct
+      defaultModel: 'llama3-1-405b-instruct',
+    }),
+  ],
 });
