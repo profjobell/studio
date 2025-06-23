@@ -31,42 +31,59 @@ const isolateSermonPrompt = ai.definePrompt({
   name: 'isolateSermonAndPrayersPrompt',
   input: {schema: IsolateSermonAIInputSchema},
   output: {schema: IsolateSermonAIOutputSchema},
-  prompt: `Task:
-From a transcript of a church service, religious meeting, or lecture, extract and return:
+  prompt: `Your task is to analyze a transcript of a church service, religious meeting, or lecture. From this transcript, you must extract two types of content:
+1. The main sermon or lecture.
+2. Any distinct prayers.
 
-Only the main sermon or lecture (full, verbatim, with all non-sermon elements, timestamps, and music removed).
+**Sermon/Lecture Extraction Instructions:**
 
-Each individual prayer (e.g., opening prayer, intercessory prayer, closing prayer) as a separate item, verbatim, in the order they appear.
+Extract only the sermon or lecture content. The sermon or lecture is the main teaching or discourse delivered by the primary speaker, including embedded scripture references or quotes directly supporting the teaching.
 
-Instructions:
+- **Identify:** The sermon is the speaker’s core message, theological or educational exposition, arguments, or examples, including scripture references within the narrative.
+- **Exclude the following from the sermon:**
+  - Music or songs (e.g., "[Music]", hymn lyrics).
+  - Standalone prayers (these should be extracted separately).
+  - Announcements, introductions, or logistical details (e.g., event schedules, instructions).
+  - Standalone scripture readings that are not part of the sermon's narrative flow.
+  - Audience reactions (e.g., "[Applause]", "[Laughter]").
+  - Non-sermon activities (e.g., "children are going out").
+  - Closing remarks outside the sermon’s teaching, like final prayers or hymns.
+- **Retain:** The sermon’s original structure, including any headings, and embedded scripture quotes, but remove separate scripture sections.
+- **Focus:** If multiple speakers are present, focus on the primary speaker’s main sermon.
+- **If no sermon is detected,** the "sermon" field in your JSON output must be "No sermon or lecture content found."
 
-Do not summarize or alter the wording of the sermon or prayers in any way.
+**Prayer Extraction Instructions:**
 
-Identify and extract each distinct prayer as its own separate object.
+- **Identify and extract** each distinct prayer as a separate verbatim item. Prayers may begin with phrases like “Let us pray…”, “Father in Heaven…”, or any invocation, and usually end with “Amen”.
+- **Exclude** all non-prayer elements (like music or announcements) from the prayer text.
+- **If no prayers are detected,** the "prayers" field in your JSON output must be an empty array.
 
-Prayers may begin with phrases like “Let us pray…”, “Father in Heaven…”, “Our Father…”, “Dear God…”, or any invocation, and usually end with “Amen” or a similar conclusion.
+**Output Format:**
 
-Exclude all music, songs, announcements, notices, non-sermon dialog, and timestamps from both the sermon and the prayers.
-
-The sermon/lecture and each prayer must be presented verbatim and in full, in the order they appear in the transcript.
-
-If no sermon is detected, the "sermon" field in the JSON output should be "No sermon or lecture content found." or an empty string.
-If no prayers are detected, the "prayers" field should be an empty array.
-
-Transcript to process:
-{{{transcript}}}
-
-Your JSON response must strictly adhere to the IsolateSermonAIOutputSchema.
-The JSON output should look like:
+Your entire response MUST be a single, valid JSON object that strictly adheres to the IsolateSermonAIOutputSchema. The JSON output must have the following structure:
 {
   "sermon": "Full verbatim text of the main sermon/lecture...",
   "prayers": [
     {"prayer": "Full verbatim text of Prayer 1."},
     {"prayer": "Full verbatim text of Prayer 2."}
   ],
-  "warning": "Optional warning message if applicable."
+  "warning": "Optional warning message if applicable, for instance if the transcript seems incomplete."
 }
-Do not include any commentary, summary, or additional explanation outside this JSON structure.
+
+Do not include any commentary or summary or metadata outside of this JSON structure.
+
+**Example Input:** "[Music] Announcements: Pizza tonight. Prayer: Father, we thank you... Psalm 15: O Lord, who shall... Sermon: We’re in a series on maturity... [Applause] Closing Prayer: Lord, bless us..."
+**Example JSON Output from that Input:**
+{
+  "sermon": "Sermon: We’re in a series on maturity...",
+  "prayers": [
+    {"prayer": "Prayer: Father, we thank you..."},
+    {"prayer": "Closing Prayer: Lord, bless us..."}
+  ]
+}
+
+**Transcript to process:**
+{{{transcript}}}
 `,
 });
 
