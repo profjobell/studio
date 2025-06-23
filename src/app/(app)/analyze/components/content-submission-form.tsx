@@ -151,6 +151,33 @@ export function ContentSubmissionForm() {
     setIsolationWarning(null);
   };
 
+  const handleClearForm = () => {
+    form.reset({
+      analysisTitle: "",
+      submissionType: "text",
+      textContent: "",
+      file: undefined,
+      youtubeUrl: "",
+      analyzePrayers: false,
+      requestIDCR: false,
+      referenceMaterial: "",
+    });
+    setSubmissionTypeState("text");
+    setDisplayedFileNames([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setPreparedText(null);
+    setIsTextPrepared(false);
+    setIsolationWarning(null);
+    setRawContentForSaving("");
+    setIsAwaitingPaste(false);
+    toast({
+      title: "Form Cleared",
+      description: "All fields have been reset.",
+    });
+  };
+
   const generateSuggestedTitle = (text: string): string => {
     if (!text) return "";
     const words = text.trim().split(/\s+/);
@@ -393,7 +420,19 @@ export function ContentSubmissionForm() {
             name="analysisTitle"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Analysis Title</FormLabel>
+                <div className="flex justify-between items-center">
+                  <FormLabel>Analysis Title</FormLabel>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearForm}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Clear All Fields
+                  </Button>
+                </div>
                 <FormControl>
                   <Input placeholder="e.g., Sermon on Romans 8 Analysis" {...field} />
                 </FormControl>
@@ -737,5 +776,3 @@ export function ContentSubmissionForm() {
     </>
   );
 }
-
-    
