@@ -20,7 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useTransition, useRef } from "react";
 import { analyzeSubmittedContent, saveReportToDatabase, isolateSermonOrLectureAction } from "../actions";
-import { Loader2, List, XCircle, ClipboardPaste, ShieldQuestion, BookText, SearchCheck, AlertTriangle } from "lucide-react";
+import { Loader2, List, XCircle, ClipboardPaste, ShieldQuestion, BookText, SearchCheck, AlertTriangle, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -408,7 +408,7 @@ export function ContentSubmissionForm() {
               <FormItem className="space-y-3">
                 <FormLabel>Submission Type</FormLabel>
                 <FormControl>
-                  <div className="flex flex-wrap gap-4">
+                  <div className="flex flex-wrap gap-4 items-center">
                       <Button
                           type="button"
                           variant={submissionTypeState === 'text' ? 'default' : 'outline'}
@@ -449,6 +449,14 @@ export function ContentSubmissionForm() {
                           }}
                       >
                           YouTube Link
+                      </Button>
+                      <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => window.open('https://kome.ai/tools/youtube-transcript-generator', '_blank')}
+                      >
+                         <ExternalLink className="mr-2 h-4 w-4" />
+                          Alternate Transcription Resource
                       </Button>
                   </div>
                 </FormControl>
@@ -703,4 +711,3 @@ export function ContentSubmissionForm() {
     </>
   );
 }
-
