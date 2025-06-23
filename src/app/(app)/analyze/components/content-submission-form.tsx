@@ -25,6 +25,7 @@ import { Loader2, List, XCircle, ClipboardPaste, ShieldQuestion, BookText, Searc
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -115,6 +116,7 @@ export function ContentSubmissionForm() {
   const [isTextPrepared, setIsTextPrepared] = useState(false);
   const [isolationWarning, setIsolationWarning] = useState<string | null>(null);
   const [rawContentForSaving, setRawContentForSaving] = useState<string>("");
+  const [isAwaitingPaste, setIsAwaitingPaste] = useState(false);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -159,6 +161,7 @@ export function ContentSubmissionForm() {
   };
 
   const handlePasteFromClipboard = async () => {
+    setIsAwaitingPaste(false);
     if (!navigator.clipboard?.readText) {
       toast({
         title: "Clipboard API not supported",
@@ -464,6 +467,7 @@ export function ContentSubmissionForm() {
                             setIsTextPrepared(false); 
                             setPreparedText(null); 
                             setIsolationWarning(null);
+                            setIsAwaitingPaste(true);
                             toast({
                                 title: "Transcription Tool Opened",
                                 description: "When you have the transcript, please paste it into the 'Text Input' field now shown below.",
@@ -490,16 +494,22 @@ export function ContentSubmissionForm() {
                 <FormItem>
                   <div className="flex items-center justify-between">
                     <FormLabel>Text Content</FormLabel>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePasteFromClipboard}
-                      className="ml-auto"
-                    >
-                      <ClipboardPaste className="mr-2 h-4 w-4" />
-                      Paste
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {isAwaitingPaste && <p className="text-sm text-yellow-600 dark:text-yellow-400 animate-pulse">← Click to paste transcript</p>}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePasteFromClipboard}
+                        className={cn(
+                          "ml-auto",
+                          isAwaitingPaste && "bg-yellow-300 hover:bg-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-700 border-yellow-500 animate-pulse"
+                        )}
+                      >
+                        <ClipboardPaste className="mr-2 h-4 w-4" />
+                        Paste
+                      </Button>
+                    </div>
                   </div>
                   <FormControl>
                     <Textarea
@@ -727,3 +737,5 @@ export function ContentSubmissionForm() {
     </>
   );
 }
+
+    
