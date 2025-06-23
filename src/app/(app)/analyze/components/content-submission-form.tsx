@@ -19,9 +19,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { analyzeSubmittedContent, saveReportToDatabase, isolateSermonOrLectureAction } from "../actions";
-import { Loader2, List, XCircle, ClipboardPaste, ShieldQuestion, BookText, SearchCheck, AlertTriangle, ExternalLink } from "lucide-react";
+import { Loader2, List, XCircle, ClipboardPaste, ShieldQuestion, BookText, SearchCheck, AlertTriangle, ExternalLink, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { AnalysisReport } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,6 +54,7 @@ const formSchema = z.object({
   youtubeUrl: z.string().optional(),
   analyzePrayers: z.boolean().default(false).optional(), 
   requestIDCR: z.boolean().default(false).optional(), // New checkbox for IDCR
+  requestGuidance: z.boolean().default(false).optional(), // Guidance checkbox
   referenceMaterial: z.string().optional(), 
 }).superRefine((data, ctx) => {
   if (data.submissionType === "text") {
@@ -117,6 +118,7 @@ export function ContentSubmissionForm() {
   const [isolationWarning, setIsolationWarning] = useState<string | null>(null);
   const [rawContentForSaving, setRawContentForSaving] = useState<string>("");
   const [isAwaitingPaste, setIsAwaitingPaste] = useState(false);
+  const [guidanceStep, setGuidanceStep] = useState<'title' | 'content' | 'prepare' | 'submit' | 'none'>('none');
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -129,13 +131,38 @@ export function ContentSubmissionForm() {
       youtubeUrl: "",
       analyzePrayers: false,
       requestIDCR: false,
+      requestGuidance: false,
       referenceMaterial: "",
     },
     mode: "onChange", 
   });
 
   const formValues = form.watch();
-  const isTitleValid = formValues.analysisTitle.length >= 5;
+  const guidanceEnabled = formValues.requestGuidance;
+
+  useEffect(() => {
+    if (!guidanceEnabled) {
+      setGuidanceStep('none');
+      return;
+    }
+
+    const isTitleValid = formValues.analysisTitle.length >= 5;
+    const isContentValid = 
+      (formValues.submissionType === "text" && (formValues.textContent?.trim() ?? "").length >= 20) ||
+      (formValues.submissionType === "file" && formValues.file && formValues.file.length > 0 && Array.from(formValues.file).every(f => f.size <= MAX_FILE_SIZE && SUPPORTED_FILE_TYPES.includes(f.type))) ||
+      (formValues.submissionType === "youtubeLink" && formValues.youtubeUrl && YOUTUBE_URL_REGEX_COMPREHENSIVE.test(formValues.youtubeUrl));
+
+    if (!isTitleValid) {
+      setGuidanceStep('title');
+    } else if (!isContentValid) {
+      setGuidanceStep('content');
+    } else if (!isTextPrepared) {
+      setGuidanceStep('prepare');
+    } else {
+      setGuidanceStep('submit');
+    }
+  }, [guidanceEnabled, formValues, isTextPrepared]);
+
   const isContentValidForPreparation = 
     (formValues.submissionType === "text" && (formValues.textContent?.trim() ?? "").length >= 20) ||
     (formValues.submissionType === "file" && formValues.file && formValues.file.length > 0 && Array.from(formValues.file).every(f => f.size <= MAX_FILE_SIZE && SUPPORTED_FILE_TYPES.includes(f.type)));
@@ -160,6 +187,7 @@ export function ContentSubmissionForm() {
       youtubeUrl: "",
       analyzePrayers: false,
       requestIDCR: false,
+      requestGuidance: form.getValues('requestGuidance'), // Keep guidance setting
       referenceMaterial: "",
     });
     setSubmissionTypeState("text");
@@ -410,6 +438,7 @@ export function ContentSubmissionForm() {
     });
   }
 
+  const highlightClass = "ring-2 ring-offset-2 ring-yellow-400 dark:ring-yellow-500 shadow-lg rounded-md transition-all duration-300";
 
   return (
     <>
@@ -417,253 +446,281 @@ export function ContentSubmissionForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
             control={form.control}
-            name="analysisTitle"
+            name="requestGuidance"
             render={({ field }) => (
-              <FormItem>
-                <div className="flex justify-between items-center">
-                  <FormLabel>Analysis Title</FormLabel>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearForm}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Clear All Fields
-                  </Button>
-                </div>
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/50">
                 <FormControl>
-                  <Input placeholder="e.g., Sermon on Romans 8 Analysis" {...field} />
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
                 </FormControl>
-                <FormDescription>
-                  A descriptive title for this analysis (min 5 characters).
-                </FormDescription>
-                <FormMessage />
+                <div className="space-y-1 leading-none">
+                  <FormLabel htmlFor="requestGuidance" className="cursor-pointer flex items-center">
+                     <HelpCircle className="mr-2 h-4 w-4 text-primary" />
+                     Request Guidance
+                  </FormLabel>
+                  <FormDescription>
+                    Enable to highlight the next step on the form.
+                  </FormDescription>
+                </div>
               </FormItem>
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="submissionType"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Submission Type</FormLabel>
-                <FormControl>
-                  <div className="flex flex-wrap gap-4 items-center">
-                      <Button
+          <div className={cn("p-2 transition-all -m-2", guidanceStep === 'title' && highlightClass)}>
+            <FormField
+              control={form.control}
+              name="analysisTitle"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex justify-between items-center">
+                    <FormLabel>Analysis Title</FormLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearForm}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Clear All Fields
+                    </Button>
+                  </div>
+                  <FormControl>
+                    <Input placeholder="e.g., Sermon on Romans 8 Analysis" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    A descriptive title for this analysis (min 5 characters).
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className={cn("p-2 transition-all -m-2", guidanceStep === 'content' && highlightClass)}>
+            <FormField
+              control={form.control}
+              name="submissionType"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Submission Type</FormLabel>
+                  <FormControl>
+                    <div className="flex flex-wrap gap-4 items-center">
+                        <Button
+                            type="button"
+                            variant={submissionTypeState === 'text' ? 'default' : 'outline'}
+                            onClick={() => {
+                                setSubmissionTypeState('text');
+                                field.onChange('text');
+                                form.setValue('file', undefined);
+                                form.setValue('youtubeUrl', '');
+                                setDisplayedFileNames([]);
+                                setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
+                            }}
+                        >
+                            Text Input
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={submissionTypeState === 'file' ? 'default' : 'outline'}
+                            onClick={() => {
+                                setSubmissionTypeState('file');
+                                field.onChange('file');
+                                form.setValue('textContent', '');
+                                form.setValue('youtubeUrl', '');
+                                setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
+                            }}
+                        >
+                            File Upload
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={submissionTypeState === 'youtubeLink' ? 'default' : 'outline'}
+                            onClick={() => {
+                                setSubmissionTypeState('youtubeLink');
+                                field.onChange('youtubeLink');
+                                form.setValue('textContent', '');
+                                form.setValue('file', undefined);
+                                setDisplayedFileNames([]);
+                                setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
+                            }}
+                        >
+                            YouTube Link
+                        </Button>
+                        <Button
                           type="button"
-                          variant={submissionTypeState === 'text' ? 'default' : 'outline'}
+                          variant="secondary"
                           onClick={() => {
+                              window.open('https://kome.ai/tools/youtube-transcript-generator', '_blank');
                               setSubmissionTypeState('text');
                               field.onChange('text');
                               form.setValue('file', undefined);
                               form.setValue('youtubeUrl', '');
                               setDisplayedFileNames([]);
-                              setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
+                              setIsTextPrepared(false); 
+                              setPreparedText(null); 
+                              setIsolationWarning(null);
+                              setIsAwaitingPaste(true);
+                              toast({
+                                  title: "Transcription Tool Opened",
+                                  description: "When you have the transcript, please paste it into the 'Text Input' field now shown below.",
+                                  duration: 8000,
+                              });
                           }}
-                      >
-                          Text Input
-                      </Button>
-                      <Button
-                          type="button"
-                          variant={submissionTypeState === 'file' ? 'default' : 'outline'}
-                          onClick={() => {
-                              setSubmissionTypeState('file');
-                              field.onChange('file');
-                              form.setValue('textContent', '');
-                              form.setValue('youtubeUrl', '');
-                              setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
-                          }}
-                      >
-                          File Upload
-                      </Button>
-                      <Button
-                          type="button"
-                          variant={submissionTypeState === 'youtubeLink' ? 'default' : 'outline'}
-                          onClick={() => {
-                              setSubmissionTypeState('youtubeLink');
-                              field.onChange('youtubeLink');
-                              form.setValue('textContent', '');
-                              form.setValue('file', undefined);
-                              setDisplayedFileNames([]);
-                              setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
-                          }}
-                      >
-                          YouTube Link
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => {
-                            window.open('https://kome.ai/tools/youtube-transcript-generator', '_blank');
-                            setSubmissionTypeState('text');
-                            field.onChange('text');
-                            form.setValue('file', undefined);
-                            form.setValue('youtubeUrl', '');
-                            setDisplayedFileNames([]);
-                            setIsTextPrepared(false); 
-                            setPreparedText(null); 
-                            setIsolationWarning(null);
-                            setIsAwaitingPaste(true);
-                            toast({
-                                title: "Transcription Tool Opened",
-                                description: "When you have the transcript, please paste it into the 'Text Input' field now shown below.",
-                                duration: 8000,
-                            });
-                        }}
-                      >
-                         <ExternalLink className="mr-2 h-4 w-4" />
-                          Alternate Transcription Resource
-                      </Button>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {submissionTypeState === "text" && (
-            <FormField
-              key="text-input-field"
-              control={form.control}
-              name="textContent"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Text Content</FormLabel>
-                    <div className="flex items-center gap-2">
-                      {isAwaitingPaste && <p className="text-sm text-yellow-600 dark:text-yellow-400 animate-pulse">← Click to paste transcript</p>}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePasteFromClipboard}
-                        className={cn(
-                          "ml-auto",
-                          isAwaitingPaste && "bg-yellow-300 hover:bg-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-700 border-yellow-500 animate-pulse"
-                        )}
-                      >
-                        <ClipboardPaste className="mr-2 h-4 w-4" />
-                        Paste
-                      </Button>
+                        >
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                            Alternate Transcription Resource
+                        </Button>
                     </div>
-                  </div>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Paste or type your religious content here (e.g., a sermon transcript). Then click 'Prepare Text & View' below."
-                      className="resize-y min-h-[200px]"
-                      {...field}
-                      onChange={(e) => { field.onChange(e); setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);}}
-                    />
                   </FormControl>
-                  <FormDescription>
-                    Provide the full text. The system will first try to extract the sermon/lecture content.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
-
-          {submissionTypeState === "file" && (
-            <FormField
-              key="file-input-field"
-              control={form.control}
-              name="file"
-              render={({ field: { name, onBlur, onChange: RHFOnChange, disabled } }) => {
-                const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-                  const files = event.target.files;
-                  RHFOnChange(files); 
-                  if (files && files.length > 0) {
-                    setDisplayedFileNames(Array.from(files).map(f => f.name));
-                  } else {
-                    setDisplayedFileNames([]);
-                  }
-                  setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
-                };
-                return (
-                <FormItem>
-                  <FormLabel>Upload File</FormLabel>
-                  <FormControl>
-                    <input
-                      type="file"
-                      id={name} 
-                      name={name}
-                      ref={fileInputRef} 
-                      onBlur={onBlur}
-                      onChange={handleFileChange} 
-                      disabled={disabled || isSubmittingAnalysis || isPreparingText}
-                      accept={SUPPORTED_FILE_TYPES.join(",")}
-                      className="p-2 border border-input bg-background rounded-md file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground w-full h-10"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Single file: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB. (.txt content will undergo sermon/lecture isolation; other files use placeholder descriptions).
-                  </FormDescription>
-                  <FormMessage />
-                  {displayedFileNames.length > 0 && (
-                    <div className="mt-3 p-3 border rounded-md bg-muted/50">
-                      <div className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground mb-2">
-                        <div className="flex items-center gap-1">
-                            <List className="h-4 w-4" />
-                            Selected File:
-                        </div>
+            
+            {submissionTypeState === "text" && (
+              <FormField
+                key="text-input-field"
+                control={form.control}
+                name="textContent"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Text Content</FormLabel>
+                      <div className="flex items-center gap-2">
+                        {isAwaitingPaste && <p className="text-sm text-yellow-600 dark:text-yellow-400 animate-pulse">← Click to paste transcript</p>}
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          onClick={handleClearFiles}
-                          className="text-destructive hover:text-destructive/80 p-1 h-auto"
+                          onClick={handlePasteFromClipboard}
+                          className={cn(
+                            "ml-auto",
+                            isAwaitingPaste && "bg-yellow-300 hover:bg-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-700 border-yellow-500 animate-pulse"
+                          )}
                         >
-                          <XCircle className="mr-1 h-4 w-4" /> Clear
+                          <ClipboardPaste className="mr-2 h-4 w-4" />
+                          Paste
                         </Button>
                       </div>
-                      <ul className="list-disc list-inside pl-5 text-sm text-muted-foreground space-y-1">
-                        {displayedFileNames.map((fileName, index) => (
-                          <li key={index}>{fileName}</li>
-                        ))}
-                      </ul>
                     </div>
-                  )}
-                </FormItem>
-                );
-              }}
-            />
-          )}
+                    <FormControl>
+                      <Textarea
+                        placeholder="Paste or type your religious content here (e.g., a sermon transcript). Then click 'Prepare Text & View' below."
+                        className="resize-y min-h-[200px]"
+                        {...field}
+                        onChange={(e) => { field.onChange(e); setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);}}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Provide the full text. The system will first try to extract the sermon/lecture content.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
-          {submissionTypeState === "youtubeLink" && (
-            <FormField
-              key="youtube-input-field"
-              control={form.control}
-              name="youtubeUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>YouTube Video URL</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
-                      {...field}
-                      disabled={isSubmittingAnalysis || isPreparingText}
-                       onChange={(e) => { field.onChange(e); setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);}}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Enter the YouTube URL. Clicking &apos;Prepare Text & View&apos; (if YouTube type selected) will open Kome.ai for manual transcription.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+            {submissionTypeState === "file" && (
+              <FormField
+                key="file-input-field"
+                control={form.control}
+                name="file"
+                render={({ field: { name, onBlur, onChange: RHFOnChange, disabled } }) => {
+                  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+                    const files = event.target.files;
+                    RHFOnChange(files); 
+                    if (files && files.length > 0) {
+                      setDisplayedFileNames(Array.from(files).map(f => f.name));
+                    } else {
+                      setDisplayedFileNames([]);
+                    }
+                    setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);
+                  };
+                  return (
+                  <FormItem>
+                    <FormLabel>Upload File</FormLabel>
+                    <FormControl>
+                      <input
+                        type="file"
+                        id={name} 
+                        name={name}
+                        ref={fileInputRef} 
+                        onBlur={onBlur}
+                        onChange={handleFileChange} 
+                        disabled={disabled || isSubmittingAnalysis || isPreparingText}
+                        accept={SUPPORTED_FILE_TYPES.join(",")}
+                        className="p-2 border border-input bg-background rounded-md file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground w-full h-10"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Single file: MP3, WAV, MP4, AVI, PDF, TXT, DOCX. Max 100MB. (.txt content will undergo sermon/lecture isolation; other files use placeholder descriptions).
+                    </FormDescription>
+                    <FormMessage />
+                    {displayedFileNames.length > 0 && (
+                      <div className="mt-3 p-3 border rounded-md bg-muted/50">
+                        <div className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground mb-2">
+                          <div className="flex items-center gap-1">
+                              <List className="h-4 w-4" />
+                              Selected File:
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearFiles}
+                            className="text-destructive hover:text-destructive/80 p-1 h-auto"
+                          >
+                            <XCircle className="mr-1 h-4 w-4" /> Clear
+                          </Button>
+                        </div>
+                        <ul className="list-disc list-inside pl-5 text-sm text-muted-foreground space-y-1">
+                          {displayedFileNames.map((fileName, index) => (
+                            <li key={index}>{fileName}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </FormItem>
+                  );
+                }}
+              />
+            )}
 
+            {submissionTypeState === "youtubeLink" && (
+              <FormField
+                key="youtube-input-field"
+                control={form.control}
+                name="youtubeUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>YouTube Video URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., https://www.youtube.com/watch?v=your_video_id"
+                        {...field}
+                        disabled={isSubmittingAnalysis || isPreparingText}
+                        onChange={(e) => { field.onChange(e); setIsTextPrepared(false); setPreparedText(null); setIsolationWarning(null);}}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Enter the YouTube URL. Clicking &apos;Prepare Text & View&apos; (if YouTube type selected) will open Kome.ai for manual transcription.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+          
           <Button
             type="button"
             onClick={handlePrepareText}
-            disabled={!isTitleValid || !isContentValidForPreparation || isPreparingText || isSubmittingAnalysis || submissionTypeState === 'youtubeLink'}
+            disabled={!formValues.analysisTitle || !isContentValidForPreparation || isPreparingText || isSubmittingAnalysis || submissionTypeState === 'youtubeLink'}
             variant="secondary"
-            className="w-full"
+            className={cn("w-full", guidanceStep === 'prepare' && highlightClass)}
           >
             {isPreparingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookText className="mr-2 h-4 w-4" />}
             {submissionTypeState === 'youtubeLink' ? "Get Transcript via Kome.ai (then paste to Text tab)" : "Prepare Text & View"}
@@ -704,73 +761,74 @@ export function ContentSubmissionForm() {
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="analyzePrayers"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/50">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
-                    id="analyzePrayers"
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel htmlFor="analyzePrayers" className={`flex items-center ${(!isTextPrepared || isSubmittingAnalysis) ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
-                     <ShieldQuestion className="mr-2 h-4 w-4 text-primary" />
-                    Analyze Prayers within Content
-                  </FormLabel>
-                  <FormDescription>
-                    Enable to perform specific KJV alignment and manipulative language analysis on prayers found in the prepared text.
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="requestIDCR"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/50">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
-                    id="requestIDCR"
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel htmlFor="requestIDCR" className={`flex items-center ${(!isTextPrepared || isSubmittingAnalysis) ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
-                     <SearchCheck className="mr-2 h-4 w-4 text-primary" />
-                    Request In-Depth Calvinistic Report (IDCR)
-                  </FormLabel>
-                  <FormDescription>
-                    Enable for a comprehensive report on Calvinistic elements, psychological tactics, God&apos;s character representation, Cessationism, and Anti-Semitism.
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
-          
-            <Button
-              type="submit"
-              disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
-              className="w-full"
-            >
-              {isSubmittingAnalysis ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting for Analysis...
-                </>
-              ) : (
-                "Run Analyses"
+          <div className={cn("p-2 transition-all -m-2 space-y-8", guidanceStep === 'submit' && highlightClass)}>
+            <FormField
+              control={form.control}
+              name="analyzePrayers"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/50">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
+                      id="analyzePrayers"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel htmlFor="analyzePrayers" className={`flex items-center ${(!isTextPrepared || isSubmittingAnalysis) ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+                      <ShieldQuestion className="mr-2 h-4 w-4 text-primary" />
+                      Analyze Prayers within Content
+                    </FormLabel>
+                    <FormDescription>
+                      Enable to perform specific KJV alignment and manipulative language analysis on prayers found in the prepared text.
+                    </FormDescription>
+                  </div>
+                </FormItem>
               )}
-            </Button>
+            />
+
+            <FormField
+              control={form.control}
+              name="requestIDCR"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/50">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
+                      id="requestIDCR"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel htmlFor="requestIDCR" className={`flex items-center ${(!isTextPrepared || isSubmittingAnalysis) ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+                      <SearchCheck className="mr-2 h-4 w-4 text-primary" />
+                      Request In-Depth Calvinistic Report (IDCR)
+                    </FormLabel>
+                    <FormDescription>
+                      Enable for a comprehensive report on Calvinistic elements, psychological tactics, God&apos;s character representation, Cessationism, and Anti-Semitism.
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+              <Button
+                type="submit"
+                disabled={!isTextPrepared || isSubmittingAnalysis || isPreparingText}
+                className="w-full"
+              >
+                {isSubmittingAnalysis ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting for Analysis...
+                  </>
+                ) : (
+                  "Run Analyses"
+                )}
+              </Button>
+          </div>
         </form>
       </Form>
     </>
