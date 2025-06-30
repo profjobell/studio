@@ -464,9 +464,9 @@ export const glossaryTermsArray: GlossaryEntry[] = [
         <li><strong>Two-Way Street:</strong> Rule Omega must be operated in both or all directions in order for it to be effective. Rule Omega cannot be offered to a sophist or an ideologue and a mechanism of interaction. They will very quickly weaponize Rule Omega and employ a mutated version of it in an asymmetric fashion.</li>
       </ul>
       <p>See also "Protocol X" on this page.</p>
-      <p><strong>Rule Omega Youtube Video:</strong> <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">(Placeholder Link - Rick Astley)</a></p>
+      <p><strong>Rule Omega Youtube Video:</strong> <a href="https://www.youtube.com/live/YsKRF9U_Fqo?si=OAu5cdvnfOfWDncA" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Watch on YouTube</a></p>
       <div class="aspect-video my-2">
-        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Placeholder Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/YsKRF9U_Fqo" title="Rule Omega Explanation Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
       </div>
     `,
   },
