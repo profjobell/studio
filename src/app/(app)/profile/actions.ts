@@ -4,6 +4,7 @@
 import type { UserDashboardPreference } from "@/types";
 import { ensureUserDashboardPreferencesStore } from "../settings/actions";
 import { revalidatePath } from "next/cache";
+import { ai } from '@/ai/genkit';
 
 // Placeholder for actual Firebase Auth or DB operations
 
@@ -95,4 +96,27 @@ export async function updateUserDashboardPreference(
   revalidatePath("/dashboard"); 
   revalidatePath("/profile");
   return { success: true, message: "Dashboard preference updated successfully." };
+}
+
+export async function generateAiBibleAvatarAction(): Promise<{ success: boolean; imageDataUri?: string; error?: string }> {
+  try {
+    const { media } = await ai.generate({
+      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      prompt: "A majestic, artistic avatar of the King James Bible. The Bible should be leather-bound, ornate, with 'KJV' in elegant gold leaf lettering. It rests on a dark, scholarly wooden desk and emits a divine, warm glow, symbolizing inspiration and truth.",
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+      },
+    });
+
+    if (!media?.url) {
+      return { success: false, error: "AI did not return an image." };
+    }
+
+    return { success: true, imageDataUri: media.url };
+
+  } catch (error) {
+    console.error("Error generating AI Bible avatar:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during AI image generation.";
+    return { success: false, error: errorMessage };
+  }
 }

@@ -1,7 +1,7 @@
 
 "use client"; // Make this a client component
 
-import { useEffect, useState, ChangeEvent } from "react";
+import { useEffect, useState, ChangeEvent, useTransition } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button"; // Imported buttonVariants
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +12,8 @@ import { ProfileUpdateForm } from "./components/profile-update-form";
 import { DeleteAccountSection } from "./components/delete-account-section";
 import { DashboardPreferenceForm } from "./components/dashboard-preference-form";
 import { format } from 'date-fns';
-import { fetchConceptuallyAddedUserProfiles, type ConceptuallyAddedUserProfile } from "../settings/actions";
-import { ShieldAlert, Loader2, ArrowLeft, Upload, Trash2, User as UserIcon } from "lucide-react";
+import { fetchConceptuallyAddedUserProfiles, type ConceptuallyAddedUserProfile, generateAiBibleAvatarAction } from "../settings/actions";
+import { ShieldAlert, Loader2, ArrowLeft, Upload, Trash2, User as UserIcon, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils"; // Imported cn
@@ -34,6 +34,7 @@ export default function ProfilePage() {
   // State for avatar management
   const [currentAvatarSrc, setCurrentAvatarSrc] = useState<string | null>(null);
   const [avatarFileType, setAvatarFileType] = useState<'generated' | 'uploaded'>('generated');
+  const [isGeneratingAiAvatar, startGeneratingAiAvatarTransition] = useTransition();
 
 
   const getGeneratedAvatarUrl = (name: string) => {
@@ -170,6 +171,25 @@ export default function ProfilePage() {
     }
   };
 
+  const handleGenerateAiAvatar = () => {
+    startGeneratingAiAvatarTransition(async () => {
+        toast({ title: "Generating AI Avatar...", description: "Please wait, this may take a moment." });
+        const result = await generateAiBibleAvatarAction();
+        if (result.success && result.imageDataUri) {
+            setCurrentAvatarSrc(result.imageDataUri);
+            setAvatarFileType('uploaded'); // Treat as custom
+            if (currentUserDetails?.id) {
+                localStorage.setItem(`avatarSrc_${currentUserDetails.id}`, result.imageDataUri);
+                localStorage.setItem(`avatarType_${currentUserDetails.id}`, 'uploaded');
+            }
+            toast({ title: "AI Avatar Generated!", description: "Your new avatar has been set." });
+            router.refresh();
+        } else {
+            toast({ title: "Generation Failed", description: result.error, variant: "destructive" });
+        }
+    });
+  };
+
 
   if (isLoadingUsers || !currentUserDetails) {
     return (
@@ -211,12 +231,17 @@ export default function ProfilePage() {
                 </Label>
                 <Input id="avatarUpload" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
 
-                <Button variant="outline" size="sm" onClick={handleUseGeneratedAvatar}>
+                <Button variant="outline" size="sm" onClick={handleUseGeneratedAvatar} disabled={isGeneratingAiAvatar}>
                   <UserIcon className="mr-2 h-4 w-4" /> Use Generated
                 </Button>
 
+                <Button variant="outline" size="sm" onClick={handleGenerateAiAvatar} disabled={isGeneratingAiAvatar}>
+                  {isGeneratingAiAvatar ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate AI Bible Avatar
+                </Button>
+
                 {avatarFileType === 'uploaded' && (
-                  <Button variant="destructive" size="sm" onClick={handleDeleteCustomAvatar}>
+                  <Button variant="destructive" size="sm" onClick={handleDeleteCustomAvatar} disabled={isGeneratingAiAvatar}>
                     <Trash2 className="mr-2 h-4 w-4" /> Delete Custom
                   </Button>
                 )}
